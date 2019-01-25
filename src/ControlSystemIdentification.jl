@@ -68,9 +68,10 @@ struct SysFilter{T<:StateSpaceNoise, FT}
 	state::Vector{FT}
 	yh::Vector{FT}
 end
-SysFilter(sys,x0=zeros(sys.nx)) = SysFilter(sys,x0,zeros(eltype(x0), sys.ny))
+SysFilter(sys::LTISystem,x0=zeros(sys.nx)) = SysFilter(sys,x0,zeros(eltype(x0), sys.ny))
 
 (s::SysFilter)(y, u) = sysfilter!(s.state, s.sys, y, u)
+(s::SysFilter)(u) = sysfilter!(s.state, s.sys, u)
 
 function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, y, u)
 	@unpack A,B,K = sys
@@ -80,7 +81,15 @@ function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, y, u)
 	yh
 end
 
+function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, u)
+	@unpack A,B,K = sys
+	yh = state[1:sys.ny] #vec(sys.C*state)
+	state .= vec(sys.A*state + sys.B*u)
+	yh
+end
+
 sysfilter!(s::SysFilter, y, u) = sysfilter!(s.state, s.sys, y, u)
+sysfilter!(s::SysFilter, u) = sysfilter!(s.state, s.sys, u)
 
 struct OberservationIterator{T}
 	y::T
@@ -90,13 +99,13 @@ end
 observations(y,u) = OberservationIterator(y,u)
 
 function Base.iterate(i::OberservationIterator{<:AbstractMatrix}, state=1)
-	state >= length(i) && return nothing
+	state > length(i) && return nothing
 	((i.y[:,state],i.u[:,state]),state+1)
 end
 Base.length(i::OberservationIterator{<:AbstractMatrix}) = size(i.y, 2)
 
 function Base.iterate(i::OberservationIterator{<:AbstractVector{<:Union{AbstractVector, Number}}}, state=1)
-	state >= length(i) && return nothing
+	state > length(i) && return nothing
 	((i.y[state],i.u[state]),state+1)
 end
 Base.length(i::OberservationIterator{<:AbstractVector{<:Union{AbstractVector, Number}}}) = length(i.y)
@@ -150,7 +159,7 @@ function mats(p, nx, ny, nu)
 end
 function model_from_params(p, nx, ny, nu)
 	A,B,K = mats(p, nx, ny, nu)
-	x0    = p[end-nx+1:end]
+	x0    = copy(p[end-nx+1:end])
 	sys   = StateSpaceNoise(A,B,K,1.)
 	sysf  = SysFilter(sys,x0,similar(x0,ny))
 end
@@ -168,17 +177,17 @@ end
 
 
 """
-sys, x0, opt = pem(y, u; nx, focus=:prediction, metric=abs2)
+sys, x0, opt = pem(y, u; nx, kwargs...)
 
 System identification using the prediction error method.
 
 # Arguments:
-- `y`: Measurements either a matrix with time along dim 2, or a vector of vectors
+- `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
 - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
-- `solver` Defaults to `Optim.BFGS`
+- `solver` Defaults to `Optim.BFGS()`
 - `kwargs`: additional keyword arguments are sent to `Optim.Options`.
 
 # Return values
@@ -186,7 +195,7 @@ System identification using the prediction error method.
 - `x0`: Estimated initial state
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 """
-function pem(y, u; nx, solver = BFGS, focus=:prediction, metric=abs2, kwargs...)
+function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, kwargs...)
 	nu,ny = obslength(u),obslength(y)
 
 	x0 = 0.001randn(nx)
@@ -196,7 +205,7 @@ function pem(y, u; nx, solver = BFGS, focus=:prediction, metric=abs2, kwargs...)
 	K = 0.001randn(nx,ny)
 	p = [A[:];B[:];K[:];x0]
 	cf = p->pem_costfun(p,y,u,nx,metric)
-	opt = optimize(cf, p, solver(), Optim.Options(;iterations=200, kwargs...); autodiff = :forward)
+	opt = optimize(cf, p, solver, Optim.Options(;iterations=200, kwargs...); autodiff = :forward)
 	println(opt)
 	if focus == :simulation
 		@info "Focusing on simulation"
@@ -205,27 +214,30 @@ function pem(y, u; nx, solver = BFGS, focus=:prediction, metric=abs2, kwargs...)
 		println(opt)
 	end
 	model = model_from_params(Optim.minimizer(opt), nx, ny, nu)
-	model.sys, model.state, opt
+	model.sys, copy(model.state), opt
 end
 
 
-# Base.oftype()
+Base.oftype(x::Vector{<:Vector}, y::Vector{<:Vector}) = y
+Base.oftype(x::Matrix, y::Vector{<:Vector}) = reduce(hcat,y)
+Base.oftype(x::Matrix, y::Matrix) = y
+Base.oftype(x::Vector{<:Vector}, y::Matrix) = [y[:,i] for i in 1:size(y,2)]
 function predict(sys, y, u, x0=zeros(sys.nx))
-	model = SysFilter(sys, x0)
+	model = SysFilter(sys, copy(x0))
 	yh = [model(yt,ut) for (yt,ut) in observations(y,u)]
 	oftype(y,yh)
 end
 
 function simulate(sys, u, x0=zeros(sys.nx))
-	model = SysFilter(sys, x0)
-	oi = observations(u,u)
-	yh = Vector{Vector{Float64}}(length(oi)+1)
-	for (i,(ut,_)) in enumerate(oi)
-		yh[i+1] = model(yh[i],ut)
+	model = SysFilter(sys, copy(x0))
+	yh = map(observations(u,u)) do (ut,_)
+		model(ut)
 	end
 	oftype(u,yh)
 end
 
-
+function ControlSystems.lsim(sys::StateSpaceNoise, u; x0=zeros(sys.nx))
+	simulate(sys, u, x0)
+end
 
 end # module

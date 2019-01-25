@@ -1,5 +1,5 @@
 using ControlSystemIdentification, ControlSystems, Optim
-using Test, Random
+using Test, Random, LinearAlgebra
 
 function ⟂(x)
     u,s,v = svd(x)
@@ -13,7 +13,7 @@ function generate_system(nx,ny,nu)
     sys = ss(A,B,C,0,1)
 end
 
-# @testset "ControlSystemIdentification.jl" begin
+@testset "ControlSystemIdentification.jl" begin
 Random.seed!(1)
 T   = 1000
 nx  = 3
@@ -72,15 +72,15 @@ sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
 
 
 # Both noises
-σu = 0.1
-σy = 0.1
+σu = 0.2
+σy = 0.2
 
 u  = randn(nu,T)
 un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
+sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction, metric=abs2, iterations=400)
+@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=1
 @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
 # Simulation error minimization
@@ -93,7 +93,7 @@ y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:simulation, metric=abs2)
 @test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
-@test Optim.minimum(opt) < 1 # A factor of 2 margin
+@test Optim.minimum(opt) < 1
 
 # L1 error minimization
 σu = 0.0
@@ -105,8 +105,13 @@ y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs)
 @test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
-@test Optim.minimum(opt) < 1 # A factor of 2 margin
+@test Optim.minimum(opt) < 1
 
 yh = ControlSystemIdentification.predict(sysh, yn, u, x0h)
+@test sum(abs2,y-yh) < 0.1
 
-# end
+yh = ControlSystemIdentification.simulate(sysh, u, x0h)
+@test sum(abs2,y-yh) < 0.1
+
+
+end
