@@ -103,7 +103,7 @@ u  = randn(nu,T)
 un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs)
+sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs, regularizer=p->0.1norm(p))
 @test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
 @test Optim.minimum(opt) < 1
 

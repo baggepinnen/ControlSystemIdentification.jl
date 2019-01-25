@@ -1,8 +1,13 @@
 # ControlSystemIdentification
 
-[![Build Status](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl.svg?branch=master)](https://travis-ci.com/baggepinnen/ControlSystemIdentification.jl)
+[![Build Status](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl)
 [![Coverage Status](https://coveralls.io/repos/github/baggepinnen/ControlSystemIdentification.jl/badge.svg?branch=master)](https://coveralls.io/github/baggepinnen/ControlSystemIdentification.jl?branch=master)
+[![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
+
+
+
+https://codecov.io/gh/baggepinnen/Robotlib.jl
 This package implements a simple algorithm for identification of LTI systems on state-space form. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
 The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (use `ControlSystems.get_C(sys)` to get it).
@@ -92,8 +97,18 @@ Note that there are 3 big singular values, corresponding to the system poles, th
 - `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
+- `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below
 - `solver` Defaults to `Optim.BFGS`
 - `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
+
+### Structure of parameter vector `p`
+```julia
+A  = size(nx,ny)
+B  = size(nx,nu)
+K  = size(nx,ny)
+x0 = size(nx)
+p  = [A[:];B[:];K[:];x0]
+```
 
 ## Return values
 - `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)`, but this will discard the Kalman gain matrix.

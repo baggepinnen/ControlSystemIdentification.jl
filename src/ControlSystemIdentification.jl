@@ -187,6 +187,7 @@ System identification using the prediction error method.
 - `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
+- `regularizer(p)=0`: function for regularization. The structure of `p` is detailed below
 - `solver` Defaults to `Optim.BFGS()`
 - `kwargs`: additional keyword arguments are sent to `Optim.Options`.
 
@@ -194,22 +195,30 @@ System identification using the prediction error method.
 - `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)`, but this will discard the Kalman gain matrix.
 - `x0`: Estimated initial state
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
+
+## Structure of parameter vecotr `p`
+```julia
+A = size(nx,ny)
+B = size(nx,nu)
+K = size(nx,ny)
+x0 = size(nx)
+p = [A[:];B[:];K[:];x0]
+```
 """
-function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, kwargs...)
+function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regularizer=p->0, kwargs...)
 	nu,ny = obslength(u),obslength(y)
 
-	x0 = 0.001randn(nx)
-	i0 = 0.001randn(ny)
 	A = 0.0001randn(nx,ny)
 	B = 0.001randn(nx,nu)
 	K = 0.001randn(nx,ny)
+	x0 = 0.001randn(nx)
 	p = [A[:];B[:];K[:];x0]
-	cf = p->pem_costfun(p,y,u,nx,metric)
+	cf = p->pem_costfun(p,y,u,nx,metric) + regularizer(p)
 	opt = optimize(cf, p, solver, Optim.Options(;iterations=200, kwargs...); autodiff = :forward)
 	println(opt)
 	if focus == :simulation
 		@info "Focusing on simulation"
-		cf = p->sem_costfun(p,y,u,nx,metric)
+		cf = p->sem_costfun(p,y,u,nx,metric) + regularizer(p)
 		opt = optimize(cf, Optim.minimizer(opt), NewtonTrustRegion(), Optim.Options(;iterations=100, kwargs...); autodiff = :forward)
 		println(opt)
 	end
