@@ -1,0 +1,10 @@
+name = "ControlSystemIdentification"
+uuid = "b31ea2f8-2091-11e9-3d84-4df7fc2b8c9d"
+authors = ["baggepinnen <cont-frb@ulund.org>"]
+version = "0.1.0"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
