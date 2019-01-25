@@ -7,7 +7,6 @@
 
 
 
-https://codecov.io/gh/baggepinnen/Robotlib.jl
 This package implements a simple algorithm for identification of LTI systems on state-space form. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
 The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (use `ControlSystems.get_C(sys)` to get it).
