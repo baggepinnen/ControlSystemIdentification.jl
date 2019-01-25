@@ -1,6 +1,7 @@
 # ControlSystemIdentification
 
-[![Build Status](https://travis-ci.com/baggepinnen/ControlSystemIdentification.jl.svg?branch=master)](https://travis-ci.com/baggepinnen/ControlSystemIdentification.jl)
+[![Build Status](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl.svg?branch=master)](https://travis-ci.com/baggepinnen/ControlSystemIdentification.jl)
+[![Coverage Status](https://coveralls.io/repos/github/baggepinnen/ControlSystemIdentification.jl/badge.svg?branch=master)](https://coveralls.io/github/baggepinnen/ControlSystemIdentification.jl?branch=master)
 
 This package implements a simple algorithm for identification of LTI systems on state-space form. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
