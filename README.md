@@ -107,7 +107,7 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 ## Arguments:
 - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
 - `u`: Control signals, same structure as `y`
-- `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
+- `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
 - `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below. L₂ regularization, for instance, can be achieved by `regularizer = p->sum(abs2, p)`
@@ -172,8 +172,8 @@ yn = y + e    # Measurement signal with noise
 
 na,nb,nc = 2,1,1
 
-Gls,Σ    = arx(Δt,yn,u,na,nb) # Regular least-squares estimation
-Gtls,Σ   = arx(Δt,yn,u,na,nb, estimator=TotalLeastSquares.tls) # Total least-squares estimation
+Gls,Σ    = arx(Δt,yn,u,na,nb)                      # Regular least-squares estimation
+Gtls,Σ   = arx(Δt,yn,u,na,nb, estimator=tls)       # Total least-squares estimation
 Gwtls,Σ  = arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)) # Weighted Total least-squares estimation
 Gplr, Gn = plr(Δt,yn,u,na,nb,nc, initial_order=20) # Pseudo-linear regression
 @show Gls; @show  Gtls; @show  Gwtls; @show  Gplr; @show  Gn;

@@ -4,5 +4,5 @@ Optim
 DSP
 FillArrays
 Parameters
-TotalLeastSquares
+TotalLeastSquares 0.1.1
 RecipesBase
