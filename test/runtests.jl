@@ -32,7 +32,15 @@ un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 
+# using BenchmarkTools
+# @btime begin
+    # Random.seed!(0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
+# end
+# 462ms 121 29
+# 296ms
+# 283ms
+
 
 @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
 

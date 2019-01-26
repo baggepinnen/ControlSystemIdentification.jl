@@ -121,7 +121,7 @@ p  = [A[:];B[:];K[:];x0]
 # Functions
 - `pem`: Main estimation function, see above.
 - `predict(sys, y, u, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
-- `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have an influence on the simulated output.
+- `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
 - `noise_model`: Extract the noise model from the estimated system (`ss(A,K,C,0)`).
 
 # Internals
@@ -130,4 +130,5 @@ Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to op
 # Other resources
 - For estimation of linear time-varying models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
 - For estimation of nonlinear ARX models (NARX), see [BasisFunctionExpansions.jl](https://github.com/baggepinnen/BasisFunctionExpansions.jl).
-- For estimation of continuous-time models, linear and nonlinear, see [DifferentialEquations.jl (parameter estimation)](http://docs.juliadiffeq.org/stable/analysis/parameter_estimation.html)
+- For estimation of linear and nonlinear grey-box models in continuous time, see [DifferentialEquations.jl (parameter estimation)](http://docs.juliadiffeq.org/stable/analysis/parameter_estimation.html)
+- Estimation of nonlinear black-box models in continuous time [DiffEqFlux.jl](https://github.com/JuliaDiffEq/DiffEqFlux.jl/) and in discrete time [Flux.jl](https://github.com/FluxML/Flux.jl)

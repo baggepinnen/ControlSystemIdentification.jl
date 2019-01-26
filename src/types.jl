@@ -117,8 +117,8 @@ function Base.iterate(i::OberservationIterator{<:AbstractVector{<:Union{Abstract
 end
 Base.length(i::OberservationIterator{<:AbstractVector{<:Union{AbstractVector, Number}}}) = length(i.y)
 
-struct PredictionErrorIterator{T}
-	model
+struct PredictionErrorIterator{T,MT}
+	model::MT
 	oi::OberservationIterator{T}
 end
 
@@ -132,13 +132,13 @@ function Base.iterate(i::PredictionErrorIterator, state=1)
 end
 Base.length(i::PredictionErrorIterator) = length(i.oi)
 
-mutable struct SimulationErrorIterator{T}
-	model
+mutable struct SimulationErrorIterator{T,MT,YT}
+	model::MT
 	oi::OberservationIterator{T}
-	yh # Stores the last prediction
+	yh::YT # Stores the last prediction
 end
 
-simulation_errors(model, y, u) = SimulationErrorIterator(model, observations(y,u), zeros(obslength(y)))
+simulation_errors(model, y, u) = SimulationErrorIterator(model, observations(y,u), zeros(eltype(model.sys.A), obslength(y)))
 
 function Base.iterate(i::SimulationErrorIterator, state=1)
 	state >= length(i) && return nothing
