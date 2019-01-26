@@ -34,7 +34,7 @@ yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
 
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
+@test sysh.C*x0h ≈ sys.C*x0 atol=0.1
 
 G = tf(sys)
 H = tf(convert(StateSpace,sysh))
@@ -55,7 +55,7 @@ un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
+@test sysh.C*x0h ≈ sys.C*x0 atol=0.1
 @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
 # Only input noise
@@ -67,7 +67,7 @@ un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
+@test sysh.C*x0h ≈ sys.C*x0 atol=0.1
 @test Optim.minimum(opt) < 1 # Should depend on system gramian, but too lazy to figure out
 
 
@@ -80,7 +80,7 @@ un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction, metric=abs2, iterations=400)
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=1
+@test sysh.C*x0h ≈ sys.C*x0 atol=1
 @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
 # Simulation error minimization
@@ -92,7 +92,7 @@ un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:simulation, metric=abs2)
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
+@test sysh.C*x0h ≈ sys.C*x0 atol=0.1
 @test Optim.minimum(opt) < 1
 
 # L1 error minimization
@@ -104,7 +104,7 @@ un = u + sim(sysn, σu*randn(size(u)),0*x0)
 y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy*randn(size(u)),0*x0)
 sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs, regularizer=p->0.1norm(p))
-@test ControlSystems.get_C(sysh)*x0h ≈ sys.C*x0 atol=0.1
+@test sysh.C*x0h ≈ sys.C*x0 atol=0.1
 @test Optim.minimum(opt) < 1
 
 yh = ControlSystemIdentification.predict(sysh, yn, u, x0h)

@@ -9,7 +9,7 @@
 
 This package implements a simple algorithm for identification of LTI systems on state-space form. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
-The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (use `ControlSystems.get_C(sys)` to get it).
+The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
 
 This package does not support estimating models on the form
 ```math
@@ -34,7 +34,6 @@ function generate_system(nx,ny,nu)
     sys = ss(A,B,C,0,1)
 end
 
-@testset "ControlSystemIdentification.jl" begin
 Random.seed!(1)
 T   = 1000  # Number of time steps
 nx  = 3     # Number of poles in the true system
@@ -70,7 +69,7 @@ plot([y; yh]', lab=["y" "ŷ"])
 
 We can have a look at the singular values of a balanced system Gramian:
 ```julia
-s = convert(StateSpace, sysh) # Convert to standard state-space type
+s = ss(sysh) # Convert to standard state-space type
 s2,G = balreal(s) # Form balanced representation (obs. and ctrb. Gramians are the same
 diag(G) # Singular values of Gramians
 
@@ -85,7 +84,12 @@ diag(G) # Singular values of Gramians
  0.0005827927965893053
  0.00029732262107216666
 ```
-Note that there are 3 big singular values, corresponding to the system poles, there are also 2×3 smaller singular values corresponding to the noise dynamics.
+Note that there are 3 big singular values, corresponding to the system poles, there are also 2×3 smaller singular values, corresponding to the noise dynamics.
+
+The estimated noise model can be extracted by `noise_model(sys)`, we can visualize it with a bodeplot.
+```julia
+bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estimated noise dynamics")
+```
 
 
 # `pem`
@@ -96,7 +100,7 @@ Note that there are 3 big singular values, corresponding to the system poles, th
 - `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
-- `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below
+- `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below. L₂ regularization, for instance, can be achieved by `regularizer = p->sum(abs2, p)`
 - `solver` Defaults to `Optim.BFGS`
 - `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
 
@@ -110,15 +114,15 @@ p  = [A[:];B[:];K[:];x0]
 ```
 
 ## Return values
-- `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)`, but this will discard the Kalman gain matrix.
+- `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)` or `ss(sys)`, but this will discard the Kalman gain matrix, see `noise_model`.
 - `x0`: Estimated initial state
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 
 # Functions
 - `pem`: Main estimation function, see above.
-- `predict(sys, y, u, x0=zeros)`: Form predictions using estimated `sys`.
-- `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`.
-
+- `predict(sys, y, u, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
+- `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have an influence on the simulated output.
+- `noise_model`: Extract the noise model from the estimated system (`ss(A,K,C,0)`).
 
 # Internals
 Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to `pem`, and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
