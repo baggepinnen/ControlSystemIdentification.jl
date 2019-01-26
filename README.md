@@ -7,7 +7,7 @@
 
 
 
-This package implements a simple algorithm for identification of LTI systems on state-space form. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
+This package implements a simple algorithm for identification of discrete-time LTI systems on state-space form. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
 The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
 
@@ -101,7 +101,7 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
 - `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below. L₂ regularization, for instance, can be achieved by `regularizer = p->sum(abs2, p)`
-- `solver` Defaults to `Optim.BFGS`
+- `solver` Defaults to `Optim.BFGS()`
 - `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
 
 ### Structure of parameter vector `p`
@@ -126,3 +126,8 @@ p  = [A[:];B[:];K[:];x0]
 
 # Internals
 Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to `pem`, and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
+
+# Other resources
+- For estimation of linear time-varying models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
+- For estimation of nonlinear ARX models (NARX), see [BasisFunctionExpansions.jl](https://github.com/baggepinnen/BasisFunctionExpansions.jl).
+- For estimation of continuous-time models, linear and nonlinear, see [DifferentialEquations.jl (parameter estimation)](http://docs.juliadiffeq.org/stable/analysis/parameter_estimation.html)
