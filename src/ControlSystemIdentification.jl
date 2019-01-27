@@ -1,6 +1,6 @@
 module ControlSystemIdentification
 
-using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase
+using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase, FFTW
 
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
 export getARXregressor, find_na, arx, bodeconfidence, tls, wtls_estimator, plr
@@ -10,6 +10,7 @@ include("utils.jl")
 include("types.jl")
 include("pem.jl")
 include("arx.jl")
+include("frd.jl")
 
 function predict(sys, y, u, x0=zeros(sys.nx))
 	model = SysFilter(sys, copy(x0))
