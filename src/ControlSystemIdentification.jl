@@ -4,6 +4,7 @@ using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays,
 
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
 export getARXregressor, find_na, arx, bodeconfidence, tls, wtls_estimator, plr
+export FRD, tfest, coherence, coherenceplot
 
 
 include("utils.jl")

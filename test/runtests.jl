@@ -6,7 +6,7 @@ function ⟂(x)
     u*v
 end
 function generate_system(nx,ny,nu)
-    U,S  = ⟂(randn(nx,nx)), diagm(0=>0.2 .+ 0.5rand(nx))
+    U,S  = ⟂(randn(nx,nx)), diagm(0=>0.2 .+ 0.78rand(nx))
     A    = S*U
     B   = randn(nx,nu)
     C   = randn(ny,nx)
@@ -161,45 +161,42 @@ end
         na,nb,nc = 2,1,1
 
         Gls,Σ = arx(1,yn,u,na,nb)
-        Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
-        Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
+        # TODO: Reactivate tests below when TLS.jl tagged
+        # Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
+        # Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
 
-        Gplr, Gn, ehat = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=20)
+        Gplr, Gn = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=20)
         @show Gplr, Gn
 
     end
+    # end
+    @testset "frd" begin
+        Random.seed!(1)
+        ##
+        T   = 10000
+        sim(sys,u) = lsim(sys, u, 1:T)[1][:]
+        σy = 0.1
+        sys = tf(1,[1,2*0.1,0.1])
+        sysn = tf(σy,[1,2*0.1,0.1])
 
+
+        u  = randn(T)
+        y  = sim(sys, u)
+        yn = y + sim(sysn, randn(size(u)))
+
+        # using BenchmarkTools
+        # @btime begin
+        # Random.seed!(0)
+        k = coherence(1,y,u)
+        @test all(k.r .> 0.99)
+        k = coherence(1,yn,u)
+        @test all(k.r .> 0.9)
+        G = tfest(1,yn,u)
+        # bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(3,1), plotphase=false, subplot=[1,3])
+
+        # coherenceplot!(1,yn,u, subplot=2)
+        # plot!(G, subplot=1, lab="G Est", alpha=0.4)
+        # plot!(N, subplot=3, lab="N Est", alpha=0.4)
+
+    end
 end
-
-
-#
-#
-# Random.seed!(1)
-# T   = 100000
-# nx  = 3
-# nu  = 1
-# ny  = 1
-# x0  = randn(nx)
-# sim(sys,u,x0=x0) = lsim(sys, u, 1:T, x0=x0)[1][:]
-# sys = generate_system(nx,nu,ny)
-# sysn = generate_system(nx,nu,ny)
-#
-# σu = 0
-# σy = 1
-#
-# u  = randn(T)
-# un = u + sim(sysn, σu*randn(size(u)),0*x0)
-# y  = sim(sys, un, x0)
-# yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-#
-# # using BenchmarkTools
-# # @btime begin
-# # Random.seed!(0)
-# H,N = tfest(1,yn,u)
-# plot!(H)
-#
-# bodeplot([sys, sysn], exp10.(range(-3, stop=log10(2pi), length=200)), layout=(2,1), plotphase=false, subplot=1)
-#
-# # κ, N = coherence(1,yn,u)
-# κ = coherence2(1,yn,u)
-# coherenceplot!(1,yn,u, subplot=2)

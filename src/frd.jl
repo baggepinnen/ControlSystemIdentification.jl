@@ -35,26 +35,23 @@ feedback(P::LTISystem,K::FRD) = feedback(freqresp(P,K.w)[:,1,1],K)
     nothing
 end
 
-
+freqvec(h,k) = LinRange(0,π/h, length(k))
 
 """
-    H, N = tfest(h,y,u)
+    H = tfest(h,y,u)
 
 Estimate a transfer function model using the Correlogram approach
 H = Syu/Suu             Process transfer function
-N = Sy - |Syu|²/Suu     Noise model
 """
-function tfest(h,y,u)
-    error("Not implemented yet.")
-    Cyu = xcorr(y,u)
-    Cyy = xcorr(y,y)
-    Cuu = xcorr(u,u)
-    Syu = welch_pgram(Cyu, fs=2π/h, window=DSP.Windows.hamming) # TODO: this must result in complex vector, i.e., do not use pgram
-    Syy = welch_pgram(Cyy, fs=2π/h, window=DSP.Windows.hamming)
-    Suu = welch_pgram(Cuu, fs=2π/h, window=DSP.Windows.hamming)
-    H = FRD(Syu.freq, Syu.power./Suu.power)
-    N = FRD(Syu.freq, Syy.power .- abs2.(Syu.power)./Suu.power)
-    return H, N
+function tfest(h::Real,y::AbstractVector,u::AbstractVector)
+    # N = Sy - |Syu|²/Suu     Noise model
+    N = length(y)
+    Syy,Suu,Syu = wfft(y,u)
+    # Syy,Suu,Syu = wcfft(Cyy,Cuu)
+    w = freqvec(h,Syu)
+    H = FRD(w, Syu./Suu)
+    # N = FRD(w, @.(Syy - abs2(Syu)/Suu))
+    return H#, N
 end
 
 
@@ -66,24 +63,50 @@ Calculates the coherence Function. κ close to 1 indicates a good explainability
 κ: Coherence function (not squared)
 N: Noise model
 """
-function coherence(h,y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
-    Syy     = zeros(length(y)÷10)
-    Suu     = zeros(length(y)÷10)
-    Syu     = zeros(ComplexF64,length(y)÷10)
+function coherence(h::Real,y::AbstractVector,u::AbstractVector; n = length(y)÷10, noverlap = n÷2, window=hamming)
+    Syy,Suu,Syu = wcfft(y,u,n=n,noverlap=noverlap,window=window)
+    k = (abs2.(Syu)./(Suu.*Syy))#[end÷2+1:end]
+    Sch = FRD(freqvec(h,k),k)
+    return Sch
+end
+
+function wcfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
     win, norm2 = DSP.Periodograms.compute_window(window, n)
-    uw = arraysplit(u,n,noverlap,nextfastfft(n),win)
-    for (i,y) in enumerate(arraysplit(y,n,noverlap,nextfastfft(n),win))
-        u       = uw[i]
-        xy      = fft(y)
-        xu      = fft(u)
-        # Cross spectrum
+    uw  = arraysplit(u,n,noverlap,nextfastfft(n),win)
+    yw  = arraysplit(y,n,noverlap,nextfastfft(n),win)
+    Syy = zeros(length(uw[1])÷2 + 1)
+    Suu = zeros(length(uw[1])÷2 + 1)
+    Syu = zeros(ComplexF64,length(uw[1])÷2 + 1)
+    for i in eachindex(uw)
+        xy      = rfft(yw[i])
+        xu      = rfft(uw[i])
         Syu .+= xy.*conj.(xu)
         Syy .+= abs2.(xy)
         Suu .+= abs2.(xu)
     end
-    k = (abs2.(Syu)./(Suu.*Syy))[end÷2+1:end]
-    Sch = FRD(LinRange(0,π/h, length(k)),k)
-    return Sch
+    Syy,Suu,Syu
+end
+
+function wfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
+    win, norm2 = DSP.Periodograms.compute_window(window, n)
+    Cyu = xcorr(y,u)
+    Cyy = xcorr(y,y)
+    Cuu = xcorr(u,u)
+    uw  = arraysplit(Cuu,n,noverlap,nextfastfft(n),win)
+    yw  = arraysplit(Cyy,n,noverlap,nextfastfft(n),win)
+    yuw = arraysplit(Cyu,n,noverlap,nextfastfft(n),win)
+    Syy = zeros(ComplexF64,length(uw[1])÷2 + 1)
+    Suu = zeros(ComplexF64,length(uw[1])÷2 + 1)
+    Syu = zeros(ComplexF64,length(uw[1])÷2 + 1)
+    for i in eachindex(uw)
+        xy    = rfft(yw[i])
+        xu    = rfft(uw[i])
+        xyu   = rfft(yuw[i])
+        Syu .+= xyu
+        Syy .+= xy
+        Suu .+= xu
+    end
+    Syy,Suu,Syu
 end
 
 
@@ -106,8 +129,7 @@ coherenceplot
     xscale --> :log10
     ylims --> (0,1)
     xlabel --> "Frequency [rad/s]"
-    ylabel --> "Coherence"
-    title --> ""
+    title --> "Coherence"
     legend --> false
     frd = coherence(h,y,u)
     @series begin
