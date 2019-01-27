@@ -161,11 +161,9 @@ end
         na,nb,nc = 2,1,1
 
         Gls,Σ = arx(1,yn,u,na,nb)
-        # TODO: Reactivate tests below when TLS.jl tagged
-        # Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
-        # Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
-
-        Gplr, Gn = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=20)
+        Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
+        Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
+        Gplr, Gn = plr(1,yn,u,na,nb,nc, initial_order=20)
         @show Gplr, Gn
 
     end
@@ -178,7 +176,6 @@ end
         σy = 0.1
         sys = tf(1,[1,2*0.1,0.1])
         sysn = tf(σy,[1,2*0.1,0.1])
-
 
         u  = randn(T)
         y  = sim(sys, u)
