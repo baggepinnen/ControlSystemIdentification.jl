@@ -24,6 +24,7 @@ sse(x::AbstractVector) = x⋅x
 
 rms(x::AbstractMatrix) = sqrt.(mean(abs2.(x),dims=2))[:]
 sse(x::AbstractMatrix) = sum(abs2,x,dims=2)[:]
-modelfit(y,yh) = 100 * (1 .-rms(y.-yh)./rms(y.-mean(y)))
+modelfit(y,yh) = 100 * (1 .-rms(y.-yh)./rms(y.-mean(y,dims=2)))
+modelfit(y::T,yh::T) where T <: AbstractVector = 100 * (1 .-rms(y.-yh)./rms(y.-mean(y)))
 aic(x::AbstractVector,d) = log(sse(x)) .+ 2d/size(x,2)
 const nrmse = modelfit

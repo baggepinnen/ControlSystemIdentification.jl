@@ -78,5 +78,6 @@ function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regulari
 		println(opt)
 	end
 	model = model_from_params(Optim.minimizer(opt), nx, ny, nu)
+	isstable(model.sys) || @warn("Estimated system does not have a stable prediction filter (A-KC)")
 	model.sys, copy(model.state), opt
 end

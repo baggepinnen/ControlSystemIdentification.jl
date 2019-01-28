@@ -29,6 +29,8 @@ struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: LTISystem
 	end
 end
 
+ControlSystems.isstable(s::StateSpaceNoise) = all(abs(e) <= 1 for e in eigvals(s.A-s.K*s.C))
+
 # Getter functions
 ControlSystems.get_A(sys::StateSpaceNoise) = sys.A
 ControlSystems.get_B(sys::StateSpaceNoise) = sys.B
