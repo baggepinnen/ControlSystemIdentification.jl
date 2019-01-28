@@ -199,48 +199,38 @@ end
 end
 
 
-# 
+
 # Random.seed!(1)
 # ##
-# T   = 300
-# nx  = 3
+# T   = 200
+# nx  = 2
 # nu  = 1
 # ny  = 1
 # x0  = randn(nx)
-# sim(sys,u,x0=x0) = lsim(sys, u', 1:T, x0=x0)[1]'
-# sys = generate_system(nx,nu,ny)
-# sysn = generate_system(nx,nu,ny)
-#
-# σy = 0.1
+# σy = 0.5
+# sim(sys,u) = lsim(sys, u', 1:T)[1]'
+# sys = tf(1,[1,2*0.1,0.1])
+# sysn = tf(σy,[1,2*0.1,0.3])
 #
 # u  = randn(nu,T)
-# y  = sim(sys, u, x0)
+# y  = sim(sys, u)
 # yn = y + sim(sysn, σy*randn(size(u)))
 #
 # uv  = randn(nu,T)
-# yv  = sim(sys, uv, x0)
+# yv  = sim(sys, uv)
 # ynv = yv + sim(sysn, σy*randn(size(uv)))
-#
-# using GenericLinearAlgebra
-# regularizer = function(p)
-#     model = ControlSystemIdentification.model_from_params(p,nx,ny,nu)
-#     s = model.sys
-#     nm = noise_model(s)
-#     e = abs.(eigvals(s.A-s.K*s.C))
-#     10sum((e.-0.9).* (e .> 0.9)) +
-#     10maximum(abs.(freqresp(nm, exp10.(range(-3, stop=3, length=200)))))
-# end
-#
-#
 # ##
-# fig = plot(layout=4)
-# # res = [pem(yn,u,nx=nx+i, focus=:prediction, regularizer=p->10norm(p[end-ny*(nx+i)+1:end])) for i = 0:2]
-# res = [pem(yn,u,nx=nx+i, focus=:prediction, iterations=400, regularizer=regularizer) for i = 0:2]
+#
+# res = [pem(yn,u,nx=nx+i, solver=ParticleSwarm(), focus=:prediction, iterations=1000, regularizer=p-> 10000*!stabfun(nx+i,nu,ny)(p)) for i = 0:3]
+#
+# fig = plot(layout=4, size=(1200,800))
 # for i in eachindex(res)
 #     (sysh,x0h,opt) = res[i]
-#     ControlSystemIdentification.compareplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
+#     ControlSystemIdentification.simplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
 #     ControlSystemIdentification.predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
 # end
-# bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3)
-# bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4)
+# bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3, title="Process", linewidth=2*[3 2 1])
+# bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4, title="Noise model", linewidth=2*[3 2 1])
+# bodeplot!(sys, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash)
+# bodeplot!(sysn, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash)
 # display(fig)

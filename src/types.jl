@@ -149,3 +149,21 @@ function Base.iterate(i::SimulationErrorIterator, state=1)
 	(y-i.yh,state1)
 end
 Base.length(i::SimulationErrorIterator) = length(i.oi)
+
+
+function stabilize(model, solver, options, cfi)
+	s = model.sys
+	cost = function(p)
+		maximum(abs.(eigvals(s.A-p*s.K*s.C)))-0.9999999
+	end
+	p = fzero(cost,1e-9,1-1e-9)
+	s.K .*= p
+	model
+end
+
+function stabfun(nx,ny,nu)
+	function (p)
+		model = model_from_params(p,nx,nu,ny)
+		isstable(model.sys)
+	end
+end

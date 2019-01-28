@@ -44,6 +44,7 @@ System identification using the prediction error method.
 - `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
 - `regularizer(p)=0`: function for regularization. The structure of `p` is detailed below
 - `solver` Defaults to `Optim.BFGS()`
+- `stabilize_predictor=true`: Modifies the estimated Kalman gain `K` in case `A-KC` is not stable by moving all unstable eigenvalues to the unit circle.
 - `kwargs`: additional keyword arguments are sent to `Optim.Options`.
 
 # Return values
@@ -60,7 +61,7 @@ x0 = size(nx)
 p = [A[:];B[:];K[:];x0]
 ```
 """
-function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regularizer=p->0, kwargs...)
+function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regularizer=p->0, stabilize_predictor=true, kwargs...)
 	nu,ny = obslength(u),obslength(y)
 
 	A = 0.0001randn(nx,ny)
@@ -68,8 +69,9 @@ function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regulari
 	K = 0.001randn(nx,ny)
 	x0 = 0.001randn(nx)
 	p = [A[:];B[:];K[:];x0]
-	cf = p->pem_costfun(p,y,u,nx,metric) + regularizer(p)
-	opt = optimize(cf, p, solver, Optim.Options(;iterations=200, kwargs...); autodiff = :forward)
+	cfp = p->pem_costfun(p,y,u,nx,metric) + regularizer(p)
+	options = Optim.Options(;iterations=200, kwargs...)
+	opt = optimize(cfp, p, solver, options; autodiff = :forward)
 	println(opt)
 	if focus == :simulation
 		@info "Focusing on simulation"
@@ -78,6 +80,12 @@ function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regulari
 		println(opt)
 	end
 	model = model_from_params(Optim.minimizer(opt), nx, ny, nu)
-	isstable(model.sys) || @warn("Estimated system does not have a stable prediction filter (A-KC)")
+	if !isstable(model.sys)
+		@warn("Estimated system does not have a stable prediction filter (A-KC)")
+		if stabilize_predictor
+			@info("Stabilizing predictor")
+			model = stabilize(model, solver, options, cfp)
+		end
+	end
 	model.sys, copy(model.state), opt
 end
