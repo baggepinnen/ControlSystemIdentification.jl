@@ -112,7 +112,7 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
-- `metric`: A Function determining how the size of the residuals is measured, default `abs2`, but any Function such as `abs` or `x -> x'Q*x` could be used.
+- `metric`: A Function determining how the size of the residuals is measured, default `sse` (e'e), but any Function such as `norm`, `e->sum(abs,e)` or `e -> e'Q*e` could be used.
 - `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below. L₂ regularization, for instance, can be achieved by `regularizer = p->sum(abs2, p)`
 - `solver` Defaults to `Optim.BFGS()`
 - `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
@@ -255,40 +255,42 @@ nx         = 2
 nu         = 1
 ny         = 1
 x0         = randn(nx)
-σy         = 1
+σy         = 0.5
 sim(sys,u) = lsim(sys, u', 1:T)[1]'
 sys        = tf(1,[1,2*0.1,0.1])
 sysn       = tf(σy,[1,2*0.1,0.3])
 # Training data
 u          = randn(nu,T)
 y          = sim(sys, u)
-yn         = y + sim(sysn, σy*randn(size(u)))
+yn         = y + sim(sysn, randn(size(u)))
 # Validation data
 uv         = randn(nu,T)
 yv         = sim(sys, uv)
-ynv        = yv + sim(sysn, σy*randn(size(uv)))
+ynv        = yv + sim(sysn, randn(size(uv)))
 ```
 We then fit a couple of models, the flag `difficult=true` causes `pem` to solve an initial global optimization problem with constraints on the stability of `A-KC` to provide a good guess for the gradient-based solver
 ```julia
-res = [pem(yn,u,nx=nx, iterations=100, difficult=true, focus=:prediction) for nx = 1:2:5]
+res = [pem(yn,u,nx=nx, iterations=100, difficult=true, focus=:prediction) for nx = [1,3,4]]
 ```
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
 ```julia
+ω   = exp10.(range(-2, stop=log10(pi), length=150))
 fig = plot(layout=4, size=(1000,600))
 for i in eachindex(res)
     (sysh,x0h,opt) = res[i]
-    simplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
+    simplot!( sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
     predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
 end
-bodeplot!(sys, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash);
-bodeplot!(sysn, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash);
-bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1]);
-bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4, title="Noise model", linewidth=2*[4 3 2 1])
+bodeplot!(ss.(getindex.(res,1)),                   ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
+bodeplot!(innovation_form.(getindex.(res,1)),      ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
+bodeplot!(sys,                                     ω, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash, legend = :bottomleft, title="System model")
+bodeplot!(innovation_form(ss(sys),syse=ss(sysn)),  ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 display(fig)
 ```
 ![window](figs/val.png)
 
-The figure indicates that a model with 5 poles performs best on both prediction and simulation data. The true system does, however, only have 4 poles, indicating that the 4 pole model found is a local minimum.
+In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the noise dynamics.
+The figure also indicates that a model with 3 poles performs best on both prediction and simulation data. The true system does, however, have 4 poles, indicating that the 4 pole model found is a local minimum.
 
 # Other resources
 - For estimation of linear time-varying models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).

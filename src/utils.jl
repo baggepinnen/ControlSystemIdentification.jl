@@ -21,6 +21,8 @@ Base.oftype(x::Vector{<:Vector}, y::Matrix) = [y[:,i] for i in 1:size(y,2)]
 
 rms(x::AbstractVector) = sqrt(mean(abs2,x))
 sse(x::AbstractVector) = x⋅x
+mse(x::AbstractVector) = sse(x)/length(x)
+
 
 rms(x::AbstractMatrix) = sqrt.(mean(abs2.(x),dims=2))[:]
 sse(x::AbstractMatrix) = sum(abs2,x,dims=2)[:]

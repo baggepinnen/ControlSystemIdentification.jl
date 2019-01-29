@@ -61,7 +61,9 @@ function Base.getproperty(sys::StateSpaceNoise, p::Symbol)
 	return getfield(sys,p)
 end
 
-noise_model(sys::StateSpaceNoise) = ss(sys.A, sys.K, sys.C, 0, sys.Ts)
+ControlSystems.innovation_form(sys::StateSpaceNoise) = ss(sys.A, sys.K, sys.C, Matrix(Eye(sys.ny)), sys.Ts) # innovation model
+
+
 
 
 function Base.getindex(sys::StateSpaceNoise, inds...)

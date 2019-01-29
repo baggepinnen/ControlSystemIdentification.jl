@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems, Optim
+using ControlSystemIdentification, ControlSystems, Optim, Plots
 using Test, Random, LinearAlgebra
 
 function ⟂(x)
@@ -36,7 +36,7 @@ end
         # using BenchmarkTools
         # @btime begin
         # Random.seed!(0)
-        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
+        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
         # end
         # 462ms 121 29
         # 296ms
@@ -54,7 +54,7 @@ end
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
+        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
@@ -65,7 +65,7 @@ end
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs2)
+        @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 1 # Should depend on system gramian, but too lazy to figure out
 
@@ -78,7 +78,7 @@ end
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction, metric=abs2, iterations=400)
+        sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction, iterations=400)
         @test sysh.C*x0h ≈ sys.C*x0 atol=1
         @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
@@ -90,7 +90,7 @@ end
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:simulation, metric=abs2)
+        @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:simulation)
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 1
 
@@ -102,7 +102,7 @@ end
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=abs, regularizer=p->0.1norm(p))
+        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=e->sum(abs,e), regularizer=p->(0.1/T)*norm(p))
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 1
 
@@ -196,43 +196,47 @@ end
         # plot!(N, subplot=3, lab="N Est", alpha=0.4)
 
     end
-end
 
-@testset "plots and difficult" begin
 
-Random.seed!(1)
-##
-T   = 200
-nx  = 2
-nu  = 1
-ny  = 1
-x0  = randn(nx)
-σy = 0.5
-sim(sys,u) = lsim(sys, u', 1:T)[1]'
-sys = tf(1,[1,2*0.1,0.1])
-sysn = tf(σy,[1,2*0.1,0.3])
+    @testset "plots and difficult" begin
 
-u  = randn(nu,T)
-y  = sim(sys, u)
-yn = y + sim(sysn, σy*randn(size(u)))
+        Random.seed!(1)
+        ##
+        T   = 200
+        nx  = 2
+        nu  = 1
+        ny  = 1
+        x0  = randn(nx)
+        σy = 0.5
+        sim(sys,u) = lsim(sys, u', 1:T)[1]'
+        sys = tf(1,[1,2*0.1,0.1])
+        sysn = tf(σy,[1,2*0.1,0.3])
 
-uv  = randn(nu,T)
-yv  = sim(sys, uv)
-ynv = yv + sim(sysn, σy*randn(size(uv)))
-##
+        u  = randn(nu,T)
+        un = u + 0.1randn(size(u))
+        y  = sim(sys, u)
+        yn = y + sim(sysn, σy*randn(size(u)))
 
-res = [pem(yn,u,nx=nx, show_trace=true, iterations=50, difficult=true, focus=:prediction) for nx = 1:3]
+        uv  = randn(nu,T)
+        yv  = sim(sys, uv)
+        ynv = yv + sim(sysn, σy*randn(size(uv)))
+        ##
 
-fig = plot(layout=4, size=(1800,1000))
-for i in eachindex(res)
-    (sysh,x0h,opt) = res[i]
-    ControlSystemIdentification.simplot!(sysh,yv,uv,x0h; subplot=1, ploty=i==1)
-    ControlSystemIdentification.predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
-end
-bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
-bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4, title="Noise model", linewidth=2*[4 3 2 1])
-bodeplot!(sys, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash)
-bodeplot!(sysn, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash)
-display(fig)
+        res = [pem(yn,un,nx=nx, iterations=50, difficult=true, focus=:prediction) for nx = [1,3,4]]
+
+        ω = exp10.(range(-2, stop=log10(pi), length=150))
+        fig = plot(layout=4, size=(1000,600))
+        for i in eachindex(res)
+            (sysh,x0h,opt) = res[i]
+            ControlSystemIdentification.simplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
+            ControlSystemIdentification.predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
+        end
+        bodeplot!(ss.(getindex.(res,1)), ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
+        bodeplot!(ControlSystems.innovation_form.(getindex.(res,1)), ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
+        bodeplot!(sys, ω, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash, legend = :bottomleft, title="System model")
+        bodeplot!(ControlSystems.innovation_form(sys,syse=sysn, R2=σy*I), ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
+        display(fig)
+
+    end
 
 end
