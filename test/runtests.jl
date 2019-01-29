@@ -198,39 +198,41 @@ end
     end
 end
 
+@testset "plots and difficult" begin
 
+Random.seed!(1)
+##
+T   = 200
+nx  = 2
+nu  = 1
+ny  = 1
+x0  = randn(nx)
+σy = 0.5
+sim(sys,u) = lsim(sys, u', 1:T)[1]'
+sys = tf(1,[1,2*0.1,0.1])
+sysn = tf(σy,[1,2*0.1,0.3])
 
-# Random.seed!(1)
-# ##
-# T   = 200
-# nx  = 2
-# nu  = 1
-# ny  = 1
-# x0  = randn(nx)
-# σy = 0.5
-# sim(sys,u) = lsim(sys, u', 1:T)[1]'
-# sys = tf(1,[1,2*0.1,0.1])
-# sysn = tf(σy,[1,2*0.1,0.3])
-#
-# u  = randn(nu,T)
-# y  = sim(sys, u)
-# yn = y + sim(sysn, σy*randn(size(u)))
-#
-# uv  = randn(nu,T)
-# yv  = sim(sys, uv)
-# ynv = yv + sim(sysn, σy*randn(size(uv)))
-# ##
-#
-# res = [pem(yn,u,nx=nx+i, solver=ParticleSwarm(), focus=:prediction, iterations=1000, regularizer=p-> 10000*!stabfun(nx+i,nu,ny)(p)) for i = 0:3]
-#
-# fig = plot(layout=4, size=(1200,800))
-# for i in eachindex(res)
-#     (sysh,x0h,opt) = res[i]
-#     ControlSystemIdentification.simplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
-#     ControlSystemIdentification.predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
-# end
-# bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3, title="Process", linewidth=2*[3 2 1])
-# bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4, title="Noise model", linewidth=2*[3 2 1])
-# bodeplot!(sys, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash)
-# bodeplot!(sysn, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash)
-# display(fig)
+u  = randn(nu,T)
+y  = sim(sys, u)
+yn = y + sim(sysn, σy*randn(size(u)))
+
+uv  = randn(nu,T)
+yv  = sim(sys, uv)
+ynv = yv + sim(sysn, σy*randn(size(uv)))
+##
+
+res = [pem(yn,u,nx=nx, show_trace=true, iterations=50, difficult=true, focus=:prediction) for nx = 1:3]
+
+fig = plot(layout=4, size=(1800,1000))
+for i in eachindex(res)
+    (sysh,x0h,opt) = res[i]
+    ControlSystemIdentification.simplot!(sysh,yv,uv,x0h; subplot=1, ploty=i==1)
+    ControlSystemIdentification.predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
+end
+bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
+bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4, title="Noise model", linewidth=2*[4 3 2 1])
+bodeplot!(sys, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash)
+bodeplot!(sysn, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash)
+display(fig)
+
+end

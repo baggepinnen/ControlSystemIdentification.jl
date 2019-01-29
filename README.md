@@ -241,7 +241,54 @@ plot!(G, subplot=1, lab="G Est", alpha=0.4)
 coherenceplot!(h,yn,u, subplot=2)
 ```
 ![window](figs/bodecoher.png)
+
 The top figure displays the Bode magnitude of the true system, together with the estimate (noisy). The bottom figure displays the coherence function.
+
+# Validation
+A number of functions are made available to assist in validation of the estimated models. We illustrate by an example
+
+Generate some test data:
+```julia
+Random.seed!(1)
+T          = 200
+nx         = 2
+nu         = 1
+ny         = 1
+x0         = randn(nx)
+σy         = 1
+sim(sys,u) = lsim(sys, u', 1:T)[1]'
+sys        = tf(1,[1,2*0.1,0.1])
+sysn       = tf(σy,[1,2*0.1,0.3])
+# Training data
+u          = randn(nu,T)
+y          = sim(sys, u)
+yn         = y + sim(sysn, σy*randn(size(u)))
+# Validation data
+uv         = randn(nu,T)
+yv         = sim(sys, uv)
+ynv        = yv + sim(sysn, σy*randn(size(uv)))
+```
+We then fit a couple of models, the flag `difficult=true` causes `pem` to solve an initial global optimization problem with constraints on the stability of `A-KC` to provide a good guess for the gradient-based solver
+```julia
+res = [pem(yn,u,nx=nx, iterations=100, difficult=true, focus=:prediction) for nx = 1:2:5]
+```
+After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
+```julia
+fig = plot(layout=4, size=(1000,600))
+for i in eachindex(res)
+    (sysh,x0h,opt) = res[i]
+    simplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
+    predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
+end
+bodeplot!(sys, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash);
+bodeplot!(sysn, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash);
+bodeplot!(ss.(getindex.(res,1)), plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1]);
+bodeplot!(noise_model.(getindex.(res,1)), plotphase=false, subplot=4, title="Noise model", linewidth=2*[4 3 2 1])
+display(fig)
+```
+![window](figs/val.png)
+
+The figure indicates that a model with 5 poles performs best on both prediction and simulation data. The true system does, however, only have 4 poles, indicating that the 4 pole model found is a local minimum.
 
 # Other resources
 - For estimation of linear time-varying models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).

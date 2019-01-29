@@ -45,6 +45,7 @@ System identification using the prediction error method.
 - `regularizer(p)=0`: function for regularization. The structure of `p` is detailed below
 - `solver` Defaults to `Optim.BFGS()`
 - `stabilize_predictor=true`: Modifies the estimated Kalman gain `K` in case `A-KC` is not stable by moving all unstable eigenvalues to the unit circle.
+- `difficult=false`: If the identification problem appears to be difficult and ends up in a local minimum, set this flag to true to solve an initial global optimization problem to supply a good initial guess. This is expected to take some time.  
 - `kwargs`: additional keyword arguments are sent to `Optim.Options`.
 
 # Return values
@@ -61,31 +62,73 @@ x0 = size(nx)
 p = [A[:];B[:];K[:];x0]
 ```
 """
-function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regularizer=p->0, stabilize_predictor=true, kwargs...)
+function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=abs2, regularizer=p->0, iterations=100, stabilize_predictor=true, difficult=false, kwargs...)
 	nu,ny = obslength(u),obslength(y)
 
-	A = 0.0001randn(nx,ny)
-	B = 0.001randn(nx,nu)
-	K = 0.001randn(nx,ny)
-	x0 = 0.001randn(nx)
-	p = [A[:];B[:];K[:];x0]
-	cfp = p->pem_costfun(p,y,u,nx,metric) + regularizer(p)
-	options = Optim.Options(;iterations=200, kwargs...)
-	opt = optimize(cfp, p, solver, options; autodiff = :forward)
+	A       = 0.0001randn(nx,ny)
+	B       = 0.001randn(nx,nu)
+	K       = 0.001randn(nx,ny)
+	x0      = 0.001randn(nx)
+	p       = [A[:];B[:];K[:];x0]
+	options = Options(;iterations=iterations, kwargs...)
+	cfp     = p->pem_costfun(p,y,u,nx,metric) + regularizer(p)
+	if difficult
+		stabilizer = p-> 10000*!stabfun(nx,nu,ny)(p)
+		options0 = Options(;iterations=iterations, kwargs...)
+		opt = optimize(p->cfp(p)+stabilizer(p), 1000p, ParticleSwarm(n_particles=100length(p)), options0)
+		p = minimizer(opt)
+	end
+	opt     = optimize(cfp, p, solver, options; autodiff = :forward)
 	println(opt)
 	if focus == :simulation
 		@info "Focusing on simulation"
 		cf = p->sem_costfun(p,y,u,nx,metric) + regularizer(p)
-		opt = optimize(cf, Optim.minimizer(opt), NewtonTrustRegion(), Optim.Options(;iterations=100, kwargs...); autodiff = :forward)
+		opt = optimize(cf, minimizer(opt), NewtonTrustRegion(), Options(;iterations=iterations÷2, kwargs...); autodiff = :forward)
 		println(opt)
 	end
-	model = model_from_params(Optim.minimizer(opt), nx, ny, nu)
+	model = model_from_params(minimizer(opt), nx, ny, nu)
 	if !isstable(model.sys)
 		@warn("Estimated system does not have a stable prediction filter (A-KC)")
 		if stabilize_predictor
 			@info("Stabilizing predictor")
+			# model = stabilize(model)
 			model = stabilize(model, solver, options, cfp)
 		end
 	end
+	isstable(ss(model.sys)) || @warn("Estimated system is not stable")
+
 	model.sys, copy(model.state), opt
+end
+
+function stabilize(model)
+	s           = model.sys
+	@unpack A,K = s
+	C           = s.C
+	poles       = eigvals(A-K*C)
+	newpoles = map(poles) do p
+		ap = abs(p)
+		ap <= 1 && (return p)
+		p / (ap + sqrt(eps()))
+	end
+	K2   = ControlSystems.acker(A',C', newpoles)' .|> real
+	all(abs(p) <= 1 for p in eigvals(A-K*C)) || @warn("Failed to stabilize predictor")
+	s.K .= K2
+	model
+end
+
+function stabilize(model, solver, options, cfi)
+	s = model.sys
+	cost = function(p)
+		maximum(abs.(eigvals(s.A-p*s.K*s.C)))-0.9999999
+	end
+	p = fzero(cost,1e-9,1-1e-9)
+	s.K .*= p
+	model
+end
+
+function stabfun(nx,ny,nu)
+	function (p)
+		model = model_from_params(p,nx,nu,ny)
+		isstable(model.sys)
+	end
 end

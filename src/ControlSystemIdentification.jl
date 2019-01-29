@@ -1,6 +1,7 @@
 module ControlSystemIdentification
 
 using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase, FFTW, Roots
+import Optim: minimizer, Options
 
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
 export getARXregressor, find_na, arx, bodeconfidence, tls, wtls_estimator, plr
