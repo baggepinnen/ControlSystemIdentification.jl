@@ -19,6 +19,7 @@ function predict(sys, y, u, x0=zeros(sys.nx))
 	yh = [model(yt,ut) for (yt,ut) in observations(y,u)]
 	oftype(y,yh)
 end
+predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args...)
 
 function simulate(sys, u, x0=zeros(sys.nx))
 	model = SysFilter(sys, copy(x0))
@@ -27,6 +28,8 @@ function simulate(sys, u, x0=zeros(sys.nx))
 	end
 	oftype(u,yh)
 end
+simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args...)
+
 
 @userplot Simplot
 """

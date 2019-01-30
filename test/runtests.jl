@@ -159,11 +159,13 @@ end
         yn = y + e
 
         na,nb,nc = 2,1,1
-
+        find_na(y,6)
+        find_nanb(y,u,6,6)
         Gls,Σ = arx(1,yn,u,na,nb)
         Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
         Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
         Gplr, Gn = plr(1,yn,u,na,nb,nc, initial_order=20)
+        bodeconfidence(Gplr, Σ, exp10.(range(-3, stop=log10(pi), length=150)))
         @show Gplr, Gn
 
     end
@@ -171,11 +173,12 @@ end
     @testset "frd" begin
         Random.seed!(1)
         ##
-        T   = 10000
+        T   = 100000
         sim(sys,u) = lsim(sys, u, 1:T)[1][:]
-        σy = 0.1
+        σy = 0.5
         sys = tf(1,[1,2*0.1,0.1])
-        sysn = tf(σy,[1,2*0.1,0.1])
+        ωn = sqrt(0.3)
+        sysn = tf(σy*ωn,[1,2*0.1*ωn,ωn^2])
 
         u  = randn(T)
         y  = sim(sys, u)
@@ -187,13 +190,17 @@ end
         k = coherence(1,y,u)
         @test all(k.r .> 0.99)
         k = coherence(1,yn,u)
-        @test all(k.r .> 0.9)
-        G = tfest(1,yn,u)
-        # bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(3,1), plotphase=false, subplot=[1,3])
+        @test all(k.r[1:10] .> 0.9)
+        @test k.r[end] .> 0.8
+        @test k.r[findfirst(k.w .> ωn)] < 0.6
+        G,N = tfest(1,yn,u, n=length(y)÷4)
+        noisemodel = innovation_form(ss(sys), syse=ss(sysn))
+        noisemodel.D .*= 0
+        bodeplot([sys,noisemodel], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
 
-        # coherenceplot!(1,yn,u, subplot=2)
-        # plot!(G, subplot=1, lab="G Est", alpha=0.4)
-        # plot!(N, subplot=3, lab="N Est", alpha=0.4)
+        coherenceplot!(1,yn,u, subplot=3)
+        plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
+        plot!(N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
     end
 
@@ -234,7 +241,7 @@ end
         bodeplot!(ss.(getindex.(res,1)), ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
         bodeplot!(ControlSystems.innovation_form.(getindex.(res,1)), ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
         bodeplot!(sys, ω, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash, legend = :bottomleft, title="System model")
-        bodeplot!(ControlSystems.innovation_form(sys,syse=sysn, R2=σy*I), ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
+        bodeplot!(ControlSystems.innovation_form(ss(sys),syse=ss(sysn), R2=σy*I), ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
         display(fig)
 
     end

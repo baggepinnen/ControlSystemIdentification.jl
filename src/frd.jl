@@ -38,20 +38,20 @@ end
 freqvec(h,k) = LinRange(0,π/h, length(k))
 
 """
-    H = tfest(h,y,u)
+    H, N = tfest(h,y,u)
 
 Estimate a transfer function model using the Correlogram approach
 H = Syu/Suu             Process transfer function
+N = Sy - |Syu|²/Suu     Noise model
 """
-function tfest(h::Real,y::AbstractVector,u::AbstractVector)
-    # N = Sy - |Syu|²/Suu     Noise model
+function tfest(h::Real,y::AbstractVector,u::AbstractVector; n = length(y)÷10, noverlap = n÷2)
     N = length(y)
-    Syy,Suu,Syu = wfft(y,u)
+    Syy,Suu,Syu = wfft(y,u,n=n, noverlap=noverlap)
     # Syy,Suu,Syu = wcfft(Cyy,Cuu)
     w = freqvec(h,Syu)
     H = FRD(w, Syu./Suu)
-    # N = FRD(w, @.(Syy - abs2(Syu)/Suu))
-    return H#, N
+    N = FRD(w, @.((Syy - abs2(Syu)/Suu)) ./ length(y))
+    return H, N
 end
 
 

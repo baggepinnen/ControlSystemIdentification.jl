@@ -74,7 +74,7 @@ function Base.getindex(sys::StateSpaceNoise, inds...)
 	return StateSpaceNoise(copy(sys.A), sys.B[:, cols], sys.K[:, rows], sys.Ts)
 end
 
-struct SysFilter{T<:StateSpaceNoise, FT}
+struct SysFilter{T<:Union{StateSpaceNoise, StateSpace}, FT}
 	sys::T
 	state::Vector{FT}
 	yh::Vector{FT}
@@ -83,24 +83,39 @@ SysFilter(sys::LTISystem,x0=zeros(sys.nx)) = SysFilter(sys,x0,zeros(eltype(x0), 
 
 (s::SysFilter)(y, u) = sysfilter!(s.state, s.sys, y, u)
 (s::SysFilter)(u) = sysfilter!(s.state, s.sys, u)
+sysfilter!(s::SysFilter, y, u) = sysfilter!(s.state, s.sys, y, u)
+sysfilter!(s::SysFilter, u) = sysfilter!(s.state, s.sys, u)
 
 function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, y, u)
-	@unpack A,B,K = sys
-	yh = state[1:length(y)] #vec(sys.C*state)
-	e = y - yh
-	state .= vec(sys.A*state + sys.B*u + sys.K*e)
+	@unpack A,B,K,ny = sys
+	yh     = state[1:ny] #vec(sys.C*state)
+	e      = y - yh
+	state .= vec(A*state + B*u + K*e)
 	yh
 end
 
 function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, u)
-	@unpack A,B,K = sys
-	yh = state[1:sys.ny] #vec(sys.C*state)
-	state .= vec(sys.A*state + sys.B*u)
+	@unpack A,B,K,ny = sys
+	yh     = state[1:ny] #vec(C*state)
+	state .= vec(A*state + B*u)
 	yh
 end
 
-sysfilter!(s::SysFilter, y, u) = sysfilter!(s.state, s.sys, y, u)
-sysfilter!(s::SysFilter, u) = sysfilter!(s.state, s.sys, u)
+function sysfilter!(state::AbstractVector, sys::StateSpace, y, u)
+	@unpack A,B,C,D = sys
+	yh     = vec(C*state + D*u)
+	e      = y - yh
+	state .= vec(A*state + B*u)
+	yh
+end
+
+function sysfilter!(state::AbstractVector, sys::StateSpace, u)
+	@unpack A,B,C,D = sys
+	yh     = vec(C*state + D*u)
+	state .= vec(A*state + B*u)
+	yh
+end
+
 
 struct OberservationIterator{T}
 	y::T

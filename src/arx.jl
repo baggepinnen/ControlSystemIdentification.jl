@@ -29,24 +29,67 @@ function getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb)
     y    = A[:,1] # extract yr
     A    = A[:,2:end]
     for i = 1:length(nb)
+        nb[i] <= 0 && continue
         s = m-1
         A = [A toeplitz(u[s:s+n-1,i],u[s:-1:s-nb[i]+1,i])]
     end
     return y,A
 end
 
+@userplot Find_na
 """
     find_na(y::AbstractVector,n::Int)
 Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
 """
-function find_na(y::AbstractVector,n::Int)
-    error = zeros(n-1,2)
-    for i = 2:n
-        w,e = arx(y,0y,i,0)
-        error[i-1,1] = rms(e)
-        error[i-1,2] = aic(e,i)
+find_na
+@recipe function find_na(p::Find_na)
+    y,n = p.args[1:2]
+    error = zeros(n,2)
+    for i = 1:n
+        yt,A = getARXregressor(y,0y,i,0)
+        e = yt-A*(A\yt)
+        error[i,1] = rms(e)
+        error[i,2] = aic(e,i)
     end
-    scatter(error, show=true)
+    layout --> 2
+    title --> ["RMS error" "AIC"]
+    seriestype --> :scatter
+    @series begin
+        error
+    end
+end
+
+@userplot Find_nanb
+"""
+    find_nanb(y::AbstractVector,u,na,nb)
+Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
+"""
+find_nanb
+@recipe function find_nanb(p::Find_nanb; logrms=false)
+    y,u,na,nb = p.args[1:4]
+    error = zeros(na,nb, 2)
+    for i = 1:na, j = 1:nb
+        yt,A = getARXregressor(y,u,i,j)
+        e = yt-A*(A\yt)
+        error[i,j,1] = logrms ? log10.(rms(e)) : rms(e)
+        error[i,j,2] = aic(e,i+j)
+    end
+    layout --> 2
+    seriestype --> :heatmap
+    xticks := (1:nb, 1:nb)
+    yticks := (1:na, 1:na)
+    ylabel := "na"
+    xlabel := "nb"
+    @series begin
+        title := "RMS error"
+        subplot := 1
+        error[:,:,1]
+    end
+    @series begin
+        title := "AIC"
+        subplot := 2
+        error[:,:,2]
+    end
 end
 
 
@@ -152,16 +195,17 @@ function parameter_covariance(y_train, A, w, λ=0)
 end
 
 """
-    bodeconfidence(arxtf::TransferFunction, Σ::Matrix; ω = logspace(0,3,200))
+    bodeconfidence(arxtf::TransferFunction, Σ::Matrix, ω = logspace(0,3,200))
 Plot a bode diagram of a transfer function estimated with [`arx`](@ref) with confidence bounds on magnitude and phase.
 """
 bodeconfidence
 
 @userplot BodeConfidence
 
-@recipe function BodeConfidence(p::BodeConfidence; ω = exp10.(LinRange(-2,3,200)))
+@recipe function BodeConfidence(p::BodeConfidence)
     arxtfm = p.args[1]
     Σ      = p.args[2]
+    ω      = length(p.args) >= 3 ? p.args[3] : exp10.(LinRange(-2,3,200))
     L      = cholesky(Hermitian(Σ)).L
     am, bm = -denpoly(arxtfm)[1].a[2:end], arxtfm.matrix[1].num.a
     wm     = [am; bm]
