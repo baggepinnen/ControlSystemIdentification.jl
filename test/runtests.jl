@@ -103,6 +103,7 @@ end
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
         sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=e->sum(abs,e), regularizer=p->(0.1/T)*norm(p))
+        # 409ms
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 1
 
@@ -193,14 +194,14 @@ end
         @test all(k.r[1:10] .> 0.9)
         @test k.r[end] .> 0.8
         @test k.r[findfirst(k.w .> ωn)] < 0.6
-        G,N = tfest(1,yn,u, n=length(y)÷4)
+        G,N = tfest(1,yn,u, 0.02)
         noisemodel = innovation_form(ss(sys), syse=ss(sysn))
         noisemodel.D .*= 0
-        bodeplot([sys,noisemodel], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
+        bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2], size=(3*800, 600), linecolor=:blue)#, ylims=(0.1,300))
 
         coherenceplot!(1,yn,u, subplot=3)
         plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
-        plot!(N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
+        plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
     end
 

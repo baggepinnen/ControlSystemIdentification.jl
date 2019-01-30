@@ -234,16 +234,14 @@ We can now estimate the coherence function to get a feel for whether or nor our 
 k = coherence(h,y,u)  # Should be close to 1 if the system is linear and noise free
 k = coherence(h,yn,u) # Slightly lower values are obtained if the system is subject to measurement noise
 ```
-We can also estimate a transfer function using spectral techniques, the main entry point to this is the function `tfest`:
+We can also estimate a transfer function using spectral techniques, the main entry point to this is the function `tfest`, which returns a transfer-function estimate and an estimate of the power-spectral density of the noise (note, the unit of the PSD is squared compared to a transfer function, hence the `√N` when plotting it in the code below):
 ```julia
-G,N            = tfest(1,yn,u)
-noisemodel     = innovation_form(ss(sys), syse=ss(sysn))
-noisemodel.D .*= 0
-bodeplot([sys,noisemodel], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
+G,N = tfest(1,yn,u)
+bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
 
 coherenceplot!(1,yn,u, subplot=3)
 plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
-plot!(N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
+plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 ```
 ![window](figs/bodecoher.png)
 

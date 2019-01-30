@@ -1,18 +1,28 @@
 import ControlSystems: feedback
 
+"""
+    FRD(w,r)
+
+Represents frequency-response data. `w` holds the frequency vector and `r` the response. Methods defined on this type include
+- `+-*`
+- `length, vec, sqrt`
+- `plot`
+- `feedback`
+"""
 struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
     w::WT
     r::RT
 end
 
 FRD(w, s::LTISystem) = FRD(w, freqresp(s,w)[:,1,1])
-import Base: +, -, *, length
+import Base: +, -, *, length, sqrt
 Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
 +(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
 -(f::FRD, f2)    = FRD(f.w, f.r .- vec(f2))
 -(f::FRD)        = FRD(f.w, -f.r)
-length(f::FRD) = length(f.w)
+length(f::FRD)   = length(f.w)
+sqrt(f::FRD)     = FRD(f.w, sqrt.(f.r))
 
 feedback(P::FRD,K) = FRD(P.w,vec(P)./(1. .+ vec(P).*vec(K)))
 feedback(P,K::FRD) = FRD(K.w,vec(P)./(1. .+ vec(P).*vec(K)))
@@ -38,20 +48,31 @@ end
 freqvec(h,k) = LinRange(0,π/h, length(k))
 
 """
-    H, N = tfest(h,y,u)
+    H, N = tfest(h,y,u, σ = 0.05)
 
-Estimate a transfer function model using the Correlogram approach
-H = Syu/Suu             Process transfer function
-N = Sy - |Syu|²/Suu     Noise model
+Estimate a transfer function model using the Correlogram approach.
+    Both `H` and `N` are of type `FRD` (frequency-response data).
+
+`σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT.
+- `H` = Syu/Suu             Process transfer function
+- `N` = Sy - |Syu|²/Suu     Noise PSD
 """
-function tfest(h::Real,y::AbstractVector,u::AbstractVector; n = length(y)÷10, noverlap = n÷2)
-    N = length(y)
-    Syy,Suu,Syu = wfft(y,u,n=n, noverlap=noverlap)
-    # Syy,Suu,Syu = wcfft(Cyy,Cuu)
-    w = freqvec(h,Syu)
-    H = FRD(w, Syu./Suu)
-    N = FRD(w, @.((Syy - abs2(Syu)/Suu)) ./ length(y))
+function tfest(h::Real,y::AbstractVector,u::AbstractVector, σ = 0.05)
+    Syy,Suu,Syu = fft_corr(y,u,σ)
+    w   = freqvec(h,Syu)
+    H   = FRD(w, Syu./Suu)
+    N   = FRD(w, sqrt.(@.(Syy - abs2(Syu)/Suu)./length(y)))
     return H, N
+end
+
+function fft_corr(y,u,σ = 0.05)
+    n = length(y)
+    w = gaussian(2n-1,σ)
+
+    Syu = rfft(ifftshift(w.*xcorr(y,u)))
+    Syy = rfft(ifftshift(w.*xcorr(y,y)))
+    Suu = rfft(ifftshift(w.*xcorr(u,u)))
+    Syy,Suu,Syu
 end
 
 
@@ -87,7 +108,7 @@ function wcfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
     Syy,Suu,Syu
 end
 
-function wfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
+function wfft_corr(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
     win, norm2 = DSP.Periodograms.compute_window(window, n)
     Cyu = xcorr(y,u)
     Cyy = xcorr(y,y)
@@ -108,7 +129,6 @@ function wfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
     end
     Syy,Suu,Syu
 end
-
 
 
 @userplot Coherenceplot
