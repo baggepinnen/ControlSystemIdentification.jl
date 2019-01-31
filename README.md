@@ -247,6 +247,25 @@ plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
 The left figure displays the Bode magnitude of the true system, together with the estimate (noisy), and the middle figure illustrates the estimated noise model. The right figure displays the coherence function, which is close to 1 everywhere except for at the resonance peak of the noise `log10(sqrt(0.3)) = -0.26`.
 
+# Impulse-response estimation
+The functions `impulseest(h,y,u,order)` and `impulseestplot` performs impulse-response estimation by fitting a high-order FIR model.
+
+Example
+```julia
+T = 200
+h = 1
+t = h:h:T
+sim(sys,u) = lsim(sys, u, t)[1][:]
+sys = c2d(tf(1,[1,2*0.1,0.1]),h)
+
+u  = randn(length(t))
+y  = sim(sys, u)
+
+impulseestplot(h,y,u,50, lab="Estimate")
+impulseplot!(sys,50, lab="True system")
+```
+![window](figs/impulse.svg)
+
 # Validation
 A number of functions are made available to assist in validation of the estimated models. We illustrate by an example
 

@@ -109,15 +109,20 @@ function arx(h,y::AbstractVector, u::AbstractVecOrMat, na, nb; λ = 0, estimator
     na >= 1 || throw(ArgumentError("na must be positive"))
     na -= 1
     y_train, A = getARXregressor(y,u, na, nb)
-    if λ == 0
-        w = estimator(A,y_train)
-    else
-        w = estimator([A; λ*I], [y_train;zeros(size(A,2))])
-    end
+    w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na,nb)
     model = tf(b,a,h)
     Σ = parameter_covariance(y_train, A, w, λ)
     return model, Σ
+end
+
+function ls(A,y,λ=0,estimator=\)
+    if λ == 0
+        w = estimator(A,y)
+    else
+        w = estimator([A; λ*I], [y;zeros(size(A,2))])
+    end
+    w
 end
 
 """
@@ -187,7 +192,7 @@ function parameter_covariance(y_train, A, w, λ=0)
         inv(A'A)
     else
         ATA = A'A
-        ATAλ = factorize(ATA + λ*I)
+        ATAλ = ATA + λ*I
         ATAλ\ATA/ATAλ
     end
     iATA = (iATA+iATA')/2

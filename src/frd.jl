@@ -159,3 +159,50 @@ coherenceplot
     end
     nothing
 end
+
+"""
+ir, t, Σ = impulseest(h,y,u,n)
+
+Estimates the system impulse response by fitting an `n`:th order FIR model. Returns impulse-response estimate, time vector and covariance matrix.
+See also `impulseestplot`
+"""
+function impulseest(h,y,u,n,λ=0)
+    yt,A = getARXregressor(y,u,0,n)
+    ir = ls(A,yt,λ)
+    t = range(h,length=n, step=h)
+    Σ = parameter_covariance(yt, A, ir, λ)
+    ir./h, t, Σ
+end
+
+@userplot Impulseestplot
+
+"""
+impulseestplot(h,y,u,n)
+
+Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% confidence band.
+See also `impulseestplot`
+"""
+impulseestplot
+@recipe function impulseestplot(p::Impulseestplot)
+    h,y,u = p.args[1:3]
+    n = length(p.args) >= 4 ? p.args[4] : 25
+    λ = length(p.args) >= 5 ? p.args[5] : 0
+    ir,t,Σ = impulseest(h,y,u,n,λ)
+    title --> "Estimated Impulse Response"
+    xlabel --> "Time [s]"
+
+    @series begin
+        label --> ""
+        t,ir
+    end
+    linestyle := :dash
+    color := :black
+    label := ""
+    seriestype := :hline
+    @series begin
+        t, 2 .*sqrt.(diag(Σ))
+    end
+    @series begin
+        t, -2 .*sqrt.(diag(Σ))
+    end
+end

@@ -247,4 +247,19 @@ end
 
     end
 
+
+    @testset "impulseest" begin
+        T = 200
+        h = 0.1
+        t = h:h:T
+        sim(sys,u) = lsim(sys, u, t)[1][:]
+        sys = c2d(tf(1,[1,2*0.1,0.1]),h)
+
+        u  = randn(length(t))
+        y  = sim(sys, u) + 0.1randn(length(t))
+
+        impulseestplot(h,y,u,Int(50/h), 0)
+        impulseplot!(sys,50, l=(:dash,:blue))
+    end
+
 end
