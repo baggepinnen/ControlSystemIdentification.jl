@@ -61,7 +61,7 @@ function tfest(h::Real,y::AbstractVector,u::AbstractVector, σ = 0.05)
     Syy,Suu,Syu = fft_corr(y,u,σ)
     w   = freqvec(h,Syu)
     H   = FRD(w, Syu./Suu)
-    N   = FRD(w, sqrt.(@.(Syy - abs2(Syu)/Suu)./length(y)))
+    N   = FRD(w, @.(Syy - abs2(Syu)/Suu)./length(y))
     return H, N
 end
 

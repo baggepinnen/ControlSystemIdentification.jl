@@ -175,7 +175,9 @@ end
         Random.seed!(1)
         ##
         T   = 100000
-        sim(sys,u) = lsim(sys, u, 1:T)[1][:]
+        h   = 1
+        t = range(0,step=h, length=T)
+        sim(sys,u) = lsim(sys, u, t)[1][:]
         σy = 0.5
         sys = tf(1,[1,2*0.1,0.1])
         ωn = sqrt(0.3)
@@ -188,18 +190,18 @@ end
         # using BenchmarkTools
         # @btime begin
         # Random.seed!(0)
-        k = coherence(1,y,u)
+        k = coherence(h,y,u)
         @test all(k.r .> 0.99)
-        k = coherence(1,yn,u)
+        k = coherence(h,yn,u)
         @test all(k.r[1:10] .> 0.9)
         @test k.r[end] .> 0.8
         @test k.r[findfirst(k.w .> ωn)] < 0.6
-        G,N = tfest(1,yn,u, 0.02)
+        G,N = tfest(h,yn,u, 0.02)
         noisemodel = innovation_form(ss(sys), syse=ss(sysn))
         noisemodel.D .*= 0
         bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2], size=(3*800, 600), linecolor=:blue)#, ylims=(0.1,300))
 
-        coherenceplot!(1,yn,u, subplot=3)
+        coherenceplot!(h,yn,u, subplot=3)
         plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
         plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
