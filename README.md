@@ -7,12 +7,13 @@
 System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/).
 
 
-This package implements a simple algorithm for identification of discrete-time LTI systems on state-space form:
+# LTI state-space models
+A simple algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
 x' = Ax + Bu + Ke
 y  = Cx + e
 ```
-The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
+is provided. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
 The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
 
@@ -29,7 +30,7 @@ or any of its other special cases is not supported. Since those models are also 
 
 Transfer-function estimation through spectral methods is supported through the functions `tfest` and `coherence`.
 
-# Usage example
+## Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences.
 ```julia
 using ControlSystemIdentification, ControlSystems, Random, LinearAlgebra
@@ -105,9 +106,9 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 ```
 
 
-# Prediction-error method
+## Prediction-error method
 `sys, x0, opt = pem(y, u; nx, kwargs...)`
-## Arguments:
+### Arguments:
 - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
 - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
@@ -117,7 +118,7 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 - `solver` Defaults to `Optim.BFGS()`
 - `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
 
-### Structure of parameter vector `p`
+#### Structure of parameter vector `p`
 ```julia
 A  = size(nx,ny)
 B  = size(nx,nu)
@@ -126,19 +127,19 @@ x0 = size(nx)
 p  = [A[:];B[:];K[:];x0]
 ```
 
-## Return values
+### Return values
 - `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)` or `ss(sys)`, but this will discard the Kalman gain matrix, see `noise_model`.
 - `x0`: Estimated initial state
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 
-## Functions
+### Functions
 - `pem`: Main estimation function, see above.
 - `predict(sys, y, u, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
 - `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
 - `noise_model`: Extract the noise model from the estimated system (`ss(A,K,C,0)`).
 
 
-## Internals
+### Internals
 Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to `pem`, and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
 
 
