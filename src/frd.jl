@@ -30,6 +30,7 @@ feedback(P::FRD,K::FRD) = feedback(P,vec(K))
 
 feedback(P::FRD,K::LTISystem) = feedback(P,freqresp(K,P.w)[:,1,1])
 feedback(P::LTISystem,K::FRD) = feedback(freqresp(P,K.w)[:,1,1],K)
+
 @recipe function plot_frd(frd::FRD)
     yscale --> :log10
     xscale --> :log10

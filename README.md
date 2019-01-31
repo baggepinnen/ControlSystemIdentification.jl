@@ -310,10 +310,10 @@ bodeplot!(sys,                                     ω, plotphase=false, subplot=
 bodeplot!(innovation_form(ss(sys),syse=ss(sysn)),  ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 display(fig)
 ```
-![window](figs/val.png)
+![window](figs/val.svg)
 
-In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the noise dynamics.
-The figure also indicates that a model with 3 poles performs best on both prediction and simulation data. The true system does, however, have 4 poles, indicating that the 4 pole model found is a local minimum.
+In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the gain of the noise dynamics.
+The figure also indicates that a model with 4 poles performs best on both prediction and simulation data. The true system has 4 poles (two in the process and two in the noise process) so this is expected. However, the third order model performs almost equally well and may be a better choice.
 
 # Other resources
 - For estimation of linear time-varying models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
