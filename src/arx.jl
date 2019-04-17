@@ -182,6 +182,15 @@ function params2poly(w,na,nb)
     end
     a,b
 end
+"""
+w, a, b = params(G::TransferFunction)
+w = [a;b]
+"""
+function params(G::TransferFunction)
+    am, bm = -denpoly(G)[1].a[1:end-1], G.matrix[1].num.a
+    wm     = [am; bm]
+    wm, am, bm
+end
 
 """
     Σ = parameter_covariance(y_train, A, w, λ=0)
@@ -199,6 +208,7 @@ function parameter_covariance(y_train, A, w, λ=0)
     Σ = σ²*iATA + sqrt(eps())*Matrix(LinearAlgebra.I,size(iATA))
 end
 
+
 """
     bodeconfidence(arxtf::TransferFunction, Σ::Matrix, ω = logspace(0,3,200))
 Plot a bode diagram of a transfer function estimated with [`arx`](@ref) with confidence bounds on magnitude and phase.
@@ -212,8 +222,7 @@ bodeconfidence
     Σ      = p.args[2]
     ω      = length(p.args) >= 3 ? p.args[3] : exp10.(LinRange(-2,3,200))
     L      = cholesky(Hermitian(Σ)).L
-    am, bm = -denpoly(arxtfm)[1].a[2:end], arxtfm.matrix[1].num.a
-    wm     = [am; bm]
+    wm, am, bm = params(arxtfm)
     na,nb  = length(am), length(bm)
     mc     = 100
     res = map(1:mc) do _
