@@ -37,6 +37,7 @@ end
         # @btime begin
         # Random.seed!(0)
         sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
+        # bodeplot([sys,ss(sysh)], exp10.(range(-3, stop=log10(pi), length=150)), legend=false, ylims=(0.01,100))
         # end
         # 462ms 121 29
         # 296ms
@@ -91,7 +92,7 @@ end
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
         @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:simulation)
-        @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
+        @test sysh.C*x0h ≈ sys.C*x0 atol=0.3
         @test Optim.minimum(opt) < 1
 
         # L1 error minimization
