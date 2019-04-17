@@ -98,7 +98,7 @@ end
     Gtf, Σ = arx(h,y, u, na, nb; λ = 0, estimator=\\)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
-`nb` and `na` are the length of the numerator and denominator polynomials. `h` is the sample time of the data. `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `tls` is potentially more robust in the presence of heavy measurement noise.
+`nb` and `na` are the length of the numerator and denominator polynomials. `h` is the sample time of the data. `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
 The number of free parameters is `na-1+nb`
 `Σ` is the covariance matrix of the parameter estimate. See `bodeconfidence` for visualiztion of uncertainty.
 
