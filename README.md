@@ -4,8 +4,8 @@
 [![Coverage Status](https://coveralls.io/repos/github/baggepinnen/ControlSystemIdentification.jl/badge.svg?branch=master)](https://coveralls.io/github/baggepinnen/ControlSystemIdentification.jl?branch=master)
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
-System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/).
-
+System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
+https://github.com/JuliaControl/ControlExamples.jl?files=1). **Note that this package currently requires ControlSystems.jl master.**
 
 # LTI state-space models
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
