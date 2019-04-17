@@ -208,6 +208,30 @@ function parameter_covariance(y_train, A, w, λ=0)
     Σ = σ²*iATA + sqrt(eps())*Matrix(LinearAlgebra.I,size(iATA))
 end
 
+"""
+TransferFunction(T::Type{<:AbstractParticles}, G::TransferFunction, Σ, N=500)
+
+Create a `TransferFunction` where the coefficients are `Particles` from [`MonteCarloMeasurements.jl`](https://github.com/baggepinnen/MonteCarloMeasurements.jl) that can represent uncertainty.
+# Example
+```julia
+using MonteCarloMeasurements
+Gls,Σls = arx(Δt,y,u,na,nb)
+Glsp    = TransferFunction(Particles, Gls, Σls)
+w       = exp10.(LinRange(-3,log10(π/Δt),100))
+mag     = bode(Glsp,w)[1][:]
+errorbarplot(w,mag,0.01; yscale=:log10, xscale=:log10, layout=3, subplot=1, lab="ls")
+
+See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl)
+```
+"""
+function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, Σ, N=500)
+      wm, am, bm = ControlSystemIdentification.params(G)
+      na,nb  = length(am), length(bm)
+      p = T(500, MvNormal(wm, Σ))
+      a,b           = ControlSystemIdentification.params2poly(p,na,nb)
+      arxtf         = tf(b,a,G.Ts)
+end
+
 
 """
     bodeconfidence(arxtf::TransferFunction, Σ::Matrix, ω = logspace(0,3,200))
