@@ -98,7 +98,7 @@ end
     Gtf, Σ = arx(h,y, u, na, nb; λ = 0, estimator=\\)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
-`nb` and `na` are the length of the numerator and denominator polynomials. `h` is the sample time of the data. `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `tls` is potentially more robust in the presence of heavy measurement noise.
+`nb` and `na` are the length of the numerator and denominator polynomials. `h` is the sample time of the data. `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
 The number of free parameters is `na-1+nb`
 `Σ` is the covariance matrix of the parameter estimate. See `bodeconfidence` for visualiztion of uncertainty.
 
@@ -182,6 +182,15 @@ function params2poly(w,na,nb)
     end
     a,b
 end
+"""
+w, a, b = params(G::TransferFunction)
+w = [a;b]
+"""
+function params(G::TransferFunction)
+    am, bm = -denpoly(G)[1].a[1:end-1], G.matrix[1].num.a
+    wm     = [am; bm]
+    wm, am, bm
+end
 
 """
     Σ = parameter_covariance(y_train, A, w, λ=0)
@@ -200,6 +209,31 @@ function parameter_covariance(y_train, A, w, λ=0)
 end
 
 """
+TransferFunction(T::Type{<:AbstractParticles}, G::TransferFunction, Σ, N=500)
+
+Create a `TransferFunction` where the coefficients are `Particles` from [`MonteCarloMeasurements.jl`](https://github.com/baggepinnen/MonteCarloMeasurements.jl) that can represent uncertainty.
+# Example
+```julia
+using MonteCarloMeasurements
+Gls,Σls = arx(Δt,y,u,na,nb)
+Glsp    = TransferFunction(Particles, Gls, Σls)
+w       = exp10.(LinRange(-3,log10(π/Δt),100))
+mag     = bode(Glsp,w)[1][:]
+errorbarplot(w,mag,0.01; yscale=:log10, xscale=:log10, layout=3, subplot=1, lab="ls")
+
+See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl)
+```
+"""
+function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, Σ, N=500)
+      wm, am, bm = ControlSystemIdentification.params(G)
+      na,nb  = length(am), length(bm)
+      p = T(500, MvNormal(wm, Σ))
+      a,b           = ControlSystemIdentification.params2poly(p,na,nb)
+      arxtf         = tf(b,a,G.Ts)
+end
+
+
+"""
     bodeconfidence(arxtf::TransferFunction, Σ::Matrix, ω = logspace(0,3,200))
 Plot a bode diagram of a transfer function estimated with [`arx`](@ref) with confidence bounds on magnitude and phase.
 """
@@ -212,8 +246,7 @@ bodeconfidence
     Σ      = p.args[2]
     ω      = length(p.args) >= 3 ? p.args[3] : exp10.(LinRange(-2,3,200))
     L      = cholesky(Hermitian(Σ)).L
-    am, bm = -denpoly(arxtfm)[1].a[2:end], arxtfm.matrix[1].num.a
-    wm     = [am; bm]
+    wm, am, bm = params(arxtfm)
     na,nb  = length(am), length(bm)
     mc     = 100
     res = map(1:mc) do _
