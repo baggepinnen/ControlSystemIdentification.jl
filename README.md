@@ -5,7 +5,7 @@
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
 System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
-https://github.com/JuliaControl/ControlExamples.jl?files=1). **Note that this package currently requires ControlSystems.jl master.**
+https://github.com/JuliaControl/ControlExamples.jl?files=1).
 
 # LTI state-space models
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
@@ -74,7 +74,7 @@ un   = u + sim(sysn, σu*randn(size(u)),0*x0) # Input + load disturbance
 y    = sim(sys, un, x0)
 yn   = y + sim(sysn, σy*randn(size(u)),0*x0) # Output + measurement noise
 ```
-The system now as `3nx` poles, `nx` for the system dynamics, and `nx` for each noise model, we indicated this to the main estimation function `pem`:
+The system now has `3nx` poles, `nx` for the system dynamics, and `nx` for each noise model, we indicated this to the main estimation function `pem`:
 ```julia
 sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction)
 yh           = predict(sysh, yn, un, x0h) # Form prediction
@@ -104,7 +104,8 @@ The estimated noise model can be extracted by `noise_model(sys)`, we can visuali
 ```julia
 bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estimated noise dynamics")
 ```
-
+See the [example notebooks](
+https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 
 ## Prediction-error method
 `sys, x0, opt = pem(y, u; nx, kwargs...)`
@@ -128,7 +129,7 @@ p  = [A[:];B[:];K[:];x0]
 ```
 
 ### Return values
-- `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)` or `ss(sys)`, but this will discard the Kalman gain matrix, see `noise_model`.
+- `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)` or `ss(sys)`, but this will discard the Kalman gain matrix, see `innovation_form`.
 - `x0`: Estimated initial state
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 
@@ -136,7 +137,7 @@ p  = [A[:];B[:];K[:];x0]
 - `pem`: Main estimation function, see above.
 - `predict(sys, y, u, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
 - `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
-- `noise_model`: Extract the noise model from the estimated system (`ss(A,K,C,0)`).
+- `innovation_form`: Extract the noise model from the estimated system (`ss(A,K,C,0)`).
 
 
 ### Internals
@@ -206,7 +207,8 @@ Gplr, Gn = plr(Δt,yn,u,na,nb,nc, initial_order=20) # Pseudo-linear regression
 # --------------------------
 # 1.0*z - 0.8896345125395438
 ```
-We now see that the estimate using standard least-squares is heavily biased. Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl)
+We now see that the estimate using standard least-squares is heavily biased. Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl). See the [example notebooks](
+https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 ## Functions
 - `arx`: Transfer-function estimation using closed-form solution.
@@ -248,6 +250,9 @@ plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
 The left figure displays the Bode magnitude of the true system, together with the estimate (noisy), and the middle figure illustrates the estimated noise model. The right figure displays the coherence function, which is close to 1 everywhere except for at the resonance peak of the noise `log10(sqrt(0.3)) = -0.26`.
 
+See the [example notebooks](
+https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
+
 # Impulse-response estimation
 The functions `impulseest(h,y,u,order)` and `impulseestplot` performs impulse-response estimation by fitting a high-order FIR model.
 
@@ -266,6 +271,9 @@ impulseestplot(h,y,u,50, lab="Estimate")
 impulseplot!(sys,50, lab="True system")
 ```
 ![window](figs/impulse.svg)
+
+See the [example notebooks](
+https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 # Validation
 A number of functions are made available to assist in validation of the estimated models. We illustrate by an example
@@ -321,3 +329,4 @@ The figure also indicates that a model with 4 poles performs best on both predic
 - For estimation of linear and nonlinear grey-box models in continuous time, see [DifferentialEquations.jl (parameter estimation)](http://docs.juliadiffeq.org/stable/analysis/parameter_estimation.html)
 - Estimation of nonlinear black-box models in continuous time [DiffEqFlux.jl](https://github.com/JuliaDiffEq/DiffEqFlux.jl/) and in discrete time [Flux.jl](https://github.com/FluxML/Flux.jl)
 - For more advanced spectral estimation, cross coherence, etc., see [LPVSpectral.jl](https://github.com/baggepinnen/LPVSpectral.jl)
+- This package interacts well with [MonteCarloMeasurements.jl](https://github.com/baggepinnen/MonteCarloMeasurements.jl). See [example file](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl).
