@@ -1,7 +1,6 @@
 # ControlSystemIdentification
 
 [![Build Status](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl)
-[![Coverage Status](https://coveralls.io/repos/github/baggepinnen/ControlSystemIdentification.jl/badge.svg?branch=master)](https://coveralls.io/github/baggepinnen/ControlSystemIdentification.jl?branch=master)
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
 System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
@@ -161,7 +160,7 @@ G  = tf(0.8, [1,-0.9], 1)
 y  = lsim(G,u,t)[1][:]
 yn = y
 
-na,nb = 2,1   # Number of polynomial coefficients
+na,nb = 1,1   # Number of polynomial coefficients
 
 Gls,Σ = arx(Δt,y,u,na,nb)
 @show Gls
@@ -175,7 +174,7 @@ As we can see, the model is perfectly recovered. In reality, the measurement sig
 e  = randn(N)
 yn = y + e    # Measurement signal with noise
 
-na,nb,nc = 2,1,1
+na,nb,nc = 1,1,1
 
 Gls,Σ    = arx(Δt,yn,u,na,nb)                      # Regular least-squares estimation
 Gtls,Σ   = arx(Δt,yn,u,na,nb, estimator=tls)       # Total least-squares estimation

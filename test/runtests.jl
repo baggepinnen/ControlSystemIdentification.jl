@@ -134,7 +134,7 @@ end
         @test A[:,1] == y[1:end-na]
         @test A[:,2] == u[1:end-1]
 
-        na = 2
+        na = 1
         Gh,Σ = arx(1,y,u,na,nb)
         @test Gh ≈ G # Should recover the original transfer function exactly
         ω=exp10.(range(-2, stop=1, length=200))
@@ -163,7 +163,7 @@ end
         e = randn(N)
         yn = y + e
 
-        na,nb,nc = 2,1,1
+        na,nb,nc = 1,1,1
         find_na(y,6)
         find_nanb(y,u,6,6)
         Gls,Σ = arx(1,yn,u,na,nb)
