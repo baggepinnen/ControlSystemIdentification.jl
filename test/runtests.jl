@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems, Optim, Plots
+using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP
 using Test, Random, LinearAlgebra
 
 function ⟂(x)
@@ -150,6 +150,27 @@ end
         Gh2,Σ = arx(1,y2,[u u2],na,nb)
 
         @test Gh2 ≈ G2
+    end
+
+    @testset "ar" begin
+        N = 20
+        t = 1:N
+        y = filt(0.8, [1,-0.9], randn(N))
+
+        na = 1
+        yr,A = ControlSystemIdentification.getARregressor(y,na)
+        @test length(yr) == N-na
+        @test size(A) == (N-na, na+nb)
+
+        @test yr == y[na+1:end]
+        @test A[:,1] == y[1:end-na]
+        @test A[:,2] == u[1:end-1]
+
+        na = 2
+        Gh,Σ = arx(1,y,u,na,nb)
+        @test Gh ≈ G # Should recover the original transfer function exactly
+        ω=exp10.(range(-2, stop=1, length=200))
+
     end
 
 
