@@ -21,6 +21,18 @@ function predict(sys, y, u, x0=zeros(sys.nx))
 end
 predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args...)
 
+"""
+	yh = predict(ar::TransferFunction, y)
+
+Predict AR model
+"""
+function predict(G::ControlSystems.TransferFunction, y)
+	_,a,_ = params(G)
+	yr,A = getARregressor(y,length(a))
+	yh = A*a
+	oftype(y,yh)
+end
+
 function simulate(sys, u, x0=zeros(sys.nx))
 	model = SysFilter(sys, copy(x0))
 	yh = map(observations(u,u)) do (ut,_)

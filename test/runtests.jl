@@ -154,23 +154,37 @@ end
     end
 
     @testset "ar" begin
-        N = 20
+        N = 10000
         t = 1:N
-        y = filt(0.8, [1,-0.9], randn(N))
+        y = zeros(N)
+        y[1] = randn()
+        for i = 2:N
+            y[i] = 0.9y[i-1]
+        end
+        G = tf(1, [1,-0.9], 1)
 
         na = 1
         yr,A = ControlSystemIdentification.getARregressor(y,na)
         @test length(yr) == N-na
-        @test size(A) == (N-na, na+nb)
+        @test size(A) == (N-na, na)
 
         @test yr == y[na+1:end]
         @test A[:,1] == y[1:end-na]
-        @test A[:,2] == u[1:end-1]
 
-        na = 2
-        Gh,Σ = arx(1,y,u,na,nb)
-        @test Gh ≈ G # Should recover the original transfer function exactly
-        ω=exp10.(range(-2, stop=1, length=200))
+        Gh,Σ = ar(1,y,na)
+        @test Gh ≈ G # We should be able to recover this transfer function
+
+        N = 10000
+        t = 1:N
+        y = zeros(N)
+        y[1] = 5randn()
+        for i = 2:N
+            y[i] = 0.9y[i-1] + 0.01randn()
+        end
+        Gh,Σ = ar(1,y,na)
+        @test Gh ≈ G atol=0.02 # We should be able to recover this transfer function
+        yh = predict(Gh,y)
+        @test rms(y[2:end]-yh) < 0.0102
 
     end
 
