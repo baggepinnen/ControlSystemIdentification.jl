@@ -20,8 +20,8 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 MonteCarloMeasurements = ">=0.1.2"
-TotalLeastSquares = "^0.1.2"
-julia = "^1"
+TotalLeastSquares = "0.1.2"
+julia = "1.0"
 
 [extras]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

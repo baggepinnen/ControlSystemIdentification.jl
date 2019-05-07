@@ -4,7 +4,7 @@ using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays,
 import Optim: minimizer, Options
 
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
-export getARXregressor, find_na, arx, bodeconfidence, tls, wtls_estimator, plr
+export getARXregressor, getARregressor, find_na, arx, ar, bodeconfidence, tls, wtls_estimator, plr
 export FRD, tfest, coherence, coherenceplot, simplot, simplot!, predplot, predplot!
 
 
@@ -20,6 +20,18 @@ function predict(sys, y, u, x0=zeros(sys.nx))
 	oftype(y,yh)
 end
 predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args...)
+
+"""
+	yh = predict(ar::TransferFunction, y)
+
+Predict AR model
+"""
+function predict(G::ControlSystems.TransferFunction, y)
+	_,a,_ = params(G)
+	yr,A = getARregressor(y,length(a))
+	yh = A*a
+	oftype(y,yh)
+end
 
 function simulate(sys, u, x0=zeros(sys.nx))
 	model = SysFilter(sys, copy(x0))

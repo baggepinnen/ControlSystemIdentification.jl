@@ -104,7 +104,6 @@ end
 function sysfilter!(state::AbstractVector, sys::StateSpace, y, u)
 	@unpack A,B,C,D = sys
 	yh     = vec(C*state + D*u)
-	# e      = y - yh
 	state .= vec(A*state + B*u)
 	yh
 end
