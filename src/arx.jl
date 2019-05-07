@@ -36,6 +36,16 @@ function getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb)
     return y,A
 end
 
+function getARregressor(y::AbstractVector, na)
+    m    = na+1 # Start of yr
+    n    = length(y) - m + 1 # Final length of yr
+    A    = toeplitz(y[m:m+n-1],y[m:-1:m-na])
+    @assert size(A,2) == na+1
+    y    = A[:,1] # extract yr
+    A    = A[:,2:end]
+    return y,A
+end
+
 @userplot Find_na
 """
     find_na(y::AbstractVector,n::Int)
@@ -105,12 +115,21 @@ The number of free parameters is `na-1+nb`
 Supports MISO estimation by supplying a matrix `u` where times is first dim, with nb = [nb₁, nb₂...]
 """
 function arx(h,y::AbstractVector, u::AbstractVecOrMat, na, nb; λ = 0, estimator=\)
-    all(nb .< na) || throw(DomainError(nb,"nb must be smaller than na"))
+    all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
-    na -= 1
     y_train, A = getARXregressor(y,u, na, nb)
     w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na,nb)
+    model = tf(b,a,h)
+    Σ = parameter_covariance(y_train, A, w, λ)
+    return model, Σ
+end
+
+function ar(h,y::AbstractVector, na; λ = 0, estimator=\)
+    na >= 1 || throw(ArgumentError("na must be positive"))
+    y_train, A = getARregressor(y, na)
+    w = ls(A,y_train,λ,estimator)
+    a,b = params2poly(w,na)
     model = tf(b,a,h)
     Σ = parameter_covariance(y_train, A, w, λ)
     return model, Σ
@@ -133,7 +152,7 @@ Perform pseudo-linear regression to estimate a model on the form
 The residual sequence is estimated by first estimating a high-order arx model, whereafter the estimated residual sequence is included in a second estimation problem. The return values are the estimated system model, and the estimated noise model. `G` and `Gn` will always have the same denominator polynomial.
 """
 function plr(h,y,u,na,nb,nc; initial_order = 20)
-    all(nb .< na) || throw(DomainError(nb,"nb must be smaller than na"))
+    all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     na -= 1
     y_train, A = getARXregressor(y,u,initial_order,initial_order)
@@ -163,7 +182,7 @@ wtls_estimator(y,na,nb)
 Create an estimator function for estimation of arx models in the presence of measurement noise.
 """
 function wtls_estimator(y,na,nb)
-    rowQ = [diagm(0=>[ones(na-1);zeros(nb);1]) for i = 1:length(y)-(na-1)]
+    rowQ = [diagm(0=>[ones(na);zeros(nb);1]) for i = 1:length(y)-(na)]
     Qaa,Qay,Qyy = rowcovariance(rowQ)
     (A,y)->wtls(A,y,Qaa,Qay,Qyy)
 end
@@ -180,6 +199,11 @@ function params2poly(w,na,nb)
         w = w[nb+1:end]
         b
     end
+    a,b
+end
+function params2poly(w,na)
+    a = [1; -w]
+    b = 1
     a,b
 end
 """
@@ -230,6 +254,11 @@ function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.Abstra
       p = T(500, MvNormal(wm, Σ))
       a,b           = ControlSystemIdentification.params2poly(p,na,nb)
       arxtf         = tf(b,a,G.Ts)
+end
+
+function DSP.filt(tf::ControlSystems.TransferFunction, y)
+    b,a = numvec(tf)[], denvec(tf)[]
+    filt(b,a,y)
 end
 
 
