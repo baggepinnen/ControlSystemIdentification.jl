@@ -251,7 +251,7 @@ See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl
 function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, Σ, N=500)
       wm, am, bm = ControlSystemIdentification.params(G)
       na,nb  = length(am), length(bm)
-      p = T(500, MvNormal(wm, Σ))
+      p = T(N, MvNormal(wm, Σ))
       a,b           = ControlSystemIdentification.params2poly(p,na,nb)
       arxtf         = tf(b,a,G.Ts)
 end
