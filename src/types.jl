@@ -1,5 +1,5 @@
 
-struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: AbstractStateSpace
+struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
 	A::MT
 	B::MT
 	K::MT
@@ -8,7 +8,7 @@ struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: AbstractStateSpace
 	nu::Int
 	ny::Int
 	function StateSpaceNoise(A::MT, B::MT, K::MT, Ts::Float64) where MT
-		nx,nu,ny = ControlSystems.state_space_validation(A,B,C,D,Ts)
+		nx,nu,ny = ControlSystems.state_space_validation(A,B,K',D,Ts)
 		new{eltype(A), typeof(A)}(A, B, K, Ts, nx, nu, ny)
 	end
 end

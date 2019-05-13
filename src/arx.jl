@@ -256,6 +256,14 @@ function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.Abstra
       arxtf      = tf(b,a,G.Ts)
 end
 
+function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, p::AbstractMatrix)
+      wm, am, bm = ControlSystemIdentification.params(G)
+      na,nb      = length(am), length(bm)
+      p          = T(p .+ wm')
+      a,b        = ControlSystemIdentification.params2poly(p,na,nb)
+      arxtf      = tf(b,a,G.Ts)
+end
+
 function DSP.filt(tf::ControlSystems.TransferFunction, y)
     b,a = numvec(tf)[], denvec(tf)[]
     filt(b,a,y)
