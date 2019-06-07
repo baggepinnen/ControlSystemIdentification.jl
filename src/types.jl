@@ -8,7 +8,7 @@ struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractState
 	nu::Int
 	ny::Int
 	function StateSpaceNoise(A::MT, B::MT, K::MT, Ts::Float64) where MT
-		nx,nu,ny = ControlSystems.state_space_validation(A,B,K',zeros(size(K,1), size(B,2)),Ts)
+		nx,nu,ny = ControlSystems.state_space_validation(A,B,K',zeros(size(K',1), size(B,2)),Ts)
 		new{eltype(A), typeof(A)}(A, B, K, Ts, nx, nu, ny)
 	end
 end
