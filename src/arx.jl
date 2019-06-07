@@ -250,10 +250,18 @@ See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl
 """
 function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, Σ, N=500)
       wm, am, bm = ControlSystemIdentification.params(G)
-      na,nb  = length(am), length(bm)
-      p = T(N, MvNormal(wm, Σ))
-      a,b           = ControlSystemIdentification.params2poly(p,na,nb)
-      arxtf         = tf(b,a,G.Ts)
+      na,nb      = length(am), length(bm)
+      p          = T(N, MvNormal(wm, Σ))
+      a,b        = ControlSystemIdentification.params2poly(p,na,nb)
+      arxtf      = tf(b,a,G.Ts)
+end
+
+function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, p::AbstractMatrix)
+      wm, am, bm = ControlSystemIdentification.params(G)
+      na,nb      = length(am), length(bm)
+      p          = T(p .+ wm')
+      a,b        = ControlSystemIdentification.params2poly(p,na,nb)
+      arxtf      = tf(b,a,G.Ts)
 end
 
 function DSP.filt(tf::ControlSystems.TransferFunction, y)

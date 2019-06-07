@@ -1,5 +1,5 @@
 
-struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: LTISystem
+struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
 	A::MT
 	B::MT
 	K::MT
@@ -8,47 +8,22 @@ struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: LTISystem
 	nu::Int
 	ny::Int
 	function StateSpaceNoise(A::MT, B::MT, K::MT, Ts::Float64) where MT
-		nx = size(A, 1)
-		nu = size(B, 2)
-		ny = size(K, 2)
-
-		if size(A, 2) != nx && nx != 0
-			error("A must be square")
-		elseif size(B, 1) != nx
-			error("B must have the same row size as A")
-		elseif nx != size(K, 1)
-			error("K must have the same row size as A")
-		end
-
-		# Validate sampling time
-		if Ts < 0 && Ts != -1
-			error("Ts must be either a positive number, 0
-			(continuous system), or -1 (unspecified)")
-		end
+		nx,nu,ny = ControlSystems.state_space_validation(A,B,K',zeros(size(K',1), size(B,2)),Ts)
 		new{eltype(A), typeof(A)}(A, B, K, Ts, nx, nu, ny)
 	end
 end
 
 ControlSystems.isstable(s::StateSpaceNoise) = all(abs(e) <= 1 for e in eigvals(s.A-s.K*s.C))
 
-# Getter functions
-ControlSystems.get_A(sys::StateSpaceNoise) = sys.A
-ControlSystems.get_B(sys::StateSpaceNoise) = sys.B
-ControlSystems.get_C(sys::StateSpaceNoise) = [I zeros(sys.ny,sys.nx-sys.ny)]
-ControlSystems.get_D(sys::StateSpaceNoise) = zeros(sys.ny,sys.nu)
-
-ControlSystems.get_Ts(sys::StateSpaceNoise) = sys.Ts
-
-ControlSystems.ssdata(sys::StateSpaceNoise) = get_A(sys), get_B(sys), get_C(sys), get_D(sys)
 
 # Funtions for number of intputs, outputs and states
-ControlSystems.ninputs(sys::StateSpaceNoise) = sys.nu
-ControlSystems.noutputs(sys::StateSpaceNoise) = sys.ny
-ControlSystems.nstates(sys::StateSpaceNoise) = sys.nx
-
-Base.ndims(::StateSpaceNoise) = 2 # NOTE: Also for SISO systems?
-Base.size(sys::StateSpaceNoise) = (noutputs(sys), ninputs(sys)) # NOTE: or just size(get_D(sys))
-Base.size(sys::StateSpaceNoise, d) = d <= 2 ? size(sys)[d] : 1
+# ControlSystems.ninputs(sys::StateSpaceNoise) = sys.nu
+# ControlSystems.noutputs(sys::StateSpaceNoise) = sys.ny
+# ControlSystems.nstates(sys::StateSpaceNoise) = sys.nx
+#
+# Base.ndims(::StateSpaceNoise) = 2 # NOTE: Also for SISO systems?
+# Base.size(sys::StateSpaceNoise) = (noutputs(sys), ninputs(sys)) # NOTE: or just size(get_D(sys))
+# Base.size(sys::StateSpaceNoise, d) = d <= 2 ? size(sys)[d] : 1
 Base.eltype(::Type{S}) where {S<:StateSpaceNoise} = S
 Base.convert(::Type{StateSpace}, sys::StateSpaceNoise) = ss(sys.A, sys.B, sys.C, 0, sys.Ts)
 ControlSystems.ss(sys::StateSpaceNoise) = convert(StateSpace,sys)

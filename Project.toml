@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
@@ -19,6 +19,7 @@ TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
+ControlSystems = "0.5.3"
 MonteCarloMeasurements = ">=0.1.2"
 TotalLeastSquares = "0.1.2"
 julia = "1.0"
