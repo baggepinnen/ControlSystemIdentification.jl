@@ -160,7 +160,6 @@ function plr(h,y,u,na,nb,nc; initial_order = 20)
     yhat = A*w1
     ehat = yhat - y_train
     ΔN = length(y)-length(ehat)
-    size(u), size(ehat)
     y_train, A = getARXregressor(y[ΔN+1:end-1],[u[ΔN+1:end-1,:] ehat[1:end-1]],na,[nb;nc])
     w = A\y_train
     a,b = params2poly(w,na,nb)
