@@ -307,7 +307,7 @@ bodeconfidence
         subplot := 1
         title --> "ARX estimate"
         ylabel --> "Magnitude"
-        fillrange := (lowermag, uppermag)
+        fillrange := [lowermag, uppermag]
         yscale --> :log10
         xscale --> :log10
         alpha --> 0.3
@@ -315,13 +315,14 @@ bodeconfidence
     end
     @series begin
         subplot := 2
-        fillrange := (lowerphase, upperphase)
+        fillrange := [lowerphase, upperphase]
         ylabel --> "Phase [deg]"
         xlabel --> "Frequency [rad/s]"
         xscale --> :log10
         alpha --> 0.3
         ω, phase
     end
+    nothing
 
 end
 
