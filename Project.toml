@@ -20,9 +20,17 @@ Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 
 [compat]
 ControlSystems = "0.5.3"
-MonteCarloMeasurements = ">=0.1.2"
+MonteCarloMeasurements = ">=0.1.2, <1"
 TotalLeastSquares = "0.1.2, 1.0"
 julia = "1.0"
+RecipesBase = "<0.8"
+FFTW = "1.0"
+Parameters = "<0.13"
+DSP = "<0.7"
+FillArrays = "<0.9"
+TotalLeastSquares = "1.0"
+Optim = "<0.20"
+Roots = "<0.9"
 
 [extras]
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
