@@ -199,15 +199,15 @@ end
         e = randn(N)
         yn = y + e
 
-        na,nb,nc = 1,1,1
+        na,nb,nc = 2,1,1
         find_na(y,6)
         find_nanb(y,u,6,6)
         Gls,Σ = arx(1,yn,u,na,nb)
         Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
         Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
-        Gplr, Gn = plr(1,yn,u,na,nb,nc, initial_order=20)
-        bodeconfidence(Gplr, Σ, exp10.(range(-3, stop=log10(pi), length=150)))
-        @show Gplr, Gn
+        Gplr, Gn = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=20)
+        bodeconfidence(Gwtls, Σ, exp10.(range(-3, stop=log10(pi), length=150)))
+        # @show Gplr, Gn
 
     end
     # end
