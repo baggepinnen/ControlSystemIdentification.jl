@@ -32,6 +32,8 @@ ControlSystems.tf(sys::StateSpaceNoise) = tf(ss(sys))
 function Base.getproperty(sys::StateSpaceNoise, p::Symbol)
 	if p == :C
 		return [I zeros(sys.ny,sys.nx-sys.ny)]
+	elseif p == :D
+		return zeros(sys.ny, sys.nu)
 	end
 	return getfield(sys,p)
 end

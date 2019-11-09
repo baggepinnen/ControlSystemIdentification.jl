@@ -160,7 +160,6 @@ function plr(h,y,u,na,nb,nc; initial_order = 20)
     yhat = A*w1
     ehat = yhat - y_train
     ΔN = length(y)-length(ehat)
-    size(u), size(ehat)
     y_train, A = getARXregressor(y[ΔN+1:end-1],[u[ΔN+1:end-1,:] ehat[1:end-1]],na,[nb;nc])
     w = A\y_train
     a,b = params2poly(w,na,nb)
@@ -308,7 +307,7 @@ bodeconfidence
         subplot := 1
         title --> "ARX estimate"
         ylabel --> "Magnitude"
-        fillrange := (lowermag, uppermag)
+        fillrange := [lowermag, uppermag]
         yscale --> :log10
         xscale --> :log10
         alpha --> 0.3
@@ -316,13 +315,14 @@ bodeconfidence
     end
     @series begin
         subplot := 2
-        fillrange := (lowerphase, upperphase)
+        fillrange := [lowerphase, upperphase]
         ylabel --> "Phase [deg]"
         xlabel --> "Frequency [rad/s]"
         xscale --> :log10
         alpha --> 0.3
         ω, phase
     end
+    nothing
 
 end
 
