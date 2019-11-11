@@ -2,7 +2,7 @@ function toeplitz(c,r)
     @assert c[1] == r[1]
     nc = length(c)
     nr = length(r)
-    A  = zeros(nc, nr)
+    A  = zeros(eltype(c), nc, nr)
     A[:,1] = c
     A[1,:] = r
     for i in 2:nr
