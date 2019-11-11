@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "0.1.8"
+version = "0.1.9"
 
 [deps]
 ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
@@ -20,9 +20,9 @@ TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 
 [compat]
 ControlSystems = "0.5.3"
-FFTW = "<1.0.1"
+FFTW = "1.1"
 Parameters = "<0.13"
-DSP = "<0.7"
+DSP = "0.6.1"
 FillArrays = "<0.9"
 MonteCarloMeasurements = "0.1.2, 0.4, 0.5, <1"
 Optim = "<0.20"
