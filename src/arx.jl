@@ -39,7 +39,7 @@ end
 function getARregressor(y::AbstractVector, na)
     m    = na+1 # Start of yr
     n    = length(y) - m + 1 # Final length of yr
-    A    = toeplitz(y[m:m+n-1],y[m:-1:m-na])
+    A    = toeplitz(y[m:m+n-1],y[m:-1:1])
     @assert size(A,2) == na+1
     y    = A[:,1] # extract yr
     A    = A[:,2:end]
@@ -130,7 +130,7 @@ function ar(h,y::AbstractVector, na; λ = 0, estimator=\)
     y_train, A = getARregressor(y, na)
     w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na)
-    model = tf(b,a,h)
+    model = tf(b,vec(a),h)
     Σ = parameter_covariance(y_train, A, w, λ)
     return model, Σ
 end
