@@ -210,52 +210,7 @@ Gplr, Gn = plr(Δt,yn,u,na,nb,nc, initial_order=20) # Pseudo-linear regression
 We now see that the estimate using standard least-squares is heavily biased. Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl). See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
-For data corrupted with large-sparse noise (outliers), the following estimation method may be useful
-```julia
-using TotalLeastSquares
-N  = 2000     # Number of time steps
-t  = 1:N
-Δt = 1        # Sample time
-u  = randn(N) # A random control input
-a  = 0.9
-y = [5randn()]
-for i = 1:N-1
-    push!(y, a*y[end] + u[i] + 0randn())
-end
-na,nb = 1,1   # Number of polynomial coefficients
-e  = 0.1randn(N) + 20randn(N) .* (rand(N) .< 0.01)
-yn = y + e    # Measurement signal with noise
-na,nb = 1,1
-Gls,Σ   = arx(Δt,yn,u,na,nb)
-Gwtls,Σ  = arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,1,1))
-λ = 1/sqrt(N) # Tuning parameter that determines level of sparse noise (outliers)
-μ = 0.01^2 # Tuning parameter that determines level of dense noise
-method = (A,y)->rtls(A,y,toeplitz=true, nukeA=false, proxE = ElasticNet(λ,μ))
-Grtls,Σ = arx(Δt,yn,u,na,nb, estimator=method)
-@show Gls; @show  Gwtls;  @show  Grtls;
-# Gls = TransferFunction{ControlSystems.SisoRational{Float64}}
-#     0.9485385973238911
-# --------------------------
-# 1.0*z - 0.7138224977091794
-#
-# Sample Time: 1.0 (seconds)
-# Discrete-time transfer function model
-# Gwtls = TransferFunction{ControlSystems.SisoRational{Float64}}
-#     2.6041268468684793
-# --------------------------
-# 1.0*z - 0.7691081635094463
-#
-# Sample Time: 1.0 (seconds)
-# Discrete-time transfer function model
-# Grtls = TransferFunction{ControlSystems.SisoRational{Float64}}
-#     1.010980714955529
-# --------------------------
-# 1.0*z - 0.8974349706535092
-#
-# Sample Time: 1.0 (seconds)
-# Discrete-time transfer function model
-```
-in this example, the outliers corrupted all estimates except the one made using robust total least-squares, `rtls`.
+
 
 ## Functions
 - `arx`: Transfer-function estimation using closed-form solution.
