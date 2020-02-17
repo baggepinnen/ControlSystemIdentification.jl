@@ -121,7 +121,13 @@ function arx(h,y::AbstractVector, u::AbstractVecOrMat, na, nb; λ = 0, estimator
     w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na,nb)
     model = tf(b,a,h)
-    Σ = parameter_covariance(y_train, A, w, λ)
+    local Σ
+    try
+        Σ = parameter_covariance(y_train, A, w, λ)
+    catch
+        Σ = zeros(na+nb,na+nb)
+    end
+
     return model, Σ
 end
 
@@ -151,17 +157,25 @@ Perform pseudo-linear regression to estimate a model on the form
 `Ay = Bu + Cw`
 The residual sequence is estimated by first estimating a high-order arx model, whereafter the estimated residual sequence is included in a second estimation problem. The return values are the estimated system model, and the estimated noise model. `G` and `Gn` will always have the same denominator polynomial.
 """
-function plr(h,y,u,na,nb,nc; initial_order = 20)
+function plr(h,y,u,na,nb,nc; initial_order = 20, method = :ls)
     all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
-    na -= 1
+    # na -= 1
     y_train, A = getARXregressor(y,u,initial_order,initial_order)
     w1 = A\y_train
     yhat = A*w1
     ehat = yhat - y_train
     ΔN = length(y)-length(ehat)
     y_train, A = getARXregressor(y[ΔN+1:end-1],[u[ΔN+1:end-1,:] ehat[1:end-1]],na,[nb;nc])
-    w = A\y_train
+    if method == :wtls
+        w = wtls_estimator(y[ΔN+1:end-1],na,nb+nc,[zeros(nb);ones(nc)])(A,y_train)
+    elseif method == :rtls
+        w = rtls(A,y_train)
+    elseif method == :ls
+        w = A\y_train
+    elseif method isa Function
+        w = method(A,y_train)
+    end
     a,b = params2poly(w,na,nb)
     model = tf(b,a,h)
     c = w[na+sum(nb)+1:end]
@@ -177,11 +191,11 @@ function ControlSystems.tf(b::AbstractVector{<:AbstractVector{<:Number}}, a::Abs
 end
 
 """
-wtls_estimator(y,na,nb)
-Create an estimator function for estimation of arx models in the presence of measurement noise.
+wtls_estimator(y,na,nb, σu=0)
+Create an estimator function for estimation of arx models in the presence of measurement noise. If the noise variance on the input `σu` (model errors) is known, this can be specified for increased accuracy.
 """
-function wtls_estimator(y,na,nb)
-    rowQ = [diagm(0=>[ones(na);zeros(nb);1]) for i = 1:length(y)-(na)]
+function wtls_estimator(y,na,nb, σu=0)
+    rowQ = [diagm(0=>[ones(na);σu.*ones(nb);1]) for i = 1:length(y)-(na)]
     Qaa,Qay,Qyy = rowcovariance(rowQ)
     (A,y)->wtls(A,y,Qaa,Qay,Qyy)
 end
