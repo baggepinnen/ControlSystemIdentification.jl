@@ -13,6 +13,7 @@ include("types.jl")
 include("pem.jl")
 include("arx.jl")
 include("frd.jl")
+include("subspace.jl")
 
 function predict(sys, y, u, x0=zeros(sys.nx))
 	model = SysFilter(sys, copy(x0))
