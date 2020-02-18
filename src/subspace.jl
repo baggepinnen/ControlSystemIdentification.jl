@@ -25,6 +25,9 @@ end
 
 proj(A,B) = A*B'/(B*B')
 
+@static if VERSION < v"1.3"
+    (LinearAlgebra.I)(n) = Matrix{Float64}(I,n,n)
+end
 
 """
     res = n4sid(y, u, r=:auto; verbose=false)
