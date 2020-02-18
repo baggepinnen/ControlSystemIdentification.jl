@@ -152,7 +152,7 @@ function stabilize(L, XU, i, j, m, n, γ)
     c = maximum(abs.(θ[(imag.(θ) .== 0 ) .* (real.(θ) .> 0)]))
 
     Σ_XU = XU*XU'
-    mod = Σ_XU/(Σ_XU + c*diagm([ones(n); zeros(m)]))#[I(n) zeros(n,m); zeros(m, n+m)])
+    mod = Σ_XU/(Σ_XU + c*diagm(0=>[ones(n); zeros(m)]))#[I(n) zeros(n,m); zeros(m, n+m)])
     L[1:n,:] .= L[1:n,:]*mod
     L
 end
