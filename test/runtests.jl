@@ -14,6 +14,64 @@ function generate_system(nx,ny,nu)
 end
 
 @testset "ControlSystemIdentification.jl" begin
+
+    @testset "n4sid" begin
+        @info "Testing n4sid"
+
+
+        N = 200
+        Random.seed!(0)
+        w = exp10.(LinRange(-3, log10(pi), 100))
+        r = 5; m=2; l=2
+        for r = 1:5, m=1:2, l=1:2
+
+            A = Matrix{Float64}(I(r))
+            A[1,1] = 1.01
+            G = ss(A, randn(r,m), randn(l,r), randn(l,m),1)
+            u = randn(N,m)
+            y,t,x = lsim(G,u,1:N,x0=randn(r))
+            @assert sum(!isfinite, y) == 0
+            yn = y + 0.1randn(size(y))
+            res = n4sid(yn,u,r, γ=0.99)
+            @test maximum(abs, pole(res.sys)) <= 1.00001*0.99
+
+
+            G = ss(0.2randn(r,r), randn(r,m), randn(l,r), randn(l,m),1)
+            u = randn(N,m)
+
+            y,t,x = lsim(G,u,1:N,x0=randn(r))
+            @assert sum(!isfinite, y) == 0
+            ϵ = 0.01
+            yn = y + ϵ*randn(size(y))
+
+            res = n4sid(yn,u,r)
+            @test res.sys.nx == r
+            @test sqrt.(diag(res.R)) ≈ ϵ*ones(l) rtol=0.5
+            @test norm(res.S) < ϵ
+
+            @test maximum(abs2.(freqresp(res.sys, w))-abs2.(freqresp(G, w))) < 0.1*m*l
+
+            res = n4sid(yn,u)
+            @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
+
+        end
+
+        m=l=r=1
+        for a = LinRange(-0.99, 0.99, 10), b = LinRange(-5, 5, 10)
+            G = tf(b,[1, -a], 1)
+            u = randn(N,m)
+            y,t,x = lsim(G,u,1:N,x0=randn(r))
+            yn = y + 0.01randn(size(y))
+            res = n4sid(yn,u,r)
+            @test res.sys.A[1] ≈ a atol=0.01
+            @test numvec(tf(res.sys))[1][2] ≈ b atol=0.01
+            @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
+        end
+
+
+    end
+
+
     @testset "pem" begin
         Random.seed!(1)
         T   = 1000

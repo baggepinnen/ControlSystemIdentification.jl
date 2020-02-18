@@ -1,3 +1,17 @@
+
+"""
+    N4SIDResult is the result of statespace model estimation using the `n4sid` method.
+
+# Fields:
+- `sys`: the estimated model in the form of a [`StateSpace`](@ref) object
+- `Q`: the estimated covariance matrix of the states
+- `R`: the estimated covariance matrix of the measurements
+- `S`: the estimated cross covariance matrix between states and measurements
+- `K`: the kalman observer gain
+- `P`: the solution to the Riccatti equation
+- `s`: The singular values
+- `fve`: Fraction of variance explained by singular values
+"""
 struct N4SIDResult
     sys
     Q
@@ -8,11 +22,26 @@ struct N4SIDResult
     s
     fve
 end
+
 proj(A,B) = A*B'/(B*B')
 
+
+"""
+    res = n4sid(y, u, r=:auto; verbose=false)
+
+Estimate a statespace model using the n4sid method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `res.sys`.
+
+#Arguments:
+- `y`: Measurements N×ny
+- `u`: Control signal N×nu
+- `r`: Rank of the model (model order)
+- `verbose`: Print stuff?
+- `i`: Algorithm parameter, generally no need to tune this
+- `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
+"""
 function n4sid(y,u,r = :auto;
                     verbose=false,
-                    i = r === :auto ? min(N÷20,20) : r+10,
+                    i = r === :auto ? min(size(y,1)÷20,20) : r+10,
                     γ = nothing)
 
 

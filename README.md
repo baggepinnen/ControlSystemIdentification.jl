@@ -8,6 +8,25 @@ System identification for [ControlSystems.jl](https://github.com/JuliaControl/Co
 https://github.com/JuliaControl/ControlExamples.jl?files=1).
 
 # LTI state-space models
+
+There exist two methods for identification of statespace models, `n4sid` and `pem`. `n4sid` uses subspace-based identification whereas `pem` solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try `n4sid` first.
+
+## Subspace based identification using n4sid
+```julia
+res = n4sid(y, u, r=:auto; verbose=false)
+```
+Estimate a statespace model using the n4sid method. Returns an object of type `N4SIDResult` where the model is accessed as `res.sys`.
+
+#### Arguments:
+- `y`: Measurements N×ny
+- `u`: Control signal N×nu
+- `r`: Rank of the model (model order)
+- `verbose`: Print stuff?
+- `i`: Algorithm parameter, generally no need to tune this
+- `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
+
+
+## PEM
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
 x' = Ax + Bu + Ke
@@ -30,7 +49,7 @@ or any of its other special cases is not supported. Since those models are also 
 
 Transfer-function estimation through spectral methods is supported through the functions `tfest` and `coherence`.
 
-## Usage example
+### Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences.
 ```julia
 using ControlSystemIdentification, ControlSystems, Random, LinearAlgebra
@@ -107,9 +126,9 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 
-## Prediction-error method
+### Call signature
 `sys, x0, opt = pem(y, u; nx, kwargs...)`
-### Arguments:
+#### Arguments:
 - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
 - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
