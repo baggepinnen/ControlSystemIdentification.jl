@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "0.1.11"
+version = "0.1.12"
 
 [deps]
 ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
