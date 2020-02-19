@@ -168,7 +168,8 @@ Estimates the system impulse response by fitting an `n`:th order FIR model. Retu
 See also `impulseestplot`
 """
 function impulseest(h,y,u,n,λ=0)
-    yt,A = getARXregressor(y,u,0,n)
+    N = min(length(u),length(y))
+    @views yt,A = getARXregressor(y[1:N],u[1:N],0,n)
     ir = ls(A,yt,λ)
     t = range(h,length=n, step=h)
     Σ = parameter_covariance(yt, A, ir, λ)
