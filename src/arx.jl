@@ -156,6 +156,8 @@ G, Gn = plr(h,y,u,na,nb,nc; initial_order = 20)
 Perform pseudo-linear regression to estimate a model on the form
 `Ay = Bu + Cw`
 The residual sequence is estimated by first estimating a high-order arx model, whereafter the estimated residual sequence is included in a second estimation problem. The return values are the estimated system model, and the estimated noise model. `G` and `Gn` will always have the same denominator polynomial.
+
+`armax` is an alias for `plr`. See also [`pem`](@ref), [`ar`](@ref), [`arx`](@ref)
 """
 function plr(h,y,u,na,nb,nc; initial_order = 20, method = :ls)
     all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
@@ -182,6 +184,73 @@ function plr(h,y,u,na,nb,nc; initial_order = 20, method = :ls)
     noise_model = tf(c,a,h)
     model, noise_model
 end
+
+const armax = plr
+
+
+"""
+    model, w = arma(h, y, na, nc; initial_order=20, method=:ls)
+
+Estimate a Autoregressive Moving Average model with `na` coefficients in the denominator and `nc` coefficients in the numerator.
+Returns the model and the estimated noise sequence driving the system.
+
+#Arguments:
+- `h`: Sample time
+- `y`: measurement signal
+- `initial_order`: An initial AR model of this order is used to estimate the residuals
+- `method`: `:ls/:tls/:rtls/:wtls` or a function `(A,y)->minimizeₓ(Ax-y)`
+
+See also [`estimate_residuals`](@ref)
+"""
+function arma(h,y,na,nc; initial_order = 20, method = :ls)
+    all(nc .<= na) || throw(DomainError(nb,"nc must be <= na"))
+    na >= 1 || throw(ArgumentError("na must be positive"))
+    # na -= 1
+    y_train, A = getARregressor(y,initial_order)
+    w1 = A\y_train
+    yhat = A*w1
+    ehat = y_train - yhat
+    ΔN = length(y)-length(ehat)
+    y_train, A = getARXregressor(y[ΔN:end-1], ehat,na,nc)
+    if method == :wtls
+        w = wtls_estimator(y[ΔN:end-1],na,nc,ones(nc))(A,y_train)
+    elseif method == :rtls
+        w = rtls(A,y_train)
+    elseif method == :ls
+        w = ls(A, y_train)
+    elseif method isa Function
+        w = method(A,y_train)
+    end
+    a,b = params2poly(w,na,nc)
+    b[1] = 1
+    model = tf(b,a,h)
+    model
+end
+
+
+"""
+    estimate_residuals(model, y)
+
+Estimate the residuals driving the dynamics of an ARMA model.
+"""
+function estimate_residuals(model, y)
+    eest = zeros(length(y))
+    na = length(denvec(model)[1,1])-1
+    nc = length(numvec(model)[1,1])
+    w = params(model)[1]
+    for i = na:length(y)-1
+        ϕ = [y[i:-1:i-na+1]; 0; eest[i-1:-1:i-nc+1]]
+        yh = w'ϕ
+        eest[i] = y[i+1] - yh
+        ϕ[na+1] = eest[i]
+        yh = w'ϕ
+        eest[i] += y[i+1] - yh
+    end
+    eest
+end
+
+
+
 # Helper constructor to make a MISO system after MISO arx estimation
 function ControlSystems.tf(b::AbstractVector{<:AbstractVector{<:Number}}, a::AbstractVector{<:Number}, h)
     tfs = map(b) do b
@@ -224,7 +293,7 @@ w, a, b = params(G::TransferFunction)
 w = [a;b]
 """
 function params(G::TransferFunction)
-    am, bm = -denpoly(G)[1].a[1:end-1], G.matrix[1].num.a
+    am, bm = -denvec(G)[1][2:end], numvec(G)[1]
     wm     = [am; bm]
     wm, am, bm
 end

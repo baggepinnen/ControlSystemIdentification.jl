@@ -1,5 +1,5 @@
 using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP
-using Test, Random, LinearAlgebra
+using Test, Random, LinearAlgebra, Statistics
 
 function ⟂(x)
     u,s,v = svd(x)
@@ -13,6 +13,12 @@ function generate_system(nx,ny,nu)
     sys = ss(A,B,C,0,1)
 end
 
+
+wtest = exp10.(LinRange(-3, log10(pi), 30))
+freqresptest(G,model) = maximum(abs, log10.(abs2.(freqresp(model, wtest)))-log10.(abs2.(freqresp(G, wtest))))
+
+freqresptest(G,model,tol) = freqresptest(G,model) < tol
+
 @testset "ControlSystemIdentification.jl" begin
 
     @testset "n4sid" begin
@@ -21,7 +27,6 @@ end
 
         N = 200
         Random.seed!(0)
-        w = exp10.(LinRange(-3, log10(pi), 100))
         r = 5; m=2; l=2
         for r = 1:5, m=1:2, l=1:2
 
@@ -49,7 +54,7 @@ end
             @test sqrt.(diag(res.R)) ≈ ϵ*ones(l) rtol=0.5
             @test norm(res.S) < ϵ
 
-            @test maximum(abs2.(freqresp(res.sys, w))-abs2.(freqresp(G, w))) < 0.1*m*l
+            @test freqresptest(G, res.sys, 0.1*m*l)
 
             res = n4sid(yn,u)
             @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
@@ -66,6 +71,7 @@ end
             @test res.sys.A[1] ≈ a atol=0.01
             @test numvec(tf(res.sys))[1][2] ≈ b atol=0.01
             @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
+            @test freqresptest(G, res.sys) < 0.01
         end
 
 
@@ -102,6 +108,7 @@ end
         # 283ms
         # 173ms
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
+        @test freqresptest(sys, StateSpace(sysh)) < 1e-7
         yh = sim(convert(StateSpace,sysh), u, x0h)
         @test Optim.minimum(opt) < 1 # Should reach 0
 
@@ -196,7 +203,8 @@ end
         na = 1
         Gh,Σ = arx(1,y,u,na,nb)
         @test Gh ≈ G # Should recover the original transfer function exactly
-        ω=exp10.(range(-2, stop=1, length=200))
+        @test freqresptest(G, Gh,0.0001)
+        ω = exp10.(range(-2, stop=1, length=200))
         # bodeplot(G,ω)
         # bodeconfidence!(Gh, Σ, ω=ω, color=:blue, lab="Est")
 
@@ -207,6 +215,7 @@ end
 
         nb = [1,1]
         Gh2,Σ = arx(1,y2,[u u2],na,nb)
+
 
         @test Gh2 ≈ G2
     end
@@ -241,6 +250,7 @@ end
         end
         Gh,Σ = ar(1,y,na)
         @test Gh ≈ G atol=0.02 # We should be able to recover this transfer function
+        @test freqresptest(G, Gh, 0.05)
         yh = predict(Gh,y)
         @test rms(y[2:end]-yh) < 0.0102
 
@@ -257,17 +267,66 @@ end
         e = randn(N)
         yn = y + e
 
-        na,nb,nc = 2,1,1
+        na,nb,nc = 1,1,1
         find_na(y,6)
         find_nanb(y,u,6,6)
         Gls,Σ = arx(1,yn,u,na,nb)
         Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
         Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
-        Gplr, Gn = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=20)
+        Gplr, Gn = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=10)
         bodeconfidence(Gwtls, Σ, exp10.(range(-3, stop=log10(pi), length=150)))
         # @show Gplr, Gn
 
+        @test freqresptest(G,Gls) < 1.5
+        @test freqresptest(G,Gtls) < 1
+        @test freqresptest(G,Gwtls) < 0.1
+        @test freqresptest(G,Gplr) < 0.1
+
+
+
+        Gls,Σ = arx(1,y,u,na,nb)
+        Gtls,Σ = arx(1,y,u,na,nb, estimator=tls)
+        Gwtls,Σ = arx(1,y,u,na,nb, estimator=wtls_estimator(y,na,nb))
+        Gplr, Gn = ControlSystemIdentification.plr(1,y,u,na,nb,nc, initial_order=10)
+
+        @test freqresptest(G,Gls) < sqrt(eps())
+        @test freqresptest(G,Gtls) < sqrt(eps())
+        @test freqresptest(G,Gwtls) < sqrt(eps())
+        @test freqresptest(G,Gplr) < sqrt(eps())
+
     end
+
+    @testset "arma" begin
+        @info "Testing arma"
+
+        N  = 2000     # Number of time steps
+        t  = 1:N
+        Δt = 1        # Sample time
+        u  = randn(N) # A random control input
+        a  = 0.9
+
+        G = tf([1, 0.1], [1, -a, 0],1)
+        y,t,x = lsim(G,u,1:N) .|> vec
+
+        na,nc = 2,2   # Number of polynomial coefficients
+        e  = 0.001randn(N) #+ 20randn(N) .* (rand(N) .< 0.01)
+        yn = y + e    # Measurement signal with noise
+
+        model = arma(Δt,yn,na,nc, initial_order=20)
+
+        @test numvec(model)[1] ≈ numvec(G)[1] atol=0.5
+        @test denvec(model)[1] ≈ denvec(G)[1] atol=0.5
+        @test freqresptest(G,model) < 0.2
+
+        uh = ControlSystemIdentification.estimate_residuals(model,yn)
+        @show mean(abs2, uh-u)/mean(abs2, u)
+        @test mean(abs2, uh-u)/mean(abs2, u) < 0.01
+
+    end
+
+
+
+
     # end
     @testset "frd" begin
         Random.seed!(1)

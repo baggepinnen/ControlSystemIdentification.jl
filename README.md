@@ -229,6 +229,7 @@ Gplr, Gn = plr(Δt,yn,u,na,nb,nc, initial_order=20) # Pseudo-linear regression
 We now see that the estimate using standard least-squares is heavily biased. Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl). See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
+See also function `arma` for estimation of signal models without inputs.
 
 
 ## Functions
