@@ -51,7 +51,7 @@ function Base.getindex(sys::StateSpaceNoise, inds...)
 	return StateSpaceNoise(copy(sys.A), sys.B[:, cols], sys.K[:, rows], sys.Ts)
 end
 
-struct SysFilter{T<:Union{StateSpaceNoise, StateSpace}, FT}
+struct SysFilter{T<:AbstractStateSpace, FT}
 	sys::T
 	state::Vector{FT}
 	yh::Vector{FT}

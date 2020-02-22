@@ -34,11 +34,19 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             A[1,1] = 1.01
             G = ss(A, randn(r,m), randn(l,r), randn(l,m),1)
             u = randn(N,m)
-            y,t,x = lsim(G,u,1:N,x0=randn(r))
+            x0 = randn(r)
+            y,t,x = lsim(G,u,1:N,x0=x0)
             @assert sum(!isfinite, y) == 0
             yn = y + 0.1randn(size(y))
             res = n4sid(yn,u,r, γ=0.99)
             @test maximum(abs, pole(res.sys)) <= 1.00001*0.99
+
+            ys = simulate(res,copy(u'),res.x[:,1], stochastic=false)
+            @show mean(abs2,y-ys') / mean(abs2,y)
+
+            yp = predict(res,copy(y'),copy(u'),res.x[:,1])
+            @show mean(abs2,y-yp') / mean(abs2,y)
+            @test mean(abs2,y-yp') / mean(abs2,y) < 0.01
 
 
             G = ss(0.2randn(r,r), randn(r,m), randn(l,r), randn(l,m),1)

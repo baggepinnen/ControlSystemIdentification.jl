@@ -207,7 +207,7 @@ function arma(h,y,na,nc; initial_order = 20, method = :ls)
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
     y_train, A = getARregressor(y,initial_order)
-    w1 = A\y_train
+    w1 = method isa Function ? method(A,y_train) : tls(A,y_train)
     yhat = A*w1
     ehat = y_train - yhat
     ΔN = length(y)-length(ehat)

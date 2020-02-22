@@ -1,6 +1,6 @@
 
 """
-    N4SIDResult is the result of statespace model estimation using the `n4sid` method.
+    N4SIDStateSpace is the result of statespace model estimation using the `n4sid` method.
 
 # Fields:
 - `sys`: the estimated model in the form of a [`StateSpace`](@ref) object
@@ -9,18 +9,27 @@
 - `S`: the estimated cross covariance matrix between states and measurements
 - `K`: the kalman observer gain
 - `P`: the solution to the Riccatti equation
+- `x`: the estimated state trajectory
 - `s`: The singular values
 - `fve`: Fraction of variance explained by singular values
 """
-struct N4SIDResult
+struct N4SIDStateSpace <: AbstractStateSpace
     sys
     Q
     R
     S
     K
     P
+	x
     s
     fve
+end
+
+@inline function Base.getproperty(res::N4SIDStateSpace, p::Symbol)
+	if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts)
+		return getproperty(res.sys, p)
+	end
+	return getfield(res,p)
 end
 
 proj(A,B) = A*B'/(B*B')
@@ -32,7 +41,7 @@ end
 """
     res = n4sid(y, u, r=:auto; verbose=false)
 
-Estimate a statespace model using the n4sid method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `res.sys`.
+Estimate a statespace model using the n4sid method. Returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `res.sys`.
 
 #Arguments:
 - `y`: Measurements N×ny
@@ -45,7 +54,10 @@ Estimate a statespace model using the n4sid method. Returns an object of type [`
 function n4sid(y,u,r = :auto;
                     verbose=false,
                     i = r === :auto ? min(size(y,1)÷20,20) : r+10,
-                    γ = nothing)
+                    γ = nothing,
+                    h = 1.0,
+                    svd = svd,
+                    estimator = \)
 
 
     N, l = size(y,1),size(y,2)
@@ -96,12 +108,12 @@ function n4sid(y,u,r = :auto;
 
     Γi = U1 * Diagonal(sqrt.(S1))
     Γim1 = U1[1:end-l,:] * Diagonal(sqrt.(S1))
-    Xi = Γi \  Zi
-    Xip1 = Γim1 \  [L¹ᵢp1 L³ᵢp1] * [U0i; Y0i]
+    Xi = estimator(Γi,  Zi)
+    Xip1 = estimator(Γim1, [L¹ᵢp1 L³ᵢp1] * [U0i; Y0i])
 
     XY = [Xip1 ; hankel(y,i,i)]
     XU = [Xi ; hankel(u,i,i)]
-    L = (XU' \ XY')'
+    L = estimator(XU', XY')'
 
     A = L[1:n,1:n]
     if γ !== nothing
@@ -119,16 +131,22 @@ function n4sid(y,u,r = :auto;
 
     errors = XY - L*XU
     Σ = 1/(j-(n+1))*errors*errors'
-    Q = Σ[1:n, 1:n]
-    R = Σ[n+1:end, n+1:end]
+    Q = Symmetric(Σ[1:n, 1:n])
+    R = Symmetric(Σ[n+1:end, n+1:end])
     S = Σ[1:n, n+1:end]
 
-    P = Symmetric(dare(copy(A'), copy(C'), Symmetric(Q), Symmetric(R))) # TODO: Skipped S as dare does not support it
-    K = ((C*P*C' + R)\(A*P*C' + S)')'
+    local P,K
+    try
+        P = Symmetric(dare(copy(A'), copy(C'), (Q), (R))) # TODO: Skipped S as dare does not support it
+        K = ((C*P*C' + R)\(A*P*C' + S)')'
+    catch
+        P = fill(NaN, n, n)
+        K = fill(NaN, n, l)
+    end
 
-    sys = ss(A,B,C,D,1)
+    sys = ss(A,B,C,D,h)
 
-    N4SIDResult(sys, Q, R, S, K, P, s.S, fve)
+    N4SIDStateSpace(sys, Q, R, S, K, P, Xi, s.S, fve)
 end
 
 
@@ -155,4 +173,37 @@ function stabilize(L, XU, i, j, m, n, γ)
     mod = Σ_XU/(Σ_XU + c*diagm(0=>[ones(n); zeros(m)]))#[I(n) zeros(n,m); zeros(m, n+m)])
     L[1:n,:] .= L[1:n,:]*mod
     L
+end
+
+
+function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, y, u)
+	sys = res.sys
+	@unpack A,B,C,D,ny = sys
+	@unpack K = res
+	yh     = vec(C*state + D*u)
+	e      = y - yh
+	state .= vec(A*state + B*u + K*e)
+	yh
+end
+
+SysFilter(res::N4SIDStateSpace,x0=zeros(sys.nx)) = SysFilter(res,x0,zeros(eltype(x0), res.sys.ny))
+
+function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=true)
+	stochastic && (x0 = Particles(MvNormal(x0, res.P)))
+	model = SysFilter(res.sys, copy(x0))
+	yh = map(observations(u,u)) do (ut,_)
+		pu = stochastic ? ut .+ Particles(MvNormal(res.R)) : ut
+		model(pu)
+	end
+	oftype(u,yh)
+end
+
+# function predict(res::N4SIDStateSpace, y, u, x0=zeros(res.sys.nx))
+# 	model = SysFilter(res, copy(x0))
+# 	yh = [model(yt,ut) for (yt,ut) in observations(y,u)]
+# 	oftype(y,yh)
+# end
+
+function ControlSystems.lsim(res::N4SIDStateSpace, u; x0=zeros(res.sys.nx))
+	simulate(res.sys, u, x0)
 end
