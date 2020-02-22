@@ -32,7 +32,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
             A = Matrix{Float64}(I(r))
             A[1,1] = 1.01
-            G = ss(A, randn(r,m), randn(l,r), randn(l,m),1)
+            G = ss(A, randn(r,m), randn(l,r), 0*randn(l,m),1)
             u = randn(N,m)
             x0 = randn(r)
             y,t,x = lsim(G,u,1:N,x0=x0)
@@ -41,7 +41,9 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             res = n4sid(yn,u,r, γ=0.99)
             @test maximum(abs, pole(res.sys)) <= 1.00001*0.99
 
-            ys = simulate(res,copy(u'),res.x[:,1], stochastic=false)
+            ys = simulate(res,copy(u'),res.x[:,1])
+            @show mean(abs2,y-ys') / mean(abs2,y)
+            ys = simulate(res,copy(u'),res.x[:,1], stochastic=true)
             @show mean(abs2,y-ys') / mean(abs2,y)
 
             yp = predict(res,copy(y'),copy(u'),res.x[:,1])

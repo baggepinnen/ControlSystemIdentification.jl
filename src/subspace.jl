@@ -188,21 +188,32 @@ end
 
 SysFilter(res::N4SIDStateSpace,x0=zeros(sys.nx)) = SysFilter(res,x0,zeros(eltype(x0), res.sys.ny))
 
-function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=true)
-	stochastic && (x0 = Particles(MvNormal(x0, res.P)))
-	model = SysFilter(res.sys, copy(x0))
+function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=false)
+	sys = res.sys
+	@unpack A,B,C,D,ny = sys
+	@unpack K,Q,R,P = res
+	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
+	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
 	yh = map(observations(u,u)) do (ut,_)
-		pu = stochastic ? ut .+ Particles(MvNormal(res.R)) : ut
-		model(pu)
+		predict!(kf, ut)
+		yh = kf.C*state(kf)
+		stochastic ? StaticParticles(MvNormal(yh,Symmetric(C*covariance(kf)*C' + kf.R2))) : yh
 	end
 	oftype(u,yh)
 end
 
-# function predict(res::N4SIDStateSpace, y, u, x0=zeros(res.sys.nx))
-# 	model = SysFilter(res, copy(x0))
-# 	yh = [model(yt,ut) for (yt,ut) in observations(y,u)]
-# 	oftype(y,yh)
-# end
+m2vv(x) = [x[:,i] for i in 1:size(x,2)]
+function predict(res::N4SIDStateSpace, y, u, x0=zeros(res.sys.nx))
+	sys = res.sys
+	@unpack A,B,C,D,ny = sys
+	@unpack K,Q,R,P = res
+	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
+	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
+	X = forward_trajectory(kf, m2vv(u), m2vv(y))[1]
+	size(X)
+	yh = Ref(C).*X
+	oftype(y,yh)
+end
 
 function ControlSystems.lsim(res::N4SIDStateSpace, u; x0=zeros(res.sys.nx))
 	simulate(res.sys, u, x0)
