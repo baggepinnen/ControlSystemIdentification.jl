@@ -198,29 +198,23 @@ Returns the model and the estimated noise sequence driving the system.
 - `h`: Sample time
 - `y`: measurement signal
 - `initial_order`: An initial AR model of this order is used to estimate the residuals
-- `method`: `:ls/:tls/:rtls/:wtls` or a function `(A,y)->minimizeₓ(Ax-y)`
+- `estimator`: A function `(A,y)->minimizeₓ(Ax-y)` default is `\` but another option is `wtls_estimator(1:length(y)-initial_order,na,nc,ones(nc))`
 
 See also [`estimate_residuals`](@ref)
 """
-function arma(h,y,na,nc; initial_order = 20, method = :ls)
+function arma(h,y,na,nc; initial_order = 20, estimator = \)
     all(nc .<= na) || throw(DomainError(nb,"nc must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
     y_train, A = getARregressor(y,initial_order)
-    w1 = method isa Function ? method(A,y_train) : tls(A,y_train)
-    yhat = A*w1
+    # w1 = method isa Function ? method(A,y_train) : tls(A,y_train)
+    w1 = A\y_train # The above seems like it should work but tests indicate that it makes performance worse, maybe exactly because it removes too much correlation in the residuals
+    yhat = A*vec(w1)
     ehat = y_train - yhat
     ΔN = length(y)-length(ehat)
+    length(y[ΔN:end-1])
     y_train, A = getARXregressor(y[ΔN:end-1], ehat,na,nc)
-    if method == :wtls
-        w = wtls_estimator(y[ΔN:end-1],na,nc,ones(nc))(A,y_train)
-    elseif method == :rtls
-        w = rtls(A,y_train)
-    elseif method == :ls
-        w = ls(A, y_train)
-    elseif method isa Function
-        w = method(A,y_train)
-    end
+    w = estimator(A,y_train)
     a,b = params2poly(w,na,nc)
     b[1] = 1
     model = tf(b,a,h)
