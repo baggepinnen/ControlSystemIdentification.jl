@@ -13,9 +13,9 @@ There exist two methods for identification of statespace models, `n4sid` and `pe
 
 ## Subspace based identification using n4sid
 ```julia
-res = n4sid(y, u, r=:auto; verbose=false)
+sys = n4sid(y, u, r=:auto; verbose=false)
 ```
-Estimate a statespace model using the n4sid method. Returns an object of type `N4SIDResult` where the model is accessed as `res.sys`.
+Estimate a statespace model using the n4sid method. Returns an object of type `N4SIDResult` where the model is accessed as `sys.sys`.
 
 #### Arguments:
 - `y`: Measurements N×ny
@@ -24,6 +24,9 @@ Estimate a statespace model using the n4sid method. Returns an object of type `N
 - `verbose`: Print stuff?
 - `i`: Algorithm parameter, generally no need to tune this
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
+
+### Filtering and simulation
+Models can be simulated using `lsim` from ControlSystems.jl and using `simulate`. You may also convert the model to a `KalmanFilter` from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
 
 
 ## PEM

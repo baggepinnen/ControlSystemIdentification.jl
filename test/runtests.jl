@@ -26,10 +26,10 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
 
         N = 200
-        Random.seed!(0)
-        r = 5; m=2; l=2
+        r = 2; m=1; l=1
         for r = 1:5, m=1:2, l=1:2
-
+            Random.seed!(0)
+            @show r,m,l
             A = Matrix{Float64}(I(r))
             A[1,1] = 1.01
             G = ss(A, randn(r,m), randn(l,r), 0*randn(l,m),1)
@@ -51,7 +51,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @test mean(abs2,y-yp') / mean(abs2,y) < 0.01
 
 
-            G = ss(0.2randn(r,r), randn(r,m), randn(l,r), randn(l,m),1)
+            G = ss(0.2randn(r,r), randn(r,m), randn(l,r), 0*randn(l,m),1)
             u = randn(N,m)
 
             y,t,x = lsim(G,u,1:N,x0=randn(r))
@@ -64,10 +64,16 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @test sqrt.(diag(res.R)) ≈ ϵ*ones(l) rtol=0.5
             @test norm(res.S) < ϵ
 
-            @test freqresptest(G, res.sys, 0.1*m*l)
+            @test freqresptest(G, res.sys) < 0.2*m*l
 
             res = n4sid(yn,u)
             @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
+            kf = KalmanFilter(res)
+            @test kf isa KalmanFilter
+            @test kf.A == res.A
+            @test kf.B == res.B
+            @test kf.C == res.C
+            @test all(iszero, kf.D)
 
         end
 

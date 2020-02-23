@@ -8,6 +8,7 @@ export n4sid
 export getARXregressor, getARregressor, find_na, arx, ar, arma, armax, bodeconfidence, tls, wtls_estimator, plr, estimate_residuals
 export FRD, tfest, coherence, coherenceplot, simplot, simplot!, predplot, predplot!
 
+export KalmanFilter
 
 include("utils.jl")
 include("types.jl")

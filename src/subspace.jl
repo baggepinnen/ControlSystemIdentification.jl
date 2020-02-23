@@ -192,8 +192,7 @@ function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=fals
 	sys = res.sys
 	@unpack A,B,C,D,ny = sys
 	@unpack K,Q,R,P = res
-	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
-	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
+	kf = KalmanFilter(res,x0)
 	yh = map(observations(u,u)) do (ut,_)
 		predict!(kf, ut)
 		yh = kf.C*state(kf)
@@ -203,18 +202,25 @@ function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=fals
 end
 
 m2vv(x) = [x[:,i] for i in 1:size(x,2)]
-function predict(res::N4SIDStateSpace, y, u, x0=zeros(res.sys.nx))
+function predict(res::N4SIDStateSpace, y, u, x0=res.x[:,1])
 	sys = res.sys
-	@unpack A,B,C,D,ny = sys
-	@unpack K,Q,R,P = res
-	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
-	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
+	@unpack C = sys
+	kf = KalmanFilter(res,x0)
 	X = forward_trajectory(kf, m2vv(u), m2vv(y))[1]
 	size(X)
 	yh = Ref(C).*X
 	oftype(y,yh)
 end
 
-function ControlSystems.lsim(res::N4SIDStateSpace, u; x0=zeros(res.sys.nx))
+function ControlSystems.lsim(res::N4SIDStateSpace, u; x0=res.x[:,1])
 	simulate(res.sys, u, x0)
+end
+
+
+function LowLevelParticleFilters.KalmanFilter(res::N4SIDStateSpace, x0=res.x[:,1])
+	sys = res.sys
+	@unpack A,B,C,D,ny = sys
+	@unpack K,Q,R,P = res
+	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
+	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
 end
