@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP
+using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
 using Test, Random, LinearAlgebra, Statistics
 
 function ⟂(x)
@@ -325,7 +325,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         y,t,x = lsim(G,u,1:N) .|> vec
 
         na,nc = 2,2   # Number of polynomial coefficients
-        e  = 0.001randn(N) #+ 20randn(N) .* (rand(N) .< 0.01)
+        e  = 0.0001randn(N) #+ 20randn(N) .* (rand(N) .< 0.01)
         yn = y + e    # Measurement signal with noise
 
         model = arma(Δt,yn,na,nc, initial_order=20)
