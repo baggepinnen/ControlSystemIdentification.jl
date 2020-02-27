@@ -13,7 +13,10 @@ There exist two methods for identification of statespace models, `n4sid` and `pe
 
 ## Subspace based identification using n4sid
 ```julia
-sys = n4sid(y, u, r=:auto; verbose=false)
+sys = n4sid(y, u, :auto; verbose=false)
+# or use a robust version of svd if y has outliers or missing values
+using TotalLeastSquares
+sys = n4sid(y, u, :auto; verbose=false, svd=x->rpca(x)[3])
 ```
 Estimate a statespace model using the n4sid method. Returns an object of type `N4SIDResult` where the model is accessed as `sys.sys`.
 
