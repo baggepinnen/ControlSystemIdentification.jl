@@ -13,14 +13,16 @@ There exist two methods for identification of statespace models, `n4sid` and `pe
 
 ## Subspace based identification using n4sid
 ```julia
-sys = n4sid(y, u, :auto; verbose=false)
+d = iddata(y,u)
+sys = n4sid(d, :auto; verbose=false)
 # or use a robust version of svd if y has outliers or missing values
 using TotalLeastSquares
-sys = n4sid(y, u, :auto; verbose=false, svd=x->rpca(x)[3])
+sys = n4sid(d, :auto; verbose=false, svd=x->rpca(x)[3])
 ```
 Estimate a statespace model using the n4sid method. Returns an object of type `N4SIDResult` where the model is accessed as `sys.sys`.
 
 #### Arguments:
+- `d`: Identification data object, created using `iddata(y,u)`.
 - `y`: Measurements N×ny
 - `u`: Control signal N×nu
 - `r`: Rank of the model (model order)
@@ -82,10 +84,11 @@ sim(sys,u,x0=x0) = lsim(sys, u', 1:T, x0=x0)[1]' # Helper function
 sys = generate_system(nx,nu,ny)
 u   = randn(nu,T)               # Generate random input
 y   = sim(sys, u, x0)           # Simulate system
+d   = iddata(y,u)
 
-sysh,x0h,opt = pem(y, u, nx=nx, focus=:prediction) # Estimate model
+sysh,x0h,opt = pem(d, nx=nx, focus=:prediction) # Estimate model
 
-yh = predict(sysh, y, u, x0h)   # Predict using estimated model
+yh = predict(sysh, d, x0h)      # Predict using estimated model
 plot([y; yh]', lab=["y" "ŷ"])   # Plot prediction and true output
 ```
 
@@ -98,11 +101,12 @@ sysn = generate_system(nx,nu,ny)             # Noise system
 un   = u + sim(sysn, σu*randn(size(u)),0*x0) # Input + load disturbance
 y    = sim(sys, un, x0)
 yn   = y + sim(sysn, σy*randn(size(u)),0*x0) # Output + measurement noise
+dn   = iddata(yn,un)
 ```
 The system now has `3nx` poles, `nx` for the system dynamics, and `nx` for each noise model, we indicated this to the main estimation function `pem`:
 ```julia
-sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction)
-yh           = predict(sysh, yn, un, x0h) # Form prediction
+sysh,x0h,opt = pem(dn,nx=3nx, focus=:prediction)
+yh           = predict(sysh, dn, x0h) # Form prediction
 plot([y; yh]', lab=["y" "ŷ"])             # Compare true output (without noise) to prediction
 ```
 
@@ -133,8 +137,9 @@ See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 
 ### Call signature
-`sys, x0, opt = pem(y, u; nx, kwargs...)`
+`sys, x0, opt = pem(d; nx, kwargs...)`
 #### Arguments:
+- `d`: Identification data object, created using `iddata(y,u [,sampletime=nothing])`
 - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
 - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
@@ -160,7 +165,7 @@ p  = [A[:];B[:];K[:];x0]
 
 ### Functions
 - `pem`: Main estimation function, see above.
-- `predict(sys, y, u, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
+- `predict(sys, d, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
 - `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
 - `innovation_form`: Extract the noise model from the estimated system (`ss(A,K,C,0)`).
 
@@ -185,10 +190,11 @@ u  = randn(N) # A random control input
 G  = tf(0.8, [1,-0.9], 1)
 y  = lsim(G,u,t)[1][:]
 yn = y
+d  = iddata(y,u,Δt)
 
 na,nb = 1,1   # Number of polynomial coefficients
 
-Gls,Σ = arx(Δt,y,u,na,nb)
+Gls,Σ = arx(d,na,nb)
 @show Gls
 # TransferFunction{ControlSystems.SisoRational{Float64}}
 #     0.8000000000000005
@@ -199,13 +205,14 @@ As we can see, the model is perfectly recovered. In reality, the measurement sig
 ```julia
 e  = randn(N)
 yn = y + e    # Measurement signal with noise
+d  = iddata(yn,u,Δt)
 
 na,nb,nc = 1,1,1
 
-Gls,Σ    = arx(Δt,yn,u,na,nb)                      # Regular least-squares estimation
-Gtls,Σ   = arx(Δt,yn,u,na,nb, estimator=tls)       # Total least-squares estimation
-Gwtls,Σ  = arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)) # Weighted Total least-squares estimation
-Gplr, Gn = plr(Δt,yn,u,na,nb,nc, initial_order=20) # Pseudo-linear regression
+Gls,Σ    = arx(d,na,nb)                      # Regular least-squares estimation
+Gtls,Σ   = arx(d,na,nb, estimator=tls)       # Total least-squares estimation
+Gwtls,Σ  = arx(d,na,nb, estimator=wtls_estimator(y,na,nb)) # Weighted Total least-squares estimation
+Gplr, Gn = plr(d,na,nb,nc, initial_order=20) # Pseudo-linear regression
 @show Gls; @show  Gtls; @show  Gwtls; @show  Gplr; @show  Gn;
 # Gls = TransferFunction{ControlSystems.SisoRational{Float64}}
 #     0.8164943522721083
@@ -259,18 +266,20 @@ sysn       = tf(σy*ωn,[1,2*0.1*ωn,ωn^2])
 u  = randn(T)
 y  = sim(sys, u)
 yn = y + sim(sysn, randn(size(u)))
+d  = iddata(y,u,h)
+dn = iddata(yn,u,h)
 ```
 We can now estimate the coherence function to get a feel for whether or nor our data seems to be generated by a linear system:
 ```julia
-k = coherence(h,y,u)  # Should be close to 1 if the system is linear and noise free
-k = coherence(h,yn,u) # Slightly lower values are obtained if the system is subject to measurement noise
+k = coherence(d)  # Should be close to 1 if the system is linear and noise free
+k = coherence(dn) # Slightly lower values are obtained if the system is subject to measurement noise
 ```
 We can also estimate a transfer function using spectral techniques, the main entry point to this is the function `tfest`, which returns a transfer-function estimate and an estimate of the power-spectral density of the noise (note, the unit of the PSD is squared compared to a transfer function, hence the `√N` when plotting it in the code below):
 ```julia
-G,N = tfest(1,yn,u)
+G,N = tfest(dn)
 bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
 
-coherenceplot!(1,yn,u, subplot=3)
+coherenceplot!(dn, subplot=3)
 plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
 plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 ```
@@ -294,8 +303,9 @@ sys = c2d(tf(1,[1,2*0.1,0.1]),h)
 
 u  = randn(length(t))
 y  = sim(sys, u)
+d  = iddata(y,u,h)
 
-impulseestplot(h,y,u,50, lab="Estimate")
+impulseestplot(d,50, lab="Estimate")
 impulseplot!(sys,50, lab="True system")
 ```
 ![window](figs/impulse.svg)
@@ -322,14 +332,17 @@ sysn       = tf(σy,[1,2*0.1,0.3])
 u          = randn(nu,T)
 y          = sim(sys, u)
 yn         = y + sim(sysn, randn(size(u)))
+dn         = iddata(yn,u)
 # Validation data
 uv         = randn(nu,T)
 yv         = sim(sys, uv)
 ynv        = yv + sim(sysn, randn(size(uv)))
+dv         = iddata(yv,uv)
+dnv        = iddata(ynv,uv)
 ```
 We then fit a couple of models, the flag `difficult=true` causes `pem` to solve an initial global optimization problem with constraints on the stability of `A-KC` to provide a good guess for the gradient-based solver
 ```julia
-res = [pem(yn,u,nx=nx, iterations=100, difficult=true, focus=:prediction) for nx = [1,3,4]]
+res = [pem(dn,nx=nx, iterations=100, difficult=true, focus=:prediction) for nx = [1,3,4]]
 ```
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
 ```julia
@@ -337,8 +350,8 @@ After fitting the models, we validate the results using the validation data and 
 fig = plot(layout=4, size=(1000,600))
 for i in eachindex(res)
     (sysh,x0h,opt) = res[i]
-    simplot!( sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
-    predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
+    simplot!( sysh,dnv,x0h; subplot=1, ploty=i==1)
+    predplot!(sysh,dnv,x0h; subplot=2, ploty=i==1)
 end
 bodeplot!(ss.(getindex.(res,1)),                   ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
 bodeplot!(innovation_form.(getindex.(res,1)),      ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])

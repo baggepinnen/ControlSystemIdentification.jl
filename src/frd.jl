@@ -49,7 +49,7 @@ end
 freqvec(h,k) = LinRange(0,π/h, length(k))
 
 """
-    H, N = tfest(h,y,u, σ = 0.05)
+    H, N = tfest(data, σ = 0.05)
 
 Estimate a transfer function model using the Correlogram approach.
     Both `H` and `N` are of type `FRD` (frequency-response data).
@@ -58,7 +58,8 @@ Estimate a transfer function model using the Correlogram approach.
 - `H` = Syu/Suu             Process transfer function
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
-function tfest(h::Real,y::AbstractVector,u::AbstractVector, σ = 0.05)
+function tfest(d, σ = 0.05)
+    y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
     Syy,Suu,Syu = fft_corr(y,u,σ)
     w   = freqvec(h,Syu)
     H   = FRD(w, Syu./Suu)
@@ -80,12 +81,14 @@ end
 
 """
     κ, N = coherence(h,y,u)
+    κ, N = coherence(d)
 
 Calculates the coherence Function. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy. An estimated noise model is also returned.
 κ: Coherence function (not squared)
 N: Noise model
 """
-function coherence(h::Real,y::AbstractVector,u::AbstractVector; n = length(y)÷10, noverlap = n÷2, window=hamming)
+function coherence(d; n = length(d)÷10, noverlap = n÷2, window=hamming)
+    y,u,h = time1(output(d)), time1(input(d)), sampletime(d)
     Syy,Suu,Syu = wcfft(y,u,n=n,noverlap=noverlap,window=window)
     k = (abs2.(Syu)./(Suu.*Syy))#[end÷2+1:end]
     Sch = FRD(freqvec(h,k),k)
@@ -134,25 +137,25 @@ end
 
 @userplot Coherenceplot
 """
-coherenceplot(h,y,u)
+coherenceplot(d)
 
 Calculates and plots the coherence Function κ. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
 """
 coherenceplot
 
 @recipe function cp(p::Coherenceplot)
-    ae = ArgumentError("Call like this: coherenceplot(h,y,u), where h is sample time and y/u are vectors of equal length.")
-    length(p.args) == 3 || throw(ae)
-    h,y,u = p.args[1:3]
-    length(u) == length(y) || throw(ae)
-    h isa Number || throw(ae)
+    ae = ArgumentError("Call like this: coherenceplot(iddata), where h is sample time and y/u are vectors of equal length.")
+    length(p.args) == 1 || throw(ae)
+    d = p.args[1]
+    y,u,h = output(d), input(d), sampletime(d)
+    d isa AbstractIdData || throw(ae)
     yscale --> :identity
     xscale --> :log10
     ylims --> (0,1)
     xlabel --> "Frequency [rad/s]"
     title --> "Coherence"
     legend --> false
-    frd = coherence(h,y,u)
+    frd = coherence(d)
     @series begin
         inds = findall(x->x==0, frd.w)
         useinds = setdiff(1:length(frd.w), inds)
@@ -179,14 +182,15 @@ end
 @userplot Impulseestplot
 
 """
-impulseestplot(h,y,u,n)
+impulseestplot(data,n)
 
 Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% confidence band.
 See also `impulseestplot`
 """
 impulseestplot
 @recipe function impulseestplot(p::Impulseestplot)
-    h,y,u = p.args[1:3]
+    d = p.args[1]
+    y,u,h = output(d), input(d), sampletime(d)
     n = length(p.args) >= 4 ? p.args[4] : 25
     λ = length(p.args) >= 5 ? p.args[5] : 0
     ir,t,Σ = impulseest(h,y,u,n,λ)

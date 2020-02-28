@@ -39,11 +39,12 @@ proj(A,B) = A*B'/(B*B')
 end
 
 """
-    res = n4sid(y, u, r=:auto; verbose=false)
+    res = n4sid(data, r=:auto; verbose=false)
 
 Estimate a statespace model using the n4sid method. Returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `res.sys`.
 
 #Arguments:
+- `data`: Identification data `data = iddata(y,u)`
 - `y`: Measurements N×ny
 - `u`: Control signal N×nu
 - `r`: Rank of the model (model order)
@@ -51,15 +52,14 @@ Estimate a statespace model using the n4sid method. Returns an object of type [`
 - `i`: Algorithm parameter, generally no need to tune this
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
 """
-function n4sid(y,u,r = :auto;
+function n4sid(data::InputOutputData,r = :auto;
                     verbose=false,
-                    i = r === :auto ? min(size(y,1)÷20,20) : r+10,
+                    i = r === :auto ? min(length(data)÷20,20) : r+10,
                     γ = nothing,
-                    h = 1.0,
                     svd = svd,
                     estimator = \)
 
-
+    y, u = oftype(Matrix, output(data)'), oftype(Matrix, input(data)')
     N, l = size(y,1),size(y,2)
     m = size(u, 2)
     j = N - 2i
@@ -144,7 +144,7 @@ function n4sid(y,u,r = :auto;
         K = fill(NaN, n, l)
     end
 
-    sys = ss(A,B,C,D,h)
+    sys = ss(A,B,C,D,sampletime(data))
 
     N4SIDStateSpace(sys, Q, R, S, K, P, Xi, s.S, fve)
 end
@@ -188,11 +188,12 @@ end
 
 SysFilter(res::N4SIDStateSpace,x0=zeros(sys.nx)) = SysFilter(res,x0,zeros(eltype(x0), res.sys.ny))
 
-function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=false)
+function simulate(res::N4SIDStateSpace, d::AbstractIdData, x0=zeros(res.sys.nx); stochastic=false)
 	sys = res.sys
 	@unpack A,B,C,D,ny = sys
 	@unpack K,Q,R,P = res
 	kf = KalmanFilter(res,x0)
+	u = input(d)
 	yh = map(observations(u,u)) do (ut,_)
 		predict!(kf, ut)
 		yh = kf.C*state(kf)
@@ -202,7 +203,9 @@ function simulate(res::N4SIDStateSpace, u, x0=zeros(res.sys.nx); stochastic=fals
 end
 
 m2vv(x) = [x[:,i] for i in 1:size(x,2)]
-function predict(res::N4SIDStateSpace, y, u, x0=res.x[:,1])
+function predict(res::N4SIDStateSpace, d::AbstractIdData, x0=res.x[:,1])
+	y = output(d)
+	u = input(d)
 	sys = res.sys
 	@unpack C = sys
 	kf = KalmanFilter(res,x0)
@@ -213,7 +216,7 @@ function predict(res::N4SIDStateSpace, y, u, x0=res.x[:,1])
 end
 
 function ControlSystems.lsim(res::N4SIDStateSpace, u; x0=res.x[:,1])
-	simulate(res.sys, u, x0)
+	simulate(res.sys, input(u), x0)
 end
 
 

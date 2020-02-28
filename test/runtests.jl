@@ -21,6 +21,116 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
 @testset "ControlSystemIdentification.jl" begin
 
+    @testset "iddata" begin
+        @info "Testing iddata"
+        @testset "vectors" begin
+            T = 100
+            y = randn(T)
+            @show d = iddata(y)
+            @test d isa ControlSystemIdentification.OutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test !hasinput(d)
+            @test ControlSystemIdentification.time1(y) == y
+            @test sampletime(d) == 1
+
+            @test_nowarn plot(d)
+
+            u = randn(T)
+            @show d = iddata(y,u)
+            @test d isa ControlSystemIdentification.InputOutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test hasinput(d)
+            @test input(d) == u
+            @test ControlSystemIdentification.time1(y) == y
+            @test sampletime(d) == 1
+
+            @test_nowarn plot(d)
+        end
+
+        @testset "matrices" begin
+            T = 10
+            ny,nu = 2,3
+            y = randn(ny,T)
+            @show d = iddata(y)
+            @test d isa ControlSystemIdentification.OutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test !hasinput(d)
+            @test ControlSystemIdentification.time1(y) == y'
+            @test sampletime(d) == 1
+
+            @test_nowarn plot(d)
+
+            u = randn(nu,T)
+            @show d = iddata(y,u)
+            @test d isa ControlSystemIdentification.InputOutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test hasinput(d)
+            @test input(d) == u
+            @test sampletime(d) == 1
+
+            @test_nowarn plot(d)
+
+            u = randn(T,nu)
+            @show d = iddata(y,u,2)
+            @test d isa ControlSystemIdentification.InputOutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test hasinput(d)
+            @test input(d) == u'
+            @test ControlSystemIdentification.time1(input(d)) == u
+            @test sampletime(d) == 2
+
+            @test_nowarn plot(d)
+
+        end
+
+        @testset "vectors of vectors" begin
+            T = 100
+            ny,nu = 2,3
+            y = [randn(ny) for _ in 1:T]
+            @show d = iddata(y)
+            @test d isa ControlSystemIdentification.OutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test !hasinput(d)
+            @test ControlSystemIdentification.time1(y) == reduce(hcat,y)'
+            @test sampletime(d) == 1
+
+            @test_nowarn plot(d)
+
+            u = [randn(nu) for _ in 1:T]
+            @show d = iddata(y,u)
+            @test d isa ControlSystemIdentification.InputOutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test hasinput(d)
+            @test input(d) == u
+            @test sampletime(d) == 1
+
+            u = randn(T,nu)
+            @show d = iddata(y,u,2)
+            @test d isa ControlSystemIdentification.InputOutputData
+            @test length(d) == T
+            @test output(d) == y
+            @test hasinput(d)
+            @test input(d) == u'
+            @test ControlSystemIdentification.time1(y) == reduce(hcat,y)'
+            @test ControlSystemIdentification.time1(input(d)) == u
+            @test sampletime(d) == 2
+
+            @test_nowarn plot(d)
+
+        end
+
+
+
+    end
+
+
     @testset "n4sid" begin
         @info "Testing n4sid"
 
@@ -38,15 +148,16 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             y,t,x = lsim(G,u,1:N,x0=x0)
             @assert sum(!isfinite, y) == 0
             yn = y + 0.1randn(size(y))
-            res = n4sid(yn,u,r, γ=0.99)
+            d = iddata(yn,u)
+            res = n4sid(d,r, γ=0.99)
             @test maximum(abs, pole(res.sys)) <= 1.00001*0.99
 
-            ys = simulate(res,copy(u'),res.x[:,1])
+            ys = simulate(res,d,res.x[:,1])
             @show mean(abs2,y-ys') / mean(abs2,y)
-            ys = simulate(res,copy(u'),res.x[:,1], stochastic=true)
+            ys = simulate(res,d,res.x[:,1], stochastic=true)
             @show mean(abs2,y-ys') / mean(abs2,y)
 
-            yp = predict(res,copy(y'),copy(u'),res.x[:,1])
+            yp = predict(res,d,res.x[:,1])
             @show mean(abs2,y-yp') / mean(abs2,y)
             @test mean(abs2,y-yp') / mean(abs2,y) < 0.01
 
@@ -58,15 +169,16 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @assert sum(!isfinite, y) == 0
             ϵ = 0.01
             yn = y + ϵ*randn(size(y))
+            d = iddata(yn,u)
 
-            res = n4sid(yn,u,r)
+            res = n4sid(d,r)
             @test res.sys.nx == r
             @test sqrt.(diag(res.R)) ≈ ϵ*ones(l) rtol=0.5
             @test norm(res.S) < ϵ
 
             @test freqresptest(G, res.sys) < 0.2*m*l
 
-            res = n4sid(yn,u)
+            res = ControlSystemIdentification.n4sid(d)
             @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
             kf = KalmanFilter(res)
             @test kf isa KalmanFilter
@@ -83,7 +195,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             u = randn(N,m)
             y,t,x = lsim(G,u,1:N,x0=randn(r))
             yn = y + 0.01randn(size(y))
-            res = n4sid(yn,u,r)
+            d = iddata(yn,u)
+            res = n4sid(d,r)
             @test res.sys.A[1] ≈ a atol=0.01
             @test numvec(tf(res.sys))[1][2] ≈ b atol=0.01
             @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
@@ -112,11 +225,12 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
+        d = iddata(yn,un)
 
         # using BenchmarkTools
         # @btime begin
         # Random.seed!(0)
-        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
+        sysh,x0h,opt = pem(d,nx=nx, focus=:prediction)
         # bodeplot([sys,ss(sysh)], exp10.(range(-3, stop=log10(pi), length=150)), legend=false, ylims=(0.01,100))
         # end
         # 462ms 121 29
@@ -136,7 +250,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
+        d = iddata(yn,un)
+        sysh,x0h,opt = pem(d,nx=nx, focus=:prediction)
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
@@ -147,7 +262,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction)
+        d = iddata(yn,un)
+        @time sysh,x0h,opt = pem(d,nx=nx, focus=:prediction)
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 1 # Should depend on system gramian, but too lazy to figure out
 
@@ -160,7 +276,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        sysh,x0h,opt = pem(yn,un,nx=3nx, focus=:prediction, iterations=400)
+        d = iddata(yn,un)
+        sysh,x0h,opt = pem(d,nx=3nx, focus=:prediction, iterations=400)
         @test sysh.C*x0h ≈ sys.C*x0 atol=1
         @test Optim.minimum(opt) < 2σy^2*T # A factor of 2 margin
 
@@ -172,7 +289,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        @time sysh,x0h,opt = pem(yn,un,nx=nx, focus=:simulation)
+        d = iddata(yn,un)
+        @time sysh,x0h,opt = pem(d,nx=nx, focus=:simulation)
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.3
         @test Optim.minimum(opt) < 1
 
@@ -184,7 +302,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + sim(sysn, σu*randn(size(u)),0*x0)
         y  = sim(sys, un, x0)
         yn = y + sim(sysn, σy*randn(size(u)),0*x0)
-        sysh,x0h,opt = pem(yn,un,nx=nx, focus=:prediction, metric=e->sum(abs,e), regularizer=p->(0.1/T)*norm(p))
+        d = iddata(yn,un)
+        sysh,x0h,opt = pem(d,nx=nx, focus=:prediction, metric=e->sum(abs,e), regularizer=p->(0.1/T)*norm(p))
         # 409ms
         @test sysh.C*x0h ≈ sys.C*x0 atol=0.1
         @test Optim.minimum(opt) < 1
@@ -193,6 +312,9 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @test sum(abs2,y-yh) < 0.1
 
         yh = ControlSystemIdentification.simulate(sysh, u, x0h)
+        @test sum(abs2,y-yh) < 0.1
+
+        yh = ControlSystemIdentification.predict(sysh, iddata(yn, u), x0h)
         @test sum(abs2,y-yh) < 0.1
     end
 
@@ -217,7 +339,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @test A[:,2] == u[1:end-1]
 
         na = 1
-        Gh,Σ = arx(1,y,u,na,nb)
+        d = iddata(y,u,1)
+        Gh,Σ = arx(d,na,nb)
         @test Gh ≈ G # Should recover the original transfer function exactly
         @test freqresptest(G, Gh,0.0001)
         ω = exp10.(range(-2, stop=1, length=200))
@@ -230,7 +353,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         y2 = lsim(G2,[u u2],t)[1][:]
 
         nb = [1,1]
-        Gh2,Σ = arx(1,y2,[u u2],na,nb)
+        d = iddata(y2,[u u2],1)
+        Gh2,Σ = arx(d,na,nb)
 
 
         @test Gh2 ≈ G2
@@ -254,7 +378,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @test yr == y[na+1:end]
         @test A[:,1] == y[1:end-na]
 
-        Gh,Σ = ar(1,y,na)
+        d = iddata(y,1)
+        Gh,Σ = ar(d,na)
         @test Gh ≈ G # We should be able to recover this transfer function
 
         N = 10000
@@ -264,7 +389,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         for i = 2:N
             y[i] = 0.9y[i-1] + 0.01randn()
         end
-        Gh,Σ = ar(1,y,na)
+        d = iddata(y,1)
+        Gh,Σ = ar(d,na)
         @test Gh ≈ G atol=0.02 # We should be able to recover this transfer function
         @test freqresptest(G, Gh, 0.05)
         yh = predict(Gh,y)
@@ -284,12 +410,13 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         yn = y + e
 
         na,nb,nc = 1,1,1
+        d = iddata(yn,u,1)
         find_na(y,6)
-        find_nanb(y,u,6,6)
-        Gls,Σ = arx(1,yn,u,na,nb)
-        Gtls,Σ = arx(1,yn,u,na,nb, estimator=tls)
-        Gwtls,Σ = arx(1,yn,u,na,nb, estimator=wtls_estimator(y,na,nb))
-        Gplr, Gn = ControlSystemIdentification.plr(1,yn,u,na,nb,nc, initial_order=10)
+        find_nanb(d,6,6)
+        Gls,Σ = arx(d,na,nb)
+        Gtls,Σ = arx(d,na,nb, estimator=tls)
+        Gwtls,Σ = arx(d,na,nb, estimator=wtls_estimator(y,na,nb))
+        Gplr, Gn = ControlSystemIdentification.plr(d,na,nb,nc, initial_order=10)
         bodeconfidence(Gwtls, Σ, exp10.(range(-3, stop=log10(pi), length=150)))
         # @show Gplr, Gn
 
@@ -298,12 +425,11 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @test freqresptest(G,Gwtls) < 0.1
         @test freqresptest(G,Gplr) < 0.1
 
-
-
-        Gls,Σ = arx(1,y,u,na,nb)
-        Gtls,Σ = arx(1,y,u,na,nb, estimator=tls)
-        Gwtls,Σ = arx(1,y,u,na,nb, estimator=wtls_estimator(y,na,nb))
-        Gplr, Gn = ControlSystemIdentification.plr(1,y,u,na,nb,nc, initial_order=10)
+        d = iddata(y,u,1)
+        Gls,Σ = arx(d,na,nb)
+        Gtls,Σ = arx(d,na,nb, estimator=tls)
+        Gwtls,Σ = arx(d,na,nb, estimator=wtls_estimator(y,na,nb))
+        Gplr, Gn = ControlSystemIdentification.plr(d,na,nb,nc, initial_order=10)
 
         @test freqresptest(G,Gls) < sqrt(eps())
         @test freqresptest(G,Gtls) < sqrt(eps())
@@ -328,7 +454,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         e  = 0.0001randn(N) #+ 20randn(N) .* (rand(N) .< 0.01)
         yn = y + e    # Measurement signal with noise
 
-        model = arma(Δt,yn,na,nc, initial_order=20)
+        d = iddata(yn,Δt)
+        model = arma(d,na,nc, initial_order=20)
 
         @test numvec(model)[1] ≈ numvec(G)[1] atol=0.5
         @test denvec(model)[1] ≈ denvec(G)[1] atol=0.5
@@ -359,22 +486,24 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         u  = randn(T)
         y  = sim(sys, u)
         yn = y + sim(sysn, randn(size(u)))
+        d = iddata(y,u,h)
+        dn = iddata(yn,u,1)
 
         # using BenchmarkTools
         # @btime begin
         # Random.seed!(0)
-        k = coherence(h,y,u)
+        k = coherence(d)
         @test all(k.r .> 0.99)
-        k = coherence(h,yn,u)
+        k = coherence(dn)
         @test all(k.r[1:10] .> 0.9)
         @test k.r[end] .> 0.8
         @test k.r[findfirst(k.w .> ωn)] < 0.6
-        G,N = tfest(h,yn,u, 0.02)
+        G,N = tfest(dn, 0.02)
         noisemodel = innovation_form(ss(sys), syse=ss(sysn))
         noisemodel.D .*= 0
         bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2], size=(3*800, 600), linecolor=:blue)#, ylims=(0.1,300))
 
-        coherenceplot!(h,yn,u, subplot=3)
+        coherenceplot!(dn, subplot=3)
         plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
         plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
@@ -399,20 +528,23 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         un = u + 0.1randn(size(u))
         y  = sim(sys, u)
         yn = y + sim(sysn, σy*randn(size(u)))
+        dd = iddata(yn,un,1)
 
         uv  = randn(nu,T)
         yv  = sim(sys, uv)
         ynv = yv + sim(sysn, σy*randn(size(uv)))
+        dv = iddata(yv,uv)
+        dnv = iddata(ynv,uv)
         ##
 
-        res = [pem(yn,un,nx=nx, iterations=50, difficult=true, focus=:prediction) for nx = [1,3,4]]
+        res = [pem(dnv,nx=nx, iterations=50, difficult=true, focus=:prediction) for nx = [1,3,4]]
 
         ω = exp10.(range(-2, stop=log10(pi), length=150))
         fig = plot(layout=4, size=(1000,600))
         for i in eachindex(res)
             (sysh,x0h,opt) = res[i]
-            ControlSystemIdentification.simplot!(sysh,ynv,uv,x0h; subplot=1, ploty=i==1)
-            ControlSystemIdentification.predplot!(sysh,ynv,uv,x0h; subplot=2, ploty=i==1)
+            ControlSystemIdentification.simplot!(sysh,dnv,x0h; subplot=1, ploty=i==1)
+            ControlSystemIdentification.predplot!(sysh,dnv,x0h; subplot=2, ploty=i==1)
         end
         bodeplot!(ss.(getindex.(res,1)), ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
         bodeplot!(ControlSystems.innovation_form.(getindex.(res,1)), ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
@@ -433,7 +565,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         u  = randn(length(t))
         y  = sim(sys, u) + 0.1randn(length(t))
 
-        impulseestplot(h,y,u,Int(50/h), 0)
+        d = iddata(y,u,h)
+        impulseestplot(d,Int(50/h), 0)
         impulseplot!(sys,50, l=(:dash,:blue))
     end
 

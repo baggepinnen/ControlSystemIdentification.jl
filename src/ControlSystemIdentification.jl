@@ -2,7 +2,9 @@ module ControlSystemIdentification
 
 using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase, FFTW, Roots, MonteCarloMeasurements, LowLevelParticleFilters
 import Optim: minimizer, Options
+import ControlSystems: ninputs, noutputs
 
+export iddata, noutputs, ninputs, input, output, sampletime, hasinput
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
 export n4sid
 export getARXregressor, getARregressor, find_na, arx, ar, arma, armax, bodeconfidence, tls, wtls_estimator, plr, estimate_residuals
@@ -16,6 +18,8 @@ include("pem.jl")
 include("arx.jl")
 include("frd.jl")
 include("subspace.jl")
+
+predict(sys, d::AbstractIdData, args...) = hasinput(sys) ? predict(sys, output(d), input(d), args...) : predict(sys, output(d), args...)
 
 function predict(sys, y, u, x0=zeros(sys.nx))
 	model = SysFilter(sys, copy(x0))
@@ -31,12 +35,13 @@ Predict AR model
 """
 function predict(G::ControlSystems.TransferFunction, y)
 	_,a,_ = params(G)
-	yr,A = getARregressor(y,length(a))
+	yr,A = getARregressor(output(y),length(a))
 	yh = A*a
-	oftype(y,yh)
+	oftype(output(y),yh)
 end
 
 function simulate(sys, u, x0=zeros(sys.nx))
+	u = input(u)
 	model = SysFilter(sys, copy(x0))
 	yh = map(observations(u,u)) do (ut,_)
 		model(ut)
@@ -48,15 +53,15 @@ simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args
 
 @userplot Simplot
 """
-simplot(sys, y, u, x0=zeros(sys.nx); ploty=true)
+simplot(sys, data, x0=zeros(sys.nx); ploty=true)
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 """
 simplot
 @recipe function simplot(p::Simplot; ploty=true)
-	sys,y,u = p.args[1:3]
-	y = oftype(randn(2,2), y)
-	u = oftype(randn(2,2), u)
+	sys,d = p.args[1:2]
+	y = oftype(randn(2,2), output(d))
+	u = oftype(randn(2,2), input(d))
 	x0 = length(p.args) > 3 ? p.args[4] : zeros(sys.nx)
 	yh = simulate(sys,u, x0)
 	xguide --> "Time [s]"
@@ -76,15 +81,15 @@ end
 
 @userplot Predplot
 """
-predplot(sys, y, u, x0=zeros(sys.nx); ploty=true)
+predplot(sys, data, x0=zeros(sys.nx); ploty=true)
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 """
 predplot
 @recipe function predplot(p::Predplot; ploty=true)
-	sys,y,u = p.args[1:3]
-	y = oftype(randn(2,2), y)
-	u = oftype(randn(2,2), u)
+	sys,d = p.args[1:2]
+	y = oftype(randn(2,2), output(d))
+	u = oftype(randn(2,2), input(d))
 	x0 = length(p.args) > 3 ? p.args[4] : zeros(sys.nx)
 	yh = predict(sys,y,u, x0)
 	xguide --> "Time [s]"
@@ -103,7 +108,7 @@ predplot
 end
 
 function ControlSystems.lsim(sys::StateSpaceNoise, u; x0=zeros(sys.nx))
-	simulate(sys, u, x0)
+	simulate(sys, input(u), x0)
 end
 
 end # module
