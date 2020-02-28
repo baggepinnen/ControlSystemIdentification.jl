@@ -40,14 +40,15 @@ end
 
 iddata(y::AbstractArray,Ts::Union{Real,Nothing}=nothing) = OutputData(autodim(y),Ts)
 iddata(y::AbstractArray,u::AbstractArray,Ts::Union{Real,Nothing}=nothing) = InputOutputData(autodim(y),autodim(u),Ts)
-iddata(y::AbstractArray,u::AbstractArray,x::AbstractArray,Ts::Union{Real,Nothing}=nothing) = InputOutputData(autodim(y),autodim(u),x,Ts)
+iddata(y::AbstractArray,u::AbstractArray,x::AbstractArray,Ts::Union{Real,Nothing}=nothing) = InputOutputStateData(autodim(y),autodim(u),x,Ts)
 
 
 output(d::AbstractIdData)                        = d.y
 input(d::AbstractIdData)                         = d.u
+LowLevelParticleFilters.state(d::AbstractIdData) = d.x
 output(d::AbstractArray)                         = d
 input(d::AbstractArray)                          = d
-LowLevelParticleFilters.state(d::AbstractIdData) = d.x
+LowLevelParticleFilters.state(d::AbstractArray)  = d
 hasinput(::OutputData)                           = false
 hasinput(::AbstractIdData)                       = true
 hasinput(::AbstractArray)                        = true

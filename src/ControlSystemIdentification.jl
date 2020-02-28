@@ -4,7 +4,7 @@ using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays,
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs
 
-export iddata, noutputs, ninputs, input, output, sampletime, hasinput
+export iddata, noutputs, ninputs, nstates, input, output, sampletime, hasinput
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
 export n4sid
 export getARXregressor, getARregressor, find_na, arx, ar, arma, armax, bodeconfidence, tls, wtls_estimator, plr, estimate_residuals
