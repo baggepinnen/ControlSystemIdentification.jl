@@ -1,3 +1,68 @@
+abstract type AbstractIdData end
+
+struct InputOutputData{Y,U,T} <: AbstractIdData
+	y::Y
+	u::U
+	Ts::T
+end
+
+struct OutputData{Y,T} <: AbstractIdData
+	y::Y
+	Ts::T
+end
+
+struct InputOutputStateData{Y,U,X,T} <: AbstractIdData
+	y::Y
+	u::U
+	x::X
+	Ts::T
+end
+
+autodim(x::Vector{<:AbstractVector}) = x
+autodim(x::AbstractVector) = x
+function autodim(x)
+	r = size(x,1)
+	c = size(x,2)
+	if (c < 5 && c < r) || (r > 4c)
+		@info "Transposing input. The convention used in ControlSystemIdentification is that input-output data is made out of either of 1) Vectors with scalars, 2) vectors of vectors or 3) matrices with time along the second dimension. The supplied input appears to be multidimensional and have time in the first dimension."
+		return copy(x')
+	end
+	x
+end
+
+function Base.show(io::IO, d::OutputData)
+	write(io, "Output data of length $(length(d)) with $(noutputs(d)) outputs")
+end
+function Base.show(io::IO, d::InputOutputData)
+	write(io, "InputOutput data of length $(length(d)) with $(noutputs(d)) outputs and $(ninputs(d)) inputs")
+end
+
+
+iddata(y::AbstractArray,Ts::Union{Real,Nothing}=nothing) = OutputData(autodim(y),Ts)
+iddata(y::AbstractArray,u::AbstractArray,Ts::Union{Real,Nothing}=nothing) = InputOutputData(autodim(y),autodim(u),Ts)
+iddata(y::AbstractArray,u::AbstractArray,x::AbstractArray,Ts::Union{Real,Nothing}=nothing) = InputOutputData(autodim(y),autodim(u),x,Ts)
+
+
+output(d::AbstractIdData)                        = d.y
+input(d::AbstractIdData)                         = d.u
+output(d::AbstractArray)                         = d
+input(d::AbstractArray)                          = d
+LowLevelParticleFilters.state(d::AbstractIdData) = d.x
+hasinput(::OutputData)                           = false
+hasinput(::AbstractIdData)                       = true
+hasinput(::AbstractArray)                        = true
+hasinput(::ControlSystems.LTISystem)             = true
+ControlSystems.noutputs(d::AbstractIdData)       = obslength(d.y)
+ControlSystems.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(d.u) : 0
+obslength(d::AbstractIdData)                     = ControlSystems.noutputs(d)
+sampletime(d::AbstractIdData)                    = d.Ts === nothing ? 1.0 : d.Ts
+function Base.length(d::AbstractIdData)
+	y = output(d)
+	y isa Matrix && return size(y,2)
+	return length(y)
+end
+
+
 
 struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
 	A::MT
@@ -66,7 +131,7 @@ sysfilter!(s::SysFilter, u) = sysfilter!(s.state, s.sys, u)
 function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, y, u)
 	@unpack A,B,K,ny = sys
 	yh     = state[1:ny] #vec(sys.C*state)
-	e      = y - yh
+	e      = y .- yh
 	state .= vec(A*state + B*u + K*e)
 	yh
 end
@@ -123,7 +188,7 @@ function Base.iterate(i::PredictionErrorIterator, state=1)
 	state >= length(i) && return nothing
 	(y,u), state1 = iterate(i.oi, state)
 	yh = i.model(y,u)
-	(y-yh,state1)
+	(y.-yh,state1)
 end
 Base.length(i::PredictionErrorIterator) = length(i.oi)
 
@@ -142,3 +207,33 @@ function Base.iterate(i::SimulationErrorIterator, state=1)
 	(y-i.yh,state1)
 end
 Base.length(i::SimulationErrorIterator) = length(i.oi)
+
+@recipe function plot(d::AbstractIdData)
+	y = time1(output(d))
+	n = noutputs(d)
+	if hasinput(d)
+		u = time1(input(d))
+		n += ninputs(d)
+	end
+	layout --> n
+	legend --> false
+	xlabel --> "Time"
+	xvec = range(0,step=sampletime(d), length=length(d))
+
+	for i in 1:size(y,2)
+		@series begin
+			title --> "Output $i"
+			lab --> "Output $i"
+			xvec, y[:,i]
+		end
+	end
+	if hasinput(d)
+		for i in 1:size(u,2)
+			@series begin
+				title --> "Input $i"
+				lab --> "Input $i"
+				xvec, u[:,i]
+			end
+		end
+	end
+end

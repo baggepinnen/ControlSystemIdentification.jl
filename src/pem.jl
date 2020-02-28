@@ -32,11 +32,12 @@ end
 
 
 """
-sys, x0, opt = pem(y, u; nx, kwargs...)
+sys, x0, opt = pem(data; nx, kwargs...)
 
 System identification using the prediction error method.
 
 # Arguments:
+- `data`: iddata object containing `y` and `u`.
 - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
 - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
@@ -62,7 +63,8 @@ x0 = size(nx)
 p = [A[:];B[:];K[:];x0]
 ```
 """
-function pem(y, u; nx, solver = BFGS(), focus=:prediction, metric=sse, regularizer=p->0, iterations=100, stabilize_predictor=true, difficult=false, kwargs...)
+function pem(d; nx, solver = BFGS(), focus=:prediction, metric=sse, regularizer=p->0, iterations=100, stabilize_predictor=true, difficult=false, kwargs...)
+	y,u   = output(d),input(d)
 	nu,ny = obslength(u),obslength(y)
 
 	A       = 0.0001randn(nx,ny)

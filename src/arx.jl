@@ -35,7 +35,9 @@ function getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb)
     end
     return y,A
 end
+getARXregressor(d::AbstractIdData, na, nb) = getARXregressor(output(d),input(d), na, nb)
 
+getARregressor(y, na) = getARregressor(output(y), na)
 function getARregressor(y::AbstractVector, na)
     m    = na+1 # Start of yr
     n    = length(y) - m + 1 # Final length of yr
@@ -71,12 +73,13 @@ end
 
 @userplot Find_nanb
 """
-    find_nanb(y::AbstractVector,u,na,nb)
+    find_nanb(d::InputOutputData,na,nb)
 Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
 """
 find_nanb
 @recipe function find_nanb(p::Find_nanb; logrms=false)
-    y,u,na,nb = p.args[1:4]
+    d,na,nb = p.args[1:3]
+    y,u = output(d),input(d)
     error = zeros(na,nb, 2)
     for i = 1:na, j = 1:nb
         yt,A = getARXregressor(y,u,i,j)
@@ -105,7 +108,7 @@ end
 
 
 """
-    Gtf, Σ = arx(h,y, u, na, nb; λ = 0, estimator=\\)
+    Gtf, Σ = arx(d::AbstractIdData, na, nb; λ = 0, estimator=\\)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
 `nb` and `na` are the length of the numerator and denominator polynomials. `h` is the sample time of the data. `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
@@ -114,7 +117,8 @@ The number of free parameters is `na-1+nb`
 
 Supports MISO estimation by supplying a matrix `u` where times is first dim, with nb = [nb₁, nb₂...]
 """
-function arx(h,y::AbstractVector, u::AbstractVecOrMat, na, nb; λ = 0, estimator=\)
+function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\)
+    y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
     all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARXregressor(y,u, na, nb)
@@ -131,7 +135,8 @@ function arx(h,y::AbstractVector, u::AbstractVecOrMat, na, nb; λ = 0, estimator
     return model, Σ
 end
 
-function ar(h,y::AbstractVector, na; λ = 0, estimator=\)
+function ar(d::AbstractIdData, na; λ = 0, estimator=\)
+    y,h = time1(output(d)),sampletime(d)
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARregressor(y, na)
     w = ls(A,y_train,λ,estimator)
@@ -151,7 +156,7 @@ function ls(A,y,λ=0,estimator=\)
 end
 
 """
-G, Gn = plr(h,y,u,na,nb,nc; initial_order = 20)
+G, Gn = plr(d::AbstractIdData,na,nb,nc; initial_order = 20)
 
 Perform pseudo-linear regression to estimate a model on the form
 `Ay = Bu + Cw`
@@ -159,7 +164,8 @@ The residual sequence is estimated by first estimating a high-order arx model, w
 
 `armax` is an alias for `plr`. See also [`pem`](@ref), [`ar`](@ref), [`arx`](@ref)
 """
-function plr(h,y,u,na,nb,nc; initial_order = 20, method = :ls)
+function plr(d::AbstractIdData,na,nb,nc; initial_order = 20, method = :ls)
+    y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
     all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
@@ -189,7 +195,7 @@ const armax = plr
 
 
 """
-    model, w = arma(h, y, na, nc; initial_order=20, method=:ls)
+    model, w = arma(d::AbstractIdData, na, nc; initial_order=20, method=:ls)
 
 Estimate a Autoregressive Moving Average model with `na` coefficients in the denominator and `nc` coefficients in the numerator.
 Returns the model and the estimated noise sequence driving the system.
@@ -202,7 +208,8 @@ Returns the model and the estimated noise sequence driving the system.
 
 See also [`estimate_residuals`](@ref)
 """
-function arma(h,y,na,nc; initial_order = 20, estimator = \)
+function arma(d::AbstractIdData,na,nc; initial_order = 20, estimator = \)
+    y,h = time1(output(d)),sampletime(d)
     all(nc .<= na) || throw(DomainError(nb,"nc must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
@@ -228,6 +235,7 @@ end
 Estimate the residuals driving the dynamics of an ARMA model.
 """
 function estimate_residuals(model, y)
+    y = time1(output(y))
     eest = zeros(length(y))
     na = length(denvec(model)[1,1])-1
     nc = length(numvec(model)[1,1])
@@ -258,6 +266,7 @@ wtls_estimator(y,na,nb, σu=0)
 Create an estimator function for estimation of arx models in the presence of measurement noise. If the noise variance on the input `σu` (model errors) is known, this can be specified for increased accuracy.
 """
 function wtls_estimator(y,na,nb, σu=0)
+    y = output(y)
     rowQ = [diagm(0=>[ones(na);σu.*ones(nb);1]) for i = 1:length(y)-(na)]
     Qaa,Qay,Qyy = rowcovariance(rowQ)
     (A,y)->wtls(A,y,Qaa,Qay,Qyy)
