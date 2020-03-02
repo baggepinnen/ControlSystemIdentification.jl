@@ -12,24 +12,34 @@ function toeplitz(c,r)
 end
 
 
-obslength(y::AbstractMatrix) = size(y,1)
-obslength(y::AbstractVector) = length(y[1])
+@inline obslength(y::AbstractMatrix) = size(y,1)
+@inline obslength(y::AbstractVector) = length(y[1])
 
-Base.oftype(x::T, y::T) where T = y
-Base.oftype(x::AbstractVector, y::Vector{<:Vector}) = getindex.(y, 1)
-Base.oftype(x::Matrix, y::Vector{<:Vector}) = reduce(hcat,y)
-Base.oftype(x::Vector{<:Vector}, y::Matrix) = [y[:,i] for i in 1:size(y,2)]
+@inline Base.oftype(x::T, y::T) where T = y
+@inline Base.oftype(x::Matrix, y::Vector{<:Vector}) = reduce(hcat,y)
+@inline Base.oftype(x::Matrix, y::Vector{<:Number}) = reshape(y,1,:)
+@inline Base.oftype(x::Vector{<:Vector}, y::Matrix) = [y[:,i] for i in 1:size(y,2)]
+@inline Base.oftype(x::Vector{<:Vector}, y::Vector{<:Number}) = [[y[i]] for i in eachindex(y)]
+@inline function Base.oftype(x::Vector{<:Number}, y::Matrix)
+    size(y,1) == 1 || size(y,2) == 1 && return vec(y)
+    throw(ArgumentError("Cannot convert a matrix with both dimensions greater than 1 to a vector."))
+end
 
-Base.oftype(::Type{Matrix}, y::Vector) = y
-Base.oftype(::Type{Matrix}, y::Vector{<:Vector}) = reduce(hcat,y)
-Base.oftype(::Type{Matrix}, y::Matrix) = y
-Base.oftype(::Type{Matrix}, y::AbstractMatrix) = Matrix(y)
+@inline Base.oftype(::Type{Matrix}, y::Vector{<:Number}) = reshape(y,1,:)
+@inline Base.oftype(::Type{Matrix}, y::Vector{<:Vector}) = reduce(hcat,y)
+@inline Base.oftype(::Type{Matrix}, y::Matrix) = y
+@inline Base.oftype(::Type{Matrix}, y::AbstractMatrix) = Matrix(y)
 
 
-time1(y::Vector) = y
-time1(y::Vector{<:Vector}) = reduce(hcat,y)'
-time1(y::Matrix) = y'
-time1(y::AbstractMatrix) = Matrix(y')
+@inline time1(y::Vector) = y
+@inline time1(y::Vector{<:Vector}) = reduce(hcat,y)'
+@inline time1(y::Matrix) = y'
+@inline time1(y::AbstractMatrix) = Matrix(y')
+
+@inline time2(y::Vector) = oftype(Matrix, y)
+@inline time2(y::Vector{<:Vector}) = oftype(Matrix, y)
+@inline time2(y::Matrix) = oftype(Matrix, y)
+@inline time2(y::AbstractMatrix) = oftype(Matrix, y)
 
 
 function Base.oftype(x::Number, y::AbstractArray)

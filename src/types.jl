@@ -1,5 +1,7 @@
 abstract type AbstractIdData end
 
+const AnyInput = Union{AbstractArray, AbstractIdData}
+
 struct InputOutputData{Y,U,T} <: AbstractIdData
 	y::Y
 	u::U
@@ -55,6 +57,8 @@ hasinput(::AbstractArray)                        = true
 hasinput(::ControlSystems.LTISystem)             = true
 ControlSystems.noutputs(d::AbstractIdData)       = obslength(d.y)
 ControlSystems.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(d.u) : 0
+ControlSystems.nstates(d::AbstractIdData)        = 0
+ControlSystems.nstates(d::InputOutputStateData)  = obslength(d.x)
 obslength(d::AbstractIdData)                     = ControlSystems.noutputs(d)
 sampletime(d::AbstractIdData)                    = d.Ts === nothing ? 1.0 : d.Ts
 function Base.length(d::AbstractIdData)

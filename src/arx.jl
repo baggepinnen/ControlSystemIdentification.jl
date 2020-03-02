@@ -108,16 +108,16 @@ end
 
 
 """
-    Gtf, Σ = arx(d::AbstractIdData, na, nb; λ = 0, estimator=\\)
+    Gtf = arx(d::AbstractIdData, na, nb; λ = 0, estimator=\\, stochastic=false)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
-`nb` and `na` are the length of the numerator and denominator polynomials. `h` is the sample time of the data. `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
-The number of free parameters is `na-1+nb`
-`Σ` is the covariance matrix of the parameter estimate. See `bodeconfidence` for visualiztion of uncertainty.
+- `nb` and `na` are the length of the numerator and denominator polynomials.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
+The number of free parameters is `na+nb`
+- `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 
 Supports MISO estimation by supplying a matrix `u` where times is first dim, with nb = [nb₁, nb₂...]
 """
-function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\)
+function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\, stochastic=false)
     y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
     all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
@@ -125,26 +125,57 @@ function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\)
     w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na,nb)
     model = tf(b,a,h)
-    local Σ
-    try
-        Σ = parameter_covariance(y_train, A, w, λ)
-    catch
-        Σ = zeros(na+nb,na+nb)
+    if stochastic
+        local Σ
+        try
+            Σ = parameter_covariance(y_train, A, w, λ)
+        catch
+            return model
+        end
+        return TransferFunction(Particles, model, Σ)
     end
 
-    return model, Σ
+    return model
 end
 
-function ar(d::AbstractIdData, na; λ = 0, estimator=\)
-    y,h = time1(output(d)),sampletime(d)
+"""
+    ar(d::AbstractIdData, na; λ=0, estimator=\\, scaleB=false, stochastic=false)
+
+Estimate an AR transfer function (only poles).
+
+#Arguments:
+- `d`: iddata
+- `na`: order of the model
+- `λ`: reg param
+- `estimator`: e.g. `\\,tls,irls,rtls`
+- `scaleB`: Whether or not to scale the numberator using the variance of the prediction error.
+- `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
+"""
+function ar(d::AbstractIdData, na; λ = 0, estimator=\, scaleB=false, stochastic=false)
+    y = time1(output(d))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARregressor(y, na)
     w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na)
-    model = tf(b,vec(a),h)
-    Σ = parameter_covariance(y_train, A, w, λ)
-    return model, Σ
+    if scaleB
+        b = √mean(abs2, y_train-A*w)*b
+    end
+    model = tf(b, vec(a), sampletime(d))
+    if stochastic
+        Σ = parameter_covariance(y_train, A, w, λ)
+        return TransferFunction(Particles, model, Σ)
+    end
+    model
 end
+
+function reversal_ls(A,y)
+    n = size(A,2)
+    J = I(n)[:,end:-1:1]
+    R = A'A
+    R .= 1/2 .* (R + J*R'*J)
+    R\(A'y)
+end
+
 
 function ls(A,y,λ=0,estimator=\)
     if λ == 0
@@ -195,14 +226,13 @@ const armax = plr
 
 
 """
-    model, w = arma(d::AbstractIdData, na, nc; initial_order=20, method=:ls)
+    model = arma(d::AbstractIdData, na, nc; initial_order=20, method=:ls)
 
 Estimate a Autoregressive Moving Average model with `na` coefficients in the denominator and `nc` coefficients in the numerator.
 Returns the model and the estimated noise sequence driving the system.
 
 #Arguments:
-- `h`: Sample time
-- `y`: measurement signal
+- `d`: iddata
 - `initial_order`: An initial AR model of this order is used to estimate the residuals
 - `estimator`: A function `(A,y)->minimizeₓ(Ax-y)` default is `\` but another option is `wtls_estimator(1:length(y)-initial_order,na,nc,ones(nc))`
 
@@ -218,14 +248,52 @@ function arma(d::AbstractIdData,na,nc; initial_order = 20, estimator = \)
     w1 = A\y_train # The above seems like it should work but tests indicate that it makes performance worse, maybe exactly because it removes too much correlation in the residuals
     yhat = A*vec(w1)
     ehat = y_train - yhat
+    σ = √mean(abs2, ehat)
     ΔN = length(y)-length(ehat)
-    length(y[ΔN:end-1])
-    y_train, A = getARXregressor(y[ΔN:end-1], ehat,na,nc)
+    y2 = @view y[ΔN:end-1]
+    y_train, A = getARXregressor(y2, ehat,na,nc)
     w = estimator(A,y_train)
     a,b = params2poly(w,na,nc)
-    b[1] = 1
+    # b[1] = 1
+    b = σ*b
     model = tf(b,a,h)
     model
+end
+
+
+"""
+    arma_ssa(d::AbstractIdData, na, nc; L=nothing, estimator=\\, robust=false)
+
+DOCSTRING
+
+#Arguments:
+- `d`: iddata
+- `na`: number of denominator parameters
+- `nc`: number of numerator parameters
+- `L`: length of the lag-embedding used to separate signal and noise. `nothing` corresponds to automatic selection.
+- `estimator`: The function to solve the least squares problem. Examples `\\,tls,irls,rtls`.
+- `robust`: Use robust PCA to be resistant to outliers.
+"""
+function arma_ssa(d::AbstractIdData,na,nc; L=nothing, estimator = \, robust=false)
+    y,h = time1(output(d)),sampletime(d)
+    all(nc .<= na) || throw(DomainError(nc,"nc must be <= na"))
+    na >= 1 || throw(ArgumentError("na must be positive"))
+
+    L === nothing && (L = min(length(y) ÷ 2, 2000))
+    H = hankel(y, L)
+    if robust
+        H,_,s = rpca(H)
+        # yhat = unhankel(H)
+    else
+        s = svd(H)
+    end
+    yinds = 1:L-L÷4
+    noiseinds = L-L÷4+1:L
+    yhat = unhankel(s.U[:,yinds]*Diagonal(s.S[yinds])*s.Vt[yinds,:])
+    ehat = unhankel(s.U[:,noiseinds]*Diagonal(s.S[noiseinds])*s.Vt[noiseinds,:])
+    dhat = iddata(yhat,ehat, d.Ts)
+
+    arma(dhat,na,nc, initial_order=L÷5)
 end
 
 
@@ -324,8 +392,7 @@ Create a `TransferFunction` where the coefficients are `Particles` from [`MonteC
 # Example
 ```julia
 using MonteCarloMeasurements
-Gls,Σls = arx(Δt,y,u,na,nb)
-Glsp    = TransferFunction(Particles, Gls, Σls)
+G       = ar(d,2,stochastic=true)
 w       = exp10.(LinRange(-3,log10(π/Δt),100))
 mag     = bode(Glsp,w)[1][:]
 errorbarplot(w,mag,0.01; yscale=:log10, xscale=:log10, layout=3, subplot=1, lab="ls")
@@ -333,92 +400,28 @@ errorbarplot(w,mag,0.01; yscale=:log10, xscale=:log10, layout=3, subplot=1, lab=
 See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl)
 ```
 """
-function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, Σ, N=500)
-      wm, am, bm = ControlSystemIdentification.params(G)
+function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, Σ::AbstractMatrix, N=500)
+      wm, am, bm = params(G)
       na,nb      = length(am), length(bm)
-      p          = T(N, MvNormal(wm, Σ))
-      a,b        = ControlSystemIdentification.params2poly(p,na,nb)
+      if nb == 1 && size(Σ,1) < length(wm)
+          p = T(N, MvNormal(wm[1:end-1], Σ))
+          a,b        = params2poly(p,na)
+      else
+          p = T(N, MvNormal(wm, Σ))
+          a,b        = params2poly(p,na,nb)
+      end
       arxtf      = tf(b,a,G.Ts)
 end
 
-function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, p::AbstractMatrix)
-      wm, am, bm = ControlSystemIdentification.params(G)
-      na,nb      = length(am), length(bm)
-      p          = T(p .+ wm')
-      a,b        = ControlSystemIdentification.params2poly(p,na,nb)
-      arxtf      = tf(b,a,G.Ts)
-end
+# function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, p::AbstractMatrix)
+#       wm, am, bm = params(G)
+#       na,nb      = length(am), length(bm)
+#       p          = T(p .+ wm')
+#       a,b        = params2poly(p,na,nb)
+#       arxtf      = tf(b,a,G.Ts)
+# end
 
 function DSP.filt(tf::ControlSystems.TransferFunction, y)
     b,a = numvec(tf)[], denvec(tf)[]
     filt(b,a,y)
-end
-
-
-"""
-    bodeconfidence(arxtf::TransferFunction, Σ::Matrix, ω = logspace(0,3,200))
-Plot a bode diagram of a transfer function estimated with [`arx`](@ref) with confidence bounds on magnitude and phase.
-"""
-bodeconfidence
-
-@userplot BodeConfidence
-
-@recipe function BodeConfidence(p::BodeConfidence)
-    arxtfm = p.args[1]
-    Σ      = p.args[2]
-    ω      = length(p.args) >= 3 ? p.args[3] : exp10.(LinRange(-2,3,200))
-    L      = cholesky(Hermitian(Σ)).L
-    wm, am, bm = params(arxtfm)
-    na,nb  = length(am), length(bm)
-    mc     = 100
-    res = map(1:mc) do _
-        w             = L*randn(size(L,1)) .+ wm
-        a,b           = params2poly(w,na,nb)
-        arxtf         = tf(b,a,arxtfm.Ts)
-        mag, phase, _ = bode(arxtf, ω)
-        mag[:], phase[:]
-    end
-    magmc      = reduce(hcat, getindex.(res,1))
-    phasemc    = reduce(hcat, getindex.(res,2))
-    mag        = mean(magmc,dims=2)[:]
-    phase      = mean(phasemc,dims=2)[:]
-    # mag,phase,_ = bode(arxtfm, ω) .|> x->x[:]
-    uppermag   = getpercentile(magmc,0.95)[:]
-    lowermag   = getpercentile(magmc,0.05)[:]
-    upperphase = getpercentile(phasemc,0.95)[:]
-    lowerphase = getpercentile(phasemc,0.05)[:]
-    layout := (2,1)
-
-    @series begin
-        subplot := 1
-        title --> "ARX estimate"
-        ylabel --> "Magnitude"
-        fillrange := [lowermag, uppermag]
-        yscale --> :log10
-        xscale --> :log10
-        alpha --> 0.3
-        ω, mag
-    end
-    @series begin
-        subplot := 2
-        fillrange := [lowerphase, upperphase]
-        ylabel --> "Phase [deg]"
-        xlabel --> "Frequency [rad/s]"
-        xscale --> :log10
-        alpha --> 0.3
-        ω, phase
-    end
-    nothing
-
-end
-
-"""
-    getpercentile(x,p)
-
-calculates the `p`th percentile along dim 2
-"""
-function getpercentile(mag,p)
-    uppermag = mapslices(mag, dims=2) do magω
-        sort(magω)[round(Int,length(magω)*p)]
-    end
 end

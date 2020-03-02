@@ -1,6 +1,8 @@
 using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
 using Test, Random, LinearAlgebra, Statistics
 
+using ControlSystemIdentification: time1, time2
+
 function ⟂(x)
     u,s,v = svd(x)
     u*v
@@ -20,6 +22,33 @@ freqresptest(G,model) = maximum(abs, log10.(abs2.(freqresp(model, wtest)))-log10
 freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
 @testset "ControlSystemIdentification.jl" begin
+
+
+    @testset "Utils" begin
+        @info "Testing Utils"
+        v = zeros(2)
+        M = zeros(2,4)
+        vv = fill(v,4)
+        @test time1(v) == v
+        @test time1(M) == M'
+        @test time1(vv) == M'
+        @test time2(v) == v'
+        @test time2(M) == M
+        @test time2(vv) == M
+
+        v = zeros(2)
+        M = zeros(1,2)
+        vv = [[0.0],[0.0]]
+        for x in (v,M,vv), t in (M,vv)
+            # @show typeof(t), typeof(x)
+            @test oftype(t,t) == t
+            @test typeof(oftype(t,x)) == typeof(t)
+        end
+
+        y = randn(1,3)
+        @test ControlSystemIdentification.modelfit(y,y) == [100]
+
+    end
 
     @testset "iddata" begin
         @info "Testing iddata"
@@ -45,6 +74,8 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @test input(d) == u
             @test ControlSystemIdentification.time1(y) == y
             @test sampletime(d) == 1
+
+            @test oftype(Matrix, output(d)) == y'
 
             @test_nowarn plot(d)
         end
@@ -340,7 +371,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
         na = 1
         d = iddata(y,u,1)
-        Gh,Σ = arx(d,na,nb)
+        Gh = arx(d,na,nb)
         @test Gh ≈ G # Should recover the original transfer function exactly
         @test freqresptest(G, Gh,0.0001)
         ω = exp10.(range(-2, stop=1, length=200))
@@ -354,7 +385,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
         nb = [1,1]
         d = iddata(y2,[u u2],1)
-        Gh2,Σ = arx(d,na,nb)
+        Gh2 = arx(d,na,nb)
 
 
         @test Gh2 ≈ G2
@@ -379,7 +410,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @test A[:,1] == y[1:end-na]
 
         d = iddata(y,1)
-        Gh,Σ = ar(d,na)
+        Gh = ar(d,na)
         @test Gh ≈ G # We should be able to recover this transfer function
 
         N = 10000
@@ -390,11 +421,16 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             y[i] = 0.9y[i-1] + 0.01randn()
         end
         d = iddata(y,1)
-        Gh,Σ = ar(d,na)
+        Gh = ar(d,na)
         @test Gh ≈ G atol=0.02 # We should be able to recover this transfer function
         @test freqresptest(G, Gh, 0.05)
         yh = predict(Gh,y)
         @test rms(y[2:end]-yh) < 0.0102
+
+        Gh2 = ar(d,na,stochastic=true)
+        @test denvec(Gh2)[1][end] ≈ denvec(Gh)[1][end]
+
+
 
     end
 
@@ -413,11 +449,11 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         d = iddata(yn,u,1)
         find_na(y,6)
         find_nanb(d,6,6)
-        Gls,Σ = arx(d,na,nb)
-        Gtls,Σ = arx(d,na,nb, estimator=tls)
-        Gwtls,Σ = arx(d,na,nb, estimator=wtls_estimator(y,na,nb))
+        Gls = arx(d,na,nb)
+        Gtls = arx(d,na,nb, estimator=tls)
+        Gwtls = arx(d,na,nb, estimator=wtls_estimator(y,na,nb))
         Gplr, Gn = ControlSystemIdentification.plr(d,na,nb,nc, initial_order=10)
-        bodeconfidence(Gwtls, Σ, exp10.(range(-3, stop=log10(pi), length=150)))
+
         # @show Gplr, Gn
 
         @test freqresptest(G,Gls) < 1.5
@@ -426,9 +462,9 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @test freqresptest(G,Gplr) < 0.1
 
         d = iddata(y,u,1)
-        Gls,Σ = arx(d,na,nb)
-        Gtls,Σ = arx(d,na,nb, estimator=tls)
-        Gwtls,Σ = arx(d,na,nb, estimator=wtls_estimator(y,na,nb))
+        Gls = arx(d,na,nb)
+        Gtls = arx(d,na,nb, estimator=tls)
+        Gwtls = arx(d,na,nb, estimator=wtls_estimator(y,na,nb))
         Gplr, Gn = ControlSystemIdentification.plr(d,na,nb,nc, initial_order=10)
 
         @test freqresptest(G,Gls) < sqrt(eps())
@@ -459,12 +495,29 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
         @test numvec(model)[1] ≈ numvec(G)[1] atol=0.5
         @test denvec(model)[1] ≈ denvec(G)[1] atol=0.5
-        @test freqresptest(G,model) < 0.2
+        @test freqresptest(G,model) < 0.3
 
         uh = ControlSystemIdentification.estimate_residuals(model,yn)
         @show mean(abs2, uh-u)/mean(abs2, u)
         @test mean(abs2, uh-u)/mean(abs2, u) < 0.01
 
+    end
+
+    @testset "arma ssa" begin
+        @info "Testing arma ssa"
+
+        T = 1000
+        G = tf(1,[1,2*0.1*1,1])
+        G = c2d(G,1)
+        u = randn(T)
+        y = lsim(G,u,1:T)[1][:]
+        d = iddata(y)
+        model = ControlSystemIdentification.arma_ssa(d, 2,2, L=200)
+
+        @test numvec(model)[1] ≈ numvec(G)[1] atol=0.7
+        @test denvec(model)[1] ≈ denvec(G)[1] atol=0.2
+
+        @test freqresptest(G,model) < 2
     end
 
 
@@ -570,4 +623,23 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         impulseplot!(sys,50, l=(:dash,:blue))
     end
 
+    @testset "Spectrogram" begin
+        @info "Testing Spectrogram"
+
+        T = 1000
+        s = sin.((1:T) .* 2pi/10)
+
+
+        S1 = spectrogram(s,window=hanning)
+
+        estimator = model_spectrum(ar,1,2)
+        S2 = spectrogram(s,estimator,window=hanning)
+        @test maximum(findmax(S1.power,dims=1)[2][:] - findmax(S2.power,dims=1)[2][:]) <= CartesianIndex(1,0)
+        @test minimum(findmax(S1.power,dims=1)[2][:] - findmax(S2.power,dims=1)[2][:]) >= CartesianIndex(-1,0)
+
+        estimator = model_spectrum(arma,1,2,1)
+        S2 = spectrogram(s,estimator,window=hanning)
+        @test maximum(findmax(S1.power,dims=1)[2][:] - findmax(S2.power,dims=1)[2][:]) <= CartesianIndex(1,0)
+        @test minimum(findmax(S1.power,dims=1)[2][:] - findmax(S2.power,dims=1)[2][:]) >= CartesianIndex(-1,0)
+    end
 end
