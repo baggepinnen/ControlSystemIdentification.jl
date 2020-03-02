@@ -194,7 +194,7 @@ d  = iddata(y,u,Δt)
 
 na,nb = 1,1   # Number of polynomial coefficients
 
-Gls = arx(d,na,nb,stochastic=false) # set stochastic to true to get a trasfer function of MonteCarloMeasurements.Particles
+Gls = arx(d,na,nb,stochastic=false) # set stochastic to true to get a transfer function of MonteCarloMeasurements.Particles
 @show Gls
 # TransferFunction{ControlSystems.SisoRational{Float64}}
 #     0.8000000000000005
@@ -242,15 +242,32 @@ Gplr, Gn = plr(d,na,nb,nc, initial_order=20) # Pseudo-linear regression
 We now see that the estimate using standard least-squares is heavily biased and it is wrongly certain about the estimate (notice the ± in the transfer function coefficients). Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl). See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
+Uncertain transfer function with `Particles` coefficients can be used like any other model. Try, e.g., `nyquistplot(Gls)` to get a Nyquist plot with confidence bounds.
+
 See also function `arma` for estimation of signal models without inputs.
 
 
 ## Functions
 - `arx`: Transfer-function estimation using closed-form solution.
-- `arma` Estimate an ARMA model.
+- `ar`: Estimate an AR model.
+- `arma`: Estimate an ARMA model.
 - `plr`: Transfer-function estimation using pseudo-linear regression
-- `getARXregressor`: For low-level control over the estimation
+- `getARXregressor/getARregressor`: For low-level control over the estimation
 See docstrings for further help.
+
+## Model-based spectral estimation
+The model estimation procedures can be used to estimate spectrograms. This package extends some methods from DSP.jl to accept a estimation function as the second argument. To create a suitable such function, we provide the function `model_spectrum`. Usage is illustrated below.
+```julia
+using ControlSystemIdentification, DSP
+T  = 1000
+fs = 1
+s = sin.((1:1/fs:T) .* 2pi/10) + 0.5randn(T)
+S1 = spectrogram(s,window=hanning, fs=fs)            # Standard spectrogram
+estimator = model_spectrum(ar,fs,6)
+S2 = spectrogram(s,estimator,window=rect, fs=fs)     # Model-based spectrogram
+plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Requires the package LPVSpectral.jl
+```
+![window](figs/ar_spectrogram.svg)
 
 # Transfer-function estimation using spectral techniques
 Non-parametric estimation is provided through spectral estimation. To illustrate, we once again simulate some data:

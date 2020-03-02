@@ -21,9 +21,9 @@ function stft(s::AbstractVector{T}, estimator::Function, n::Int=length(s)>>3, no
     sig_split = arraysplit(s, n, noverlap, nfft, win)
     nout = onesided ? (nfft >> 1)+1 : nfft
     out = zeros(stfttype(T, psdonly), nout, length(sig_split))
-    r = fs*norm2
 
     freqs = onesided ? DSP.rfftfreq(nfft, fs) : DSP.fftfreq(nfft, fs)
+    r = fs*norm2/sqrt(length(freqs))
     offset = 0
     for (i,sig) in enumerate(sig_split)
         # mul!(tmp, plan, sig)
