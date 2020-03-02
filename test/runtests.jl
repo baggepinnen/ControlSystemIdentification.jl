@@ -1,6 +1,8 @@
 using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
 using Test, Random, LinearAlgebra, Statistics
 
+using ControlSystemIdentification: time1, time2
+
 function ⟂(x)
     u,s,v = svd(x)
     u*v
@@ -20,6 +22,33 @@ freqresptest(G,model) = maximum(abs, log10.(abs2.(freqresp(model, wtest)))-log10
 freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
 @testset "ControlSystemIdentification.jl" begin
+
+
+    @testset "Utils" begin
+        @info "Testing Utils"
+        v = zeros(2)
+        M = zeros(2,4)
+        vv = fill(v,4)
+        @test time1(v) == v
+        @test time1(M) == M'
+        @test time1(vv) == M'
+        @test time2(v) == v'
+        @test time2(M) == M
+        @test time2(vv) == M
+
+        v = zeros(2)
+        M = zeros(1,2)
+        vv = [[0.0],[0.0]]
+        for x in (v,M,vv), t in (M,vv)
+            # @show typeof(t), typeof(x)
+            @test oftype(t,t) == t
+            @test typeof(oftype(t,x)) == typeof(t)
+        end
+
+        y = randn(1,3)
+        @test ControlSystemIdentification.modelfit(y,y) == [100]
+
+    end
 
     @testset "iddata" begin
         @info "Testing iddata"
@@ -466,7 +495,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
         @test numvec(model)[1] ≈ numvec(G)[1] atol=0.5
         @test denvec(model)[1] ≈ denvec(G)[1] atol=0.5
-        @test freqresptest(G,model) < 0.2
+        @test freqresptest(G,model) < 0.3
 
         uh = ControlSystemIdentification.estimate_residuals(model,yn)
         @show mean(abs2, uh-u)/mean(abs2, u)
