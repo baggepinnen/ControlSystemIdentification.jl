@@ -126,6 +126,7 @@ function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\, stochastic=false)
     a,b = params2poly(w,na,nb)
     model = tf(b,a,h)
     if stochastic
+        local Σ
         try
             Σ = parameter_covariance(y_train, A, w, λ)
         catch

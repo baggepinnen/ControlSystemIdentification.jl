@@ -194,7 +194,7 @@ d  = iddata(y,u,Δt)
 
 na,nb = 1,1   # Number of polynomial coefficients
 
-Gls,Σ = arx(d,na,nb)
+Gls = arx(d,na,nb,stochastic=false) # set stochastic to true to get a trasfer function of MonteCarloMeasurements.Particles
 @show Gls
 # TransferFunction{ControlSystems.SisoRational{Float64}}
 #     0.8000000000000005
@@ -209,15 +209,15 @@ d  = iddata(yn,u,Δt)
 
 na,nb,nc = 1,1,1
 
-Gls,Σ    = arx(d,na,nb)                      # Regular least-squares estimation
-Gtls,Σ   = arx(d,na,nb, estimator=tls)       # Total least-squares estimation
-Gwtls,Σ  = arx(d,na,nb, estimator=wtls_estimator(y,na,nb)) # Weighted Total least-squares estimation
+Gls      = arx(d,na,nb, stochastic=true)     # Regular least-squares estimation
+Gtls     = arx(d,na,nb, estimator=tls)       # Total least-squares estimation
+Gwtls    = arx(d,na,nb, estimator=wtls_estimator(y,na,nb)) # Weighted Total least-squares estimation
 Gplr, Gn = plr(d,na,nb,nc, initial_order=20) # Pseudo-linear regression
 @show Gls; @show  Gtls; @show  Gwtls; @show  Gplr; @show  Gn;
-# Gls = TransferFunction{ControlSystems.SisoRational{Float64}}
-#     0.8164943522721083
-# --------------------------
-# 1.0*z - 0.6718598414253432
+# TransferFunction{ControlSystems.SisoRational{MonteCarloMeasurements.Particles{Float64,500}}}
+#     0.824 ± 0.029
+# ---------------------
+# 1.0*z - 0.713 ± 0.013
 
 # Gtls = TransferFunction{ControlSystems.SisoRational{Float64}}
 #     1.848908051191616
@@ -239,7 +239,7 @@ Gplr, Gn = plr(d,na,nb,nc, initial_order=20) # Pseudo-linear regression
 # --------------------------
 # 1.0*z - 0.8896345125395438
 ```
-We now see that the estimate using standard least-squares is heavily biased. Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl). See the [example notebooks](
+We now see that the estimate using standard least-squares is heavily biased and it is wrongly certain about the estimate (notice the ± in the transfer function coefficients). Regular Total least-squares does not work well in this example, since not all variables in the regressor contain equally much noise. Weighted total least-squares does a reasonable job at recovering the true model. Pseudo-linear regression also fares okay, while simultaneously estimating a noise model. The helper function `wtls_estimator(y,na,nb)` returns a function that performs `wtls` using appropriately sized covariance matrices, based on the length of `y` and the model orders. Weighted total least-squares estimation is provided by [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl). See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 See also function `arma` for estimation of signal models without inputs.
@@ -247,9 +247,9 @@ See also function `arma` for estimation of signal models without inputs.
 
 ## Functions
 - `arx`: Transfer-function estimation using closed-form solution.
+- `arma` Estimate an ARMA model.
 - `plr`: Transfer-function estimation using pseudo-linear regression
 - `getARXregressor`: For low-level control over the estimation
-- `bodeconfidence(G::TransferFunction, Σ)`: Plot estimated transfer function with uncertainty bands.
 See docstrings for further help.
 
 # Transfer-function estimation using spectral techniques
