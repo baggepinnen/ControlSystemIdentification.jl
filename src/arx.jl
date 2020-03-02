@@ -270,8 +270,8 @@ DOCSTRING
 - `na`: number of denominator parameters
 - `nc`: number of numerator parameters
 - `L`: length of the lag-embedding used to separate signal and noise. `nothing` corresponds to automatic selection.
-- `estimator`: The function to solve the least squares problem. Examples `\,tls,irls,rtls`.
-- `robust`: Use robust PCA to be resistant to outliers. 
+- `estimator`: The function to solve the least squares problem. Examples `\\,tls,irls,rtls`.
+- `robust`: Use robust PCA to be resistant to outliers.
 """
 function arma_ssa(d::AbstractIdData,na,nc; L=nothing, estimator = \, robust=false)
     y,h = time1(output(d)),sampletime(d)
