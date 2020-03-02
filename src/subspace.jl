@@ -59,7 +59,7 @@ function n4sid(data::InputOutputData,r = :auto;
                     svd = svd,
                     estimator = \)
 
-    y, u = oftype(Matrix, output(data)'), oftype(Matrix, input(data)')
+    y, u = time1(output(data)), time1(input(data))
     N, l = size(y,1),size(y,2)
     m = size(u, 2)
     j = N - 2i

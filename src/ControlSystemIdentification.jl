@@ -2,13 +2,15 @@ module ControlSystemIdentification
 
 using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase, FFTW, Roots, MonteCarloMeasurements, LowLevelParticleFilters
 import Optim: minimizer, Options
-import ControlSystems: ninputs, noutputs
+import ControlSystems: ninputs, noutputs, nstates
 
 export iddata, noutputs, ninputs, nstates, input, output, sampletime, hasinput
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
 export n4sid
-export getARXregressor, getARregressor, find_na, arx, ar, arma, armax, bodeconfidence, tls, wtls_estimator, plr, estimate_residuals
+export getARXregressor, getARregressor, find_na, arx, ar, arma, arma_ssa, armax, bodeconfidence, tls, wtls_estimator, plr, estimate_residuals
 export FRD, tfest, coherence, coherenceplot, simplot, simplot!, predplot, predplot!
+
+export model_spectrum
 
 export KalmanFilter
 
@@ -18,6 +20,7 @@ include("pem.jl")
 include("arx.jl")
 include("frd.jl")
 include("subspace.jl")
+include("spectrogram.jl")
 
 predict(sys, d::AbstractIdData, args...) = hasinput(sys) ? predict(sys, output(d), input(d), args...) : predict(sys, output(d), args...)
 

@@ -20,7 +20,7 @@ Base.oftype(x::AbstractVector, y::Vector{<:Vector}) = getindex.(y, 1)
 Base.oftype(x::Matrix, y::Vector{<:Vector}) = reduce(hcat,y)
 Base.oftype(x::Vector{<:Vector}, y::Matrix) = [y[:,i] for i in 1:size(y,2)]
 
-Base.oftype(::Type{Matrix}, y::Vector) = y
+Base.oftype(::Type{Matrix}, y::Vector) = y'
 Base.oftype(::Type{Matrix}, y::Vector{<:Vector}) = reduce(hcat,y)
 Base.oftype(::Type{Matrix}, y::Matrix) = y
 Base.oftype(::Type{Matrix}, y::AbstractMatrix) = Matrix(y)
