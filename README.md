@@ -1,6 +1,6 @@
 # ControlSystemIdentification
 
-[![Build Status](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl.svg?branch=master)](https://travis-ci.org/baggepinnen/ControlSystemIdentification.jl)
+[![CI](https://github.com/baggepinnen/ControlSystemIdentification.jl/workflows/CI/badge.svg)](https://github.com/baggepinnen/ControlSystemIdentification.jl/actions)
 [![PkgEval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/C/ControlSystemIdentification.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
