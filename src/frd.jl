@@ -15,14 +15,26 @@ struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
 end
 
 FRD(w, s::LTISystem) = FRD(w, freqresp(s,w)[:,1,1])
-import Base: +, -, *, length, sqrt
+import Base: +, -, *, length, sqrt, getindex
 Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
 +(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
 -(f::FRD, f2)    = FRD(f.w, f.r .- vec(f2))
 -(f::FRD)        = FRD(f.w, -f.r)
 length(f::FRD)   = length(f.w)
+Base.size(f::FRD)   = (1,1) # Size in the ControlSystems sense
+Base.lastindex(f::FRD) = length(f)
+function Base.getproperty(f::FRD, s::Symbol)
+    s === :Ts && return 1/((f.w[2]-f.w[2])/(2π))
+    getfield(f,s)
+end
+ControlSystems.noutputs(f::FRD) = 1
+ControlSystems.ninputs(f::FRD) = 1
+
 sqrt(f::FRD)     = FRD(f.w, sqrt.(f.r))
+getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
+getindex(f::FRD, i::Int) = f.r[i]
+getindex(f::FRD, i::Int, j::Int) = (@assert(i==1 && j==1); f)
 
 feedback(P::FRD,K) = FRD(P.w,vec(P)./(1. .+ vec(P).*vec(K)))
 feedback(P,K::FRD) = FRD(K.w,vec(P)./(1. .+ vec(P).*vec(K)))
@@ -31,17 +43,17 @@ feedback(P::FRD,K::FRD) = feedback(P,vec(K))
 feedback(P::FRD,K::LTISystem) = feedback(P,freqresp(K,P.w)[:,1,1])
 feedback(P::LTISystem,K::FRD) = feedback(freqresp(P,K.w)[:,1,1],K)
 
-@recipe function plot_frd(frd::FRD)
+@recipe function plot_frd(frd::FRD; hz=false)
     yscale --> :log10
     xscale --> :log10
-    xlabel --> "Frequency [rad/s]"
+    xlabel --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     ylabel --> "Magnitude"
     title --> "Bode Plot"
     legend --> false
     @series begin
         inds = findall(x->x==0, frd.w)
         useinds = setdiff(1:length(frd.w), inds)
-        frd.w[useinds], abs.(frd.r[useinds])
+        (hz ? 1/(2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
     end
     nothing
 end
@@ -137,29 +149,35 @@ end
 
 @userplot Coherenceplot
 """
-coherenceplot(d)
+coherenceplot(d; hz=false)
 
 Calculates and plots the coherence Function κ. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
+
+`hz` indicates Hertz instead of rad/s
 """
 coherenceplot
 
-@recipe function cp(p::Coherenceplot)
+@recipe function cp(p::Coherenceplot; hz=false)
     ae = ArgumentError("Call like this: coherenceplot(iddata), where h is sample time and y/u are vectors of equal length.")
-    length(p.args) == 1 || throw(ae)
     d = p.args[1]
-    y,u,h = output(d), input(d), sampletime(d)
     d isa AbstractIdData || throw(ae)
+    if length(p.args) >= 2
+        kwargs = p.args[2]
+    else
+        kwargs = NamedTuple()
+    end
+    y,u,h = output(d), input(d), sampletime(d)
     yscale --> :identity
     xscale --> :log10
     ylims --> (0,1)
-    xlabel --> "Frequency [rad/s]"
+    xlabel --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     title --> "Coherence"
     legend --> false
-    frd = coherence(d)
+    frd = coherence(d; kwargs...)
     @series begin
         inds = findall(x->x==0, frd.w)
         useinds = setdiff(1:length(frd.w), inds)
-        frd.w[useinds], abs.(frd.r[useinds])
+        (hz ? 1/(2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
     end
     nothing
 end
@@ -191,8 +209,8 @@ impulseestplot
 @recipe function impulseestplot(p::Impulseestplot)
     d = p.args[1]
     y,u,h = output(d), input(d), sampletime(d)
-    n = length(p.args) >= 4 ? p.args[4] : 25
-    λ = length(p.args) >= 5 ? p.args[5] : 0
+    n = length(p.args) >= 2 ? p.args[2] : 25
+    λ = length(p.args) >= 3 ? p.args[3] : 0
     ir,t,Σ = impulseest(h,y,u,n,λ)
     title --> "Estimated Impulse Response"
     xlabel --> "Time [s]"
