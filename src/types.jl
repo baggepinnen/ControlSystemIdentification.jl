@@ -26,7 +26,7 @@ function autodim(x)
 	r = size(x,1)
 	c = size(x,2)
 	if (c < 5 && c < r) || (r > 4c)
-		@info "Transposing input. The convention used in ControlSystemIdentification is that input-output data is made out of either of 1) Vectors with scalars, 2) vectors of vectors or 3) matrices with time along the second dimension. The supplied input appears to be multidimensional and have time in the first dimension."
+		@info "Transposing input. The convention used in ControlSystemIdentification is that input-output data is made out of either of 1) Vectors with scalars, 2) vectors of vectors or 3) matrices with time along the second dimension. The supplied input appears to be multidimensional and have time in the first dimension." maxlog=3
 		return copy(x')
 	end
 	x
@@ -222,13 +222,13 @@ Base.length(i::SimulationErrorIterator) = length(i.oi)
 	end
 	layout --> n
 	legend --> false
-	xlabel --> "Time"
+	xguide --> "Time"
 	xvec = range(0,step=sampletime(d), length=length(d))
 
 	for i in 1:size(y,2)
 		@series begin
 			title --> "Output $i"
-			lab --> "Output $i"
+			label --> "Output $i"
 			xvec, y[:,i]
 		end
 	end
@@ -236,7 +236,7 @@ Base.length(i::SimulationErrorIterator) = length(i.oi)
 		for i in 1:size(u,2)
 			@series begin
 				title --> "Input $i"
-				lab --> "Input $i"
+				label --> "Input $i"
 				xvec, u[:,i]
 			end
 		end

@@ -15,7 +15,7 @@ end
 @inline obslength(y::AbstractMatrix) = size(y,1)
 @inline obslength(y::AbstractVector) = length(y[1])
 
-@inline Base.oftype(x::T, y::T) where T = y
+# @inline Base.oftype(x::T, y::T) where T = y
 @inline Base.oftype(x::Matrix, y::Vector{<:Vector}) = reduce(hcat,y)
 @inline Base.oftype(x::Matrix, y::Vector{<:Number}) = reshape(y,1,:)
 @inline Base.oftype(x::Vector{<:Vector}, y::Matrix) = [y[:,i] for i in 1:size(y,2)]
