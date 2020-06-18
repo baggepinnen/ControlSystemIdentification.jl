@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "0.2.2"
+version = "0.2.3"
 
 [deps]
 ControlSystems = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
@@ -26,7 +26,7 @@ FFTW = "1.1"
 FillArrays = "<0.9"
 LowLevelParticleFilters = "0.4.4"
 MonteCarloMeasurements = "0.1.2, 0.4, 0.5, <1"
-Optim = "<0.20, 0.20"
+Optim = "<0.20, 0.20, 0.21"
 Parameters = "<0.13"
 RecipesBase = "<0.8, 0.8, 1.0"
 Roots = "<0.9, 1.0"
