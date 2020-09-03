@@ -67,6 +67,22 @@ function Base.length(d::AbstractIdData)
 	return length(y)
 end
 
+function DSP.resample(d::OutputData, f)
+	iddata(resample(d.y, f), d.Ts/f)
+end
+
+"""
+	dr = resample(d::InputOutputData, f)
+
+Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
+"""
+function DSP.resample(d::InputOutputData, f)
+	iddata(resample(d.y, f), resample(d.u, f), d.Ts/f)
+end
+
+function DSP.resample(d::InputOutputStateData, f)
+	iddata(resample(d.y, f), resample(d.u, f), resample(d.x, f), d.Ts/f)
+end
 
 
 struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
@@ -95,6 +111,7 @@ ControlSystems.isstable(s::StateSpaceNoise) = all(abs(e) <= 1 for e in eigvals(s
 # Base.size(sys::StateSpaceNoise) = (noutputs(sys), ninputs(sys)) # NOTE: or just size(get_D(sys))
 # Base.size(sys::StateSpaceNoise, d) = d <= 2 ? size(sys)[d] : 1
 Base.eltype(::Type{S}) where {S<:StateSpaceNoise} = S
+ControlSystems.numeric_type(::Type{<:StateSpaceNoise{T}}) where {T} = T
 Base.convert(::Type{StateSpace}, sys::StateSpaceNoise) = ss(sys.A, sys.B, sys.C, 0, sys.Ts)
 ControlSystems.ss(sys::StateSpaceNoise) = convert(StateSpace,sys)
 ControlSystems.tf(sys::StateSpaceNoise) = tf(ss(sys))
