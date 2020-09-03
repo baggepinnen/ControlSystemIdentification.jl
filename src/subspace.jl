@@ -56,8 +56,8 @@ function n4sid(data::InputOutputData,r = :auto;
                     verbose=false,
                     i = r === :auto ? min(length(data)÷20,20) : r+10,
                     γ = nothing,
-                    svd = svd,
-                    estimator = \)
+                    svd::F1 = svd,
+                    estimator::F2 = \) where {F1,F2}
 
     y, u = time1(output(data)), time1(input(data))
     N, l = size(y,1),size(y,2)

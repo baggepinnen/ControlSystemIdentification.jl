@@ -92,10 +92,9 @@ end
 
 
 """
-    κ, N = coherence(h,y,u)
-    κ, N = coherence(d)
+    κ = coherence(d; n = length(d)÷10, noverlap = n÷2, window=hamming)
 
-Calculates the coherence Function. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy. An estimated noise model is also returned.
+Calculates the magnitude-squared coherence Function. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
 κ: Coherence function (not squared)
 N: Noise model
 """
@@ -149,11 +148,13 @@ end
 
 @userplot Coherenceplot
 """
-coherenceplot(d; hz=false)
+coherenceplot(d, [(;n=..., noverlap=...); hz=false)
 
-Calculates and plots the coherence Function κ. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
+Calculates and plots the (squared) coherence Function κ. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
 
 `hz` indicates Hertz instead of rad/s
+
+Keyword arguments to `coherence` are supplied as a named tuple as a second positional argument .
 """
 coherenceplot
 
@@ -170,7 +171,7 @@ coherenceplot
     yscale --> :identity
     xscale --> :log10
     ylims --> (0,1)
-    xlabel --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
+    xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     title --> "Coherence"
     legend --> false
     frd = coherence(d; kwargs...)

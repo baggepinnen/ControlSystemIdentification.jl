@@ -54,7 +54,7 @@ System identification using the prediction error method.
 - `x0`: Estimated initial state
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 
-## Structure of parameter vecotr `p`
+## Structure of parameter vector `p`
 ```julia
 A = size(nx,ny)
 B = size(nx,nu)
@@ -63,43 +63,65 @@ x0 = size(nx)
 p = [A[:];B[:];K[:];x0]
 ```
 """
-function pem(d; nx, solver = BFGS(), focus=:prediction, metric=sse, regularizer=p->0, iterations=100, stabilize_predictor=true, difficult=false, kwargs...)
-	y,u   = output(d),input(d)
-	nu,ny = obslength(u),obslength(y)
+function pem(
+    d;
+    nx,
+    solver              = BFGS(),
+    focus               = :prediction,
+    metric              = sse,
+    regularizer         = p -> 0,
+    iterations          = 100,
+    stabilize_predictor = true,
+    difficult           = false,
+    A                   = 0.0001randn(nx, ny),
+    B                   = 0.001randn(nx, nu),
+    K                   = 0.001randn(nx, ny),
+    x0                  = 0.001randn(nx),
+    kwargs...,
+)
+    y, u = output(d), input(d)
+    nu, ny = obslength(u), obslength(y)
 
-	A       = 0.0001randn(nx,ny)
-	B       = 0.001randn(nx,nu)
-	K       = 0.001randn(nx,ny)
-	x0      = 0.001randn(nx)
-	p       = [A[:];B[:];K[:];x0]
-	options = Options(;iterations=iterations, kwargs...)
-	cfp     = p->pem_costfun(p,y,u,nx,metric) + regularizer(p)
-	if difficult
-		stabilizer = p-> 10000*!stabfun(nx,nu,ny)(p)
-		options0 = Options(;iterations=iterations, kwargs...)
-		opt = optimize(p->cfp(p)+stabilizer(p), 1000p, ParticleSwarm(n_particles=100length(p)), options0)
-		p = minimizer(opt)
-	end
-	opt     = optimize(cfp, p, solver, options; autodiff = :forward)
-	println(opt)
-	if focus == :simulation
-		@info "Focusing on simulation"
-		cf = p->sem_costfun(p,y,u,nx,metric) + regularizer(p)
-		opt = optimize(cf, minimizer(opt), NewtonTrustRegion(), Options(;iterations=iterations÷2, kwargs...); autodiff = :forward)
-		println(opt)
-	end
-	model = model_from_params(minimizer(opt), nx, ny, nu)
-	if !isstable(model.sys)
-		@warn("Estimated system does not have a stable prediction filter (A-KC)")
-		if stabilize_predictor
-			@info("Stabilizing predictor")
-			# model = stabilize(model)
-			model = stabilize(model, solver, options, cfp)
-		end
-	end
-	isstable(ss(model.sys)) || @warn("Estimated system is not stable")
+    p = [A[:]; B[:]; K[:]; x0]
+    options = Options(; iterations = iterations, kwargs...)
+    cost_pred = p -> pem_costfun(p, y, u, nx, metric) + regularizer(p)
+    if difficult
+        stabilizer = p -> 10000 * !stabfun(nx, nu, ny)(p)
+        options0 = Options(; iterations = iterations, kwargs...)
+        opt = optimize(
+            p -> cost_pred(p) + stabilizer(p),
+            1000p,
+            ParticleSwarm(n_particles = 100length(p)),
+            options0,
+        )
+        p = minimizer(opt)
+    end
+    opt = optimize(cost_pred, p, solver, options; autodiff = :forward)
+    println(opt)
+    if focus == :simulation
+        @info "Focusing on simulation"
+        cost_sim = p -> sem_costfun(p, y, u, nx, metric) + regularizer(p)
+        opt = optimize(
+            cost_sim,
+            minimizer(opt),
+            NewtonTrustRegion(),
+            Options(; iterations = iterations ÷ 2, kwargs...);
+            autodiff = :forward,
+        )
+        println(opt)
+    end
+    model = model_from_params(minimizer(opt), nx, ny, nu)
+    if !isstable(model.sys)
+        @warn("Estimated system does not have a stable prediction filter (A-KC)")
+        if stabilize_predictor
+            @info("Stabilizing predictor")
+            # model = stabilize(model)
+            model = stabilize(model, solver, options, cost_pred)
+        end
+    end
+    isstable(ss(model.sys)) || @warn("Estimated system is not stable")
 
-	model.sys, copy(model.state), opt
+    model.sys, copy(model.state), opt
 end
 
 function stabilize(model)
