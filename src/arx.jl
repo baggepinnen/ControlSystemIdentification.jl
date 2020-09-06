@@ -91,8 +91,8 @@ find_nanb
     seriestype --> :heatmap
     xticks := (1:nb, 1:nb)
     yticks := (1:na, 1:na)
-    ylabel := "na"
-    xlabel := "nb"
+    yguide := "na"
+    xguide := "nb"
     @series begin
         title := "RMS error"
         subplot := 1
@@ -119,7 +119,7 @@ Supports MISO estimation by supplying a matrix `u` where times is first dim, wit
 """
 function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\, stochastic=false)
     y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
-    all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
+    # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARXregressor(y,u, na, nb)
     w = ls(A,y_train,λ,estimator)

@@ -46,8 +46,8 @@ feedback(P::LTISystem,K::FRD) = feedback(freqresp(P,K.w)[:,1,1],K)
 @recipe function plot_frd(frd::FRD; hz=false)
     yscale --> :log10
     xscale --> :log10
-    xlabel --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
-    ylabel --> "Magnitude"
+    xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
+    yguide --> "Magnitude"
     title --> "Bode Plot"
     legend --> false
     @series begin
@@ -214,7 +214,7 @@ impulseestplot
     λ = length(p.args) >= 3 ? p.args[3] : 0
     ir,t,Σ = impulseest(h,y,u,n,λ)
     title --> "Estimated Impulse Response"
-    xlabel --> "Time [s]"
+    xguide --> "Time [s]"
 
     @series begin
         label --> ""
