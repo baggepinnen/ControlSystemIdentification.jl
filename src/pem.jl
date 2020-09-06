@@ -73,9 +73,9 @@ function pem(
     iterations          = 100,
     stabilize_predictor = true,
     difficult           = false,
-    A                   = 0.0001randn(nx, ny),
-    B                   = 0.001randn(nx, nu),
-    K                   = 0.001randn(nx, ny),
+    A                   = 0.0001randn(nx, obslength(output(d))),
+    B                   = 0.001randn(nx, obslength(input(d))),
+    K                   = 0.001randn(nx, obslength(output(d))),
     x0                  = 0.001randn(nx),
     kwargs...,
 )
