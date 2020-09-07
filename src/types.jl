@@ -67,23 +67,29 @@ function Base.length(d::AbstractIdData)
 	return length(y)
 end
 
-function DSP.resample(d::OutputData, f)
-	iddata(resample(d.y, f), d.Ts/f)
+function apply_fun(fun, d::OutputData)
+	iddata(fun(d.y), d.Ts/f)
 end
 
 """
-	dr = resample(d::InputOutputData, f)
+	apply_fun(fun, d::InputOutputData)
+
+Apply `fun(y)` to all time series `y[,u,[x]] ∈ d` and return a new `iddata` with the transformed series.
+"""
+function apply_fun(fun, d::InputOutputData)
+	iddata(fun(d.y), fun(d.u), d.Ts/f)
+end
+
+function apply_fun(fun, d::InputOutputStateData)
+	iddata(fun(d.y), fun(d.u), fun(d.x), d.Ts/f)
+end
+
+"""
+dr = resample(d::InputOutputData, f)
 
 Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
 """
-function DSP.resample(d::InputOutputData, f)
-	iddata(resample(d.y, f), resample(d.u, f), d.Ts/f)
-end
-
-function DSP.resample(d::InputOutputStateData, f)
-	iddata(resample(d.y, f), resample(d.u, f), resample(d.x, f), d.Ts/f)
-end
-
+DSP.resample(d::AbstractIdData, f) = apply_fun(y->resample(y,f), d, f)
 
 struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
 	A::MT
