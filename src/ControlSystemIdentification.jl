@@ -4,9 +4,9 @@ using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays,
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates
 
-export iddata, noutputs, ninputs, nstates, input, output, sampletime, hasinput
+export iddata, noutputs, ninputs, nstates, input, output, sampletime, hasinput, apply_fun, resample
 export StateSpaceNoise, pem, simulation_errors, prediction_errors, predict, simulate, noise_model
-export n4sid
+export n4sid, era, okid
 export getARXregressor, getARregressor, find_na, arx, ar, arma, arma_ssa, armax, bodeconfidence, tls, wtls_estimator, plr, estimate_residuals
 export FRD, tfest, coherence, coherenceplot, simplot, simplot!, predplot, predplot!
 

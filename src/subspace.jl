@@ -227,3 +227,115 @@ function LowLevelParticleFilters.KalmanFilter(res::N4SIDStateSpace, x0=res.x[:,1
 	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
 	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
 end
+
+
+
+##
+"""
+    era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int, n::Int)
+
+Eigenvalue realization algorithm.
+
+# Arguments:
+- `YY`: Markov parameters (impulse response) size `n_out×n_in×n_time`
+- `Ts`: Sample time
+- `r`: Model order
+- `m`: Number of rows in Hankel matrix
+- `n`: Number of columns in Hankel matrix
+"""
+function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
+	nout, nin, T = size(YY)
+	size(YY,3) >= m+n || throw(ArgumentError("hankel size too large for input size. $(size(YY,3)) < m+n ($(m+n))"))
+
+	Dr = similar(YY, nout, nin)
+	Y = similar(YY, nout, nin, T-1)
+	for i=1:nout
+		for j=1:nin
+			Dr[i,j] = YY[i,j,1]
+			Y[i,j,:] = YY[i,j,2:end]
+		end
+	end
+	H,H2 = similar(YY, m, n), similar(YY, m, n)
+	for i=1:m
+		for j=1:n
+			for Q=1:nout
+				for P=1:nin
+					H[nout*i-nout+Q, nin*j-nin+P] = Y[Q, P, i+j-1]
+					H2[nout*i-nout+Q, nin*j-nin+P] = Y[Q, P, i+j]
+				end
+			end
+		end
+	end
+	U,S,V = svd(H)
+	Ur = U[:,1:r]
+	Vr = V[:,1:r]
+	S2 = Diagonal(1 ./ sqrt.(S[1:r]))
+	Ar = S2*Ur'H2*Vr*S2
+	Br = S2*Ur'H[:,1:nin]
+	Cr = H[1:nout,:]*Vr*S2
+	ss(Ar,Br,Cr,Dr,Ts === nothing ? 1 : Ts)
+end
+
+"""
+    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r)
+
+Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as an initial step.
+
+# Arguments:
+- `r`: Model order
+- `l`: Number of Markov parameters to estimate.
+"""
+era(d::AbstractIdData, r, m=2r, n=2r, l=5r) = era(okid(d,r,l),d.Ts,r,m,n)
+
+
+"""
+    okid(d::AbstractIdData, r, l = 5r)
+
+Observer Kalman filter identification
+
+# Arguments:
+- `r`: Model order
+- `l`: Number of Markov parameters to estimate.
+"""
+function okid(d::AbstractIdData, r, l = 5r)
+	y, u = time2(output(d)), time2(input(d))
+	p,m = size(y) # p is the number of outputs
+	q = size(u,1) # q is the number of inputs
+	# Step 1, choose impulse length l (5 times system order r)
+
+	# Step 2, form y, V, solve for observer Markov params, Ybar
+	V = zeros(q + (q+p)*l,m)
+	for i=1:m
+		V[1:q,i] = u[1:q,i]
+	end
+	for i=2:l+1
+		for j=1:m+1-i
+			vtemp = [u[:,j];y[:,j]]
+			V[q+(i-2)*(q+p)+1:q+(i-1)*(q+p),i+j-1] = vtemp
+		end
+	end
+	Ybar = y*pinv(V)
+	# Ybar = y/V
+	# Ybar = ls(V', y')'
+	# Step 3, isolate system Markov parameters H
+	D = Ybar[:,1:q] # Feed-through term (D) is first term
+	Ybar1, Ybar2 = similar(Ybar, p, q, l), similar(Ybar, p, q, l)
+	for i=1:l
+		Ybar1[1:p,1:q,i] = Ybar[:,q+1+(q+p)*(i-1):q+(q+p)*(i-1)+q]
+		Ybar2[1:p,1:q,i] = Ybar[:,q+1+(q+p)*(i-1)+q:q+(q+p)*i]
+	end
+	Y = similar(Ybar, p, q, l)
+	Y[:,:,1] = Ybar1[:,:,1] + Ybar2[:,:,1]*D
+	for k=2:l
+		Y[:,:,k] = Ybar1[:,:,k] + Ybar2[:,:,k]*D
+		for i=1:k-1
+			Y[:,:,k] = Y[:,:,k] + Ybar2[:,:,i]*Y[:,:,k-i]
+		end
+	end
+	H = similar(D, size(D)..., l+1)
+	H[:,:,1] = D
+	for k=2:l+1
+		H[:,:,k] = Y[:,:,k-1]
+	end
+	H
+end

@@ -179,7 +179,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             y,t,x = lsim(G,u,1:N,x0=x0)
             @assert sum(!isfinite, y) == 0
             yn = y + 0.1randn(size(y))
-            d = iddata(yn,u)
+            d = iddata(yn,u,1)
             res = n4sid(d,r, γ=0.99)
             @test maximum(abs, pole(res.sys)) <= 1.00001*0.99
 
@@ -206,8 +206,16 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @test res.sys.nx == r
             @test sqrt.(diag(res.R)) ≈ ϵ*ones(l) rtol=0.5
             @test norm(res.S) < ϵ
-
             @test freqresptest(G, res.sys) < 0.2*m*l
+
+            iy,it,ix = impulse(G, 20)
+            H = okid(d,r,20)
+            @test norm(iy-vec(H))< 0.05
+            plot([iy vec(H)])
+
+            sys = era(d,r)
+            @test sys.nx == r
+            @test freqresptest(G, sys) < 0.2*m*l
 
             res = ControlSystemIdentification.n4sid(d)
             @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low

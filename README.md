@@ -30,6 +30,11 @@ Estimate a statespace model using the n4sid method. Returns an object of type `N
 - `i`: Algorithm parameter, generally no need to tune this
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
 
+### ERA and OKID
+See
+- `sys = era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r)`
+- `H   = okid(d::AbstractIdData, r, l = 5r)`
+
 ### Filtering and simulation
 Models can be simulated using `lsim` from ControlSystems.jl and using `simulate`. You may also convert the model to a `KalmanFilter` from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
 
@@ -117,13 +122,13 @@ s2,G = balreal(s) # Form balanced representation (obs. and ctrb. Gramians are th
 diag(G)           # Singular values of Gramians
 
 # 9-element Array{Float64,1}:
-#  3.5972307807882844    
-#  0.19777167699663994   
-#  0.0622528285731599    
-#  0.004322765397504325  
-#  0.004270259700592557  
-#  0.003243449461350837  
-#  0.003150873301312319  
+#  3.5972307807882844
+#  0.19777167699663994
+#  0.0622528285731599
+#  0.004322765397504325
+#  0.004270259700592557
+#  0.003243449461350837
+#  0.003150873301312319
 #  0.0005827927965893053
 #  0.00029732262107216666
 ```
