@@ -177,19 +177,19 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             u = randn(N,m)
             x0 = randn(r)
             y,t,x = lsim(G,u,1:N,x0=x0)
-            @assert sum(!isfinite, y) == 0
+            @test sum(!isfinite, y) == 0
             yn = y + 0.1randn(size(y))
             d = iddata(yn,u,1)
             res = n4sid(d,r, γ=0.99)
             @test maximum(abs, pole(res.sys)) <= 1.00001*0.99
 
             ys = simulate(res,d,res.x[:,1])
-            @show mean(abs2,y-ys') / mean(abs2,y)
+            # @show mean(abs2,y-ys') / mean(abs2,y)
             ys = simulate(res,d,res.x[:,1], stochastic=true)
-            @show mean(abs2,y-ys') / mean(abs2,y)
+            # @show mean(abs2,y-ys') / mean(abs2,y)
 
             yp = predict(res,d,res.x[:,1])
-            @show mean(abs2,y-yp') / mean(abs2,y)
+            # @show mean(abs2,y-yp') / mean(abs2,y)
             @test mean(abs2,y-yp') / mean(abs2,y) < 0.01
 
 

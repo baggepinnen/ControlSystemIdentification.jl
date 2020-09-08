@@ -137,8 +137,9 @@ function n4sid(data::InputOutputData,r = :auto;
 
     local P,K
     try
-        P = Symmetric(dare(copy(A'), copy(C'), (Q), (R))) # TODO: Skipped S as dare does not support it
-        K = ((C*P*C' + R)\(A*P*C' + S)')'
+        P,_,Kt,_ = MatrixEquations.ared(copy(A'), copy(C'), R, Q, S)
+        # K0 = ((C*P*C' + R)\(A*P*C' + S)')'
+		K = Kt' |> copy
     catch
         P = fill(NaN, n, n)
         K = fill(NaN, n, l)
