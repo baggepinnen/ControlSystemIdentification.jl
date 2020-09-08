@@ -255,17 +255,20 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
 			Y[i,j,:] = YY[i,j,2:end]
 		end
 	end
-	H,H2 = similar(YY, m, n), similar(YY, m, n)
+	H,H2 = similar(YY, m*nout, n*nin), similar(YY, m*nout, n*nin)
 	for i=1:m
 		for j=1:n
 			for Q=1:nout
 				for P=1:nin
-					H[nout*i-nout+Q, nin*j-nin+P] = Y[Q, P, i+j-1]
-					H2[nout*i-nout+Q, nin*j-nin+P] = Y[Q, P, i+j]
+					i1 = nout*(i-1)+P
+					i2 = nin*(j-1)+P
+					H[i1, i2] = Y[Q, P, i+j-1]
+					H2[i1, i2] = Y[Q, P, i+j]
 				end
 			end
 		end
 	end
+	# return H
 	U,S,V = svd(H)
 	Ur = U[:,1:r]
 	Vr = V[:,1:r]
@@ -289,9 +292,9 @@ era(d::AbstractIdData, r, m=2r, n=2r, l=5r) = era(okid(d,r,l),d.Ts,r,m,n)
 
 
 """
-    okid(d::AbstractIdData, r, l = 5r)
+    H = okid(d::AbstractIdData, r, l = 5r)
 
-Observer Kalman filter identification
+Observer Kalman filter identification. Returns the Markov parameters `H` size `n_out×n_in×l+1`
 
 # Arguments:
 - `r`: Model order
@@ -301,10 +304,9 @@ function okid(d::AbstractIdData, r, l = 5r)
 	y, u = time2(output(d)), time2(input(d))
 	p,m = size(y) # p is the number of outputs
 	q = size(u,1) # q is the number of inputs
-	# Step 1, choose impulse length l (5 times system order r)
 
 	# Step 2, form y, V, solve for observer Markov params, Ybar
-	V = zeros(q + (q+p)*l,m)
+	V = zeros(eltype(y), q + (q+p)*l, m)
 	for i=1:m
 		V[1:q,i] = u[1:q,i]
 	end
@@ -315,16 +317,21 @@ function okid(d::AbstractIdData, r, l = 5r)
 		end
 	end
 	Ybar = y*pinv(V)
-	# Ybar = y/V
-	# Ybar = ls(V', y')'
-	# Step 3, isolate system Markov parameters H
+	# @show size(Ybar,1),p,q
+
 	D = Ybar[:,1:q] # Feed-through term (D) is first term
 	Ybar1, Ybar2 = similar(Ybar, p, q, l), similar(Ybar, p, q, l)
-	for i=1:l
-		Ybar1[1:p,1:q,i] = Ybar[:,q+1+(q+p)*(i-1):q+(q+p)*(i-1)+q]
-		Ybar2[1:p,1:q,i] = Ybar[:,q+1+(q+p)*(i-1)+q:q+(q+p)*i]
-	end
 	Y = similar(Ybar, p, q, l)
+	# Ybar1(1:PP,1:QQ,i) = Ybar(:,QQ+1+(QQ+PP)*(i-1):QQ+(QQ+PP)*(i-1)+QQ);
+    # Ybar2(1:PP,1:QQ,i) = Ybar(:,QQ+1+(QQ+PP)*(i-1)+QQ:QQ+(QQ+PP)*i);
+	for i=1:l
+		# @show ind1 = q+1+(q+p)*(i-1):2q+(q+p)*(i-1)
+		# @show ind2 = 2q+1+(q+p)*(i-1):q+(q+p)*i
+		ind1 = q+1+(q+p)*(i-1):2q+(q+p)*(i-1)
+		ind2 = 2q+1+(q+p)*(i-1):q+(q+p)*i
+		Ybar1[:,:,i] = Ybar[:, ind1]
+		Ybar2[:,:,i] = Ybar[:, ind2]
+	end
 	Y[:,:,1] = Ybar1[:,:,1] + Ybar2[:,:,1]*D
 	for k=2:l
 		Y[:,:,k] = Ybar1[:,:,k] + Ybar2[:,:,k]*D

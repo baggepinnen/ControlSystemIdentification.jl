@@ -167,7 +167,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 
 
         N = 200
-        r = 2; m=1; l=1
+        r = 2; m=2; l=1
         for r = 1:5, m=1:2, l=1:2
             Random.seed!(0)
             @show r,m,l
@@ -208,14 +208,16 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @test norm(res.S) < ϵ
             @test freqresptest(G, res.sys) < 0.2*m*l
 
-            iy,it,ix = impulse(G, 20)
-            H = okid(d,r,20)
-            @test norm(iy-vec(H))< 0.05
-            plot([iy vec(H)])
+            if m == l == 1
+                iy,it,ix = impulse(G, 20)
+                H = okid(d,r,20)
+                @test norm(iy-permutedims(H, (3,1,2)))< 0.05
+                # plot([iy vec(H)])
 
-            sys = era(d,r)
-            @test sys.nx == r
-            @test freqresptest(G, sys) < 0.2*m*l
+                sys = era(d,r)
+                @test sys.nx == r
+                @test freqresptest(G, sys) < 0.2*m*l
+            end
 
             res = ControlSystemIdentification.n4sid(d)
             @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
