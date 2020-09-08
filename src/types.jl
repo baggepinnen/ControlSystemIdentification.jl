@@ -63,12 +63,12 @@ obslength(d::AbstractIdData)                     = ControlSystems.noutputs(d)
 sampletime(d::AbstractIdData)                    = d.Ts === nothing ? 1.0 : d.Ts
 function Base.length(d::AbstractIdData)
 	y = output(d)
-	y isa Matrix && return size(y,2)
+	y isa AbstractMatrix && return size(y,2)
 	return length(y)
 end
 
-function apply_fun(fun, d::OutputData)
-	iddata(fun(d.y), d.Ts/f)
+function apply_fun(fun, d::OutputData, Ts = d.Ts)
+	iddata(fun(d.y), Ts)
 end
 
 """
@@ -76,12 +76,22 @@ end
 
 Apply `fun(y)` to all time series `y[,u,[x]] ∈ d` and return a new `iddata` with the transformed series.
 """
-function apply_fun(fun, d::InputOutputData)
-	iddata(fun(d.y), fun(d.u), d.Ts/f)
+function apply_fun(fun, d::InputOutputData, Ts = d.Ts)
+	iddata(fun(d.y), fun(d.u), Ts)
 end
 
-function apply_fun(fun, d::InputOutputStateData)
-	iddata(fun(d.y), fun(d.u), fun(d.x), d.Ts/f)
+function apply_fun(fun, d::InputOutputStateData, Ts = d.Ts)
+	iddata(fun(d.y), fun(d.u), fun(d.x), Ts)
+end
+
+function Base.getindex(d::Union{InputOutputData, InputOutputStateData}, i, j)
+	iddata(d.y[i,:], d.u[j,:], d.Ts)
+end
+
+function Base.getindex(d::AbstractIdData, i)
+	apply_fun(d) do y
+		y[:,i]
+	end
 end
 
 """
@@ -89,7 +99,12 @@ dr = resample(d::InputOutputData, f)
 
 Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
 """
-DSP.resample(d::AbstractIdData, f) = apply_fun(y->resample(y,f), d, f)
+DSP.resample(d::AbstractIdData, f) = apply_fun(y->resample(y,f), d, d.Ts/f)
+
+function Base.hcat(d1::InputOutputData, d2::InputOutputData)
+	@assert d1.Ts == d2.Ts
+	iddata([d1.y d2.y], [d1.u d2.u], d1.Ts)
+end
 
 struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
 	A::MT
