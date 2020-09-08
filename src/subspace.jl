@@ -43,7 +43,10 @@ end
 
 Estimate a statespace model using the n4sid method. Returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `res.sys`.
 
-#Arguments:
+Implements the simplified algorithm (alg 2) from
+"N4SID: Subspace Algorithms for the Identification of Combined Deterministic Stochastic Systems" PETER VAN OVERSCHEE and BART DE MOOR
+
+# Arguments:
 - `data`: Identification data `data = iddata(y,u)`
 - `y`: Measurements N×ny
 - `u`: Control signal N×nu
@@ -178,26 +181,30 @@ end
 
 
 function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, y, u)
-	sys = res.sys
-	@unpack A,B,C,D,ny = sys
-	@unpack K = res
+	@unpack A,B,C,D,ny,sys,K = res
 	yh     = vec(C*state + D*u)
 	e      = y - yh
 	state .= vec(A*state + B*u + K*e)
 	yh
 end
 
-SysFilter(res::N4SIDStateSpace,x0=zeros(sys.nx)) = SysFilter(res,x0,zeros(eltype(x0), res.sys.ny))
+function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, u)
+	@unpack A,B,C,D,ny,K,sys = res
+	yh     = vec(C*state + D*u)
+	state .= vec(A*state + B*u)
+	yh
+end
 
-function simulate(res::N4SIDStateSpace, d::AbstractIdData, x0=zeros(res.sys.nx); stochastic=false)
+SysFilter(res::N4SIDStateSpace,x0=res.x[:,1]) = SysFilter(res,x0,res.C*x0)
+
+function simulate(res::N4SIDStateSpace, d::AbstractIdData, x0=res.x[:,1]; stochastic=false)
 	sys = res.sys
-	@unpack A,B,C,D,ny = sys
-	@unpack K,Q,R,P = res
+	@unpack A,B,C,D,ny,K,Q,R,P,sys = res
 	kf = KalmanFilter(res,x0)
 	u = input(d)
 	yh = map(observations(u,u)) do (ut,_)
+		yh = C*state(kf) + D*ut
 		predict!(kf, ut)
-		yh = kf.C*state(kf)
 		stochastic ? StaticParticles(MvNormal(yh,Symmetric(C*covariance(kf)*C' + kf.R2))) : yh
 	end
 	oftype(u,yh)
@@ -205,14 +212,13 @@ end
 
 m2vv(x) = [x[:,i] for i in 1:size(x,2)]
 function predict(res::N4SIDStateSpace, d::AbstractIdData, x0=res.x[:,1])
-	y = output(d)
+	y = time2(output(d))
 	u = input(d)
-	sys = res.sys
-	@unpack C = sys
+	@unpack C,D,sys = res
 	kf = KalmanFilter(res,x0)
-	X = forward_trajectory(kf, m2vv(u), m2vv(y))[1]
-	size(X)
-	yh = Ref(C).*X
+	U = m2vv(u)
+	X = forward_trajectory(kf, U, m2vv(y))[2] # Use the corrected state estimate [2]
+	yh = Ref(C).*X .+ Ref(D).*U
 	oftype(y,yh)
 end
 
@@ -223,10 +229,8 @@ end
 
 function LowLevelParticleFilters.KalmanFilter(res::N4SIDStateSpace, x0=res.x[:,1])
 	sys = res.sys
-	@unpack A,B,C,D,ny = sys
-	@unpack K,Q,R,P = res
-	norm(D) < 0.1*norm(C) || throw(ArgumentError("Nonzero D matrix not supported yet"))
-	kf = KalmanFilter(A, B, C, 0*D, Q, R, MvNormal(x0,P))
+	@unpack A,B,C,D,ny,K,Q,R,P = res
+	kf = KalmanFilter(A, B, C, D, Q, R, MvNormal(x0,P))
 end
 
 

@@ -67,6 +67,9 @@ function Base.length(d::AbstractIdData)
 	return length(y)
 end
 
+timevec(d::AbstractIdData) = range(0, step=sampletime(d), length=length(d))
+
+
 function apply_fun(fun, d::OutputData, Ts = d.Ts)
 	iddata(fun(d.y), Ts)
 end

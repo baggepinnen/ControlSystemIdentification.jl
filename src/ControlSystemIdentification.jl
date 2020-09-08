@@ -57,7 +57,8 @@ simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args
 
 @userplot Simplot
 """
-simplot(sys, data, x0=zeros(sys.nx); ploty=true)
+	simplot(sys, data, x0=zeros(sys.nx); ploty=true)
+
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 """
@@ -67,10 +68,10 @@ simplot
 	y = oftype(randn(2,2), output(d))
 	u = oftype(randn(2,2), input(d))
 	x0 = length(p.args) > 3 ? p.args[4] : zeros(sys.nx)
-	yh = simulate(sys,u, x0)
+	yh = simulate(sys, u, x0)
 	xguide --> "Time [s]"
 	yguide --> "Output"
-	t = range(0, step=sys.Ts, length=length(y))
+	t = timevec(d)
 	err = nrmse(y,yh)
 	ploty && @series begin
 		label --> "y"
@@ -85,7 +86,8 @@ end
 
 @userplot Predplot
 """
-predplot(sys, data, x0=zeros(sys.nx); ploty=true)
+	predplot(sys, data, x0=zeros(sys.nx); ploty=true)
+	
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 """
@@ -95,10 +97,10 @@ predplot
 	y = oftype(randn(2,2), output(d))
 	u = oftype(randn(2,2), input(d))
 	x0 = length(p.args) > 3 ? p.args[4] : zeros(sys.nx)
-	yh = predict(sys,y,u, x0)
+	yh = predict(sys, y, u, x0)
 	xguide --> "Time [s]"
 	yguide --> "Output"
-	t = range(0, step=sys.Ts, length=length(y))
+	t = timevec(d)
 	err = nrmse(y,yh)
 	ploty && @series begin
 		label --> "y"
