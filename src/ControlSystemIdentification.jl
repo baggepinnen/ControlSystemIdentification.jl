@@ -15,6 +15,8 @@ export model_spectrum
 
 export KalmanFilter
 
+export weighted_estimator, Bandpass, Bandstop, Lowpass, Highpass
+
 include("utils.jl")
 include("types.jl")
 include("pem.jl")
@@ -22,6 +24,7 @@ include("arx.jl")
 include("frd.jl")
 include("subspace.jl")
 include("spectrogram.jl")
+include("frequency_weights.jl")
 
 predict(sys, d::AbstractIdData, args...) = hasinput(sys) ? predict(sys, output(d), input(d), args...) : predict(sys, output(d), args...)
 
@@ -87,7 +90,7 @@ end
 @userplot Predplot
 """
 	predplot(sys, data, x0=zeros(sys.nx); ploty=true)
-	
+
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 """

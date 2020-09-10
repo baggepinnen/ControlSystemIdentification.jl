@@ -32,8 +32,6 @@ end
 	return getfield(res,p)
 end
 
-proj(A,B) = A*B'/(B*B')
-
 @static if VERSION < v"1.3"
     (LinearAlgebra.I)(n) = Matrix{Float64}(I,n,n)
 end
@@ -46,12 +44,16 @@ Estimate a statespace model using the n4sid method. Returns an object of type [`
 Implements the simplified algorithm (alg 2) from
 "N4SID: Subspace Algorithms for the Identification of Combined Deterministic Stochastic Systems" PETER VAN OVERSCHEE and BART DE MOOR
 
+The frequency weighting is borrowing ideas from
+"Frequency Weighted Subspace Based System Identication in the Frequency Domain", Tomas McKelvey 1996. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
+
 # Arguments:
 - `data`: Identification data `data = iddata(y,u)`
 - `y`: Measurements N×ny
 - `u`: Control signal N×nu
 - `r`: Rank of the model (model order)
 - `verbose`: Print stuff?
+- `Wf`: A frequency-domain model of measurement disturbances. To focus the attention of the model on a narrow frequency band, try something like `Wf = Bandstop(lower, upper, fs=1/Ts)` to indicate that there are disturbances *outside* this band.
 - `i`: Algorithm parameter, generally no need to tune this
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
 """
@@ -59,6 +61,7 @@ function n4sid(data::InputOutputData,r = :auto;
                     verbose=false,
                     i = r === :auto ? min(length(data)÷20,20) : r+10,
                     γ = nothing,
+					Wf = nothing,
                     svd::F1 = svd,
                     estimator::F2 = \) where {F1,F2}
 
@@ -84,6 +87,7 @@ function n4sid(data::InputOutputData,r = :auto;
     U0i   = hankel(u,0,i)
     UY0   = [U0im1; hankel(u,i,2i-1); Y0im1]
     UY1   = [U0i; hankel(u,i+1,2i-1); Y0i]
+	proj(A,B) = A*B'/(B*B')
     Li    = proj(hankel(y,i,2i-1), UY0)
     Lip1  = proj(hankel(y,i+1,2i-1), UY1)
 
@@ -98,7 +102,13 @@ function n4sid(data::InputOutputData,r = :auto;
 
     Zi = [L¹ᵢ L³ᵢ] * [U0im1; Y0im1]
 
-    s = svd(Zi)
+	if Wf === nothing
+		s = svd(Zi)
+	else
+		W = frequency_weight(Wf,size(Zi,1))
+		s = svd(W\Zi)
+		estimator = weighted_estimator(Wf)
+	end
     if r === :auto
         r = sum(s.S .> sqrt(s.S[1]*s.S[end]))
         verbose && @info "Choosing order $r"
@@ -110,7 +120,10 @@ function n4sid(data::InputOutputData,r = :auto;
     verbose && @info "Fraction of variance explained: $(fve)"
 
     Γi = U1 * Diagonal(sqrt.(S1))
-    Γim1 = U1[1:end-l,:] * Diagonal(sqrt.(S1))
+	if Wf !== nothing
+		Γi = W*Γi
+	end
+    Γim1 = Γi[1:end-l,:]
     Xi = estimator(Γi,  Zi)
     Xip1 = estimator(Γim1, [L¹ᵢp1 L³ᵢp1] * [U0i; Y0i])
 
@@ -170,11 +183,11 @@ function stabilize(L, XU, i, j, m, n, γ)
     AΣ  = A*Σ
     P0  = kron(AΣ, AΣ) - γ^2 * kron(Σ, Σ)
 
-    θ = eigen(Matrix([0I(n^2) -I(n^2); P0 P1]), -Matrix([I(n^2) 0I(n^2); 0I(n^2) P2])).values
+    θ = eigvals(Matrix([0I(n^2) -I(n^2); P0 P1]), -Matrix([I(n^2) 0I(n^2); 0I(n^2) P2]))
     c = maximum(abs.(θ[(imag.(θ) .== 0 ) .* (real.(θ) .> 0)]))
 
-    Σ_XU = XU*XU'
-    mod = Σ_XU/(Σ_XU + c*diagm(0=>[ones(n); zeros(m)]))#[I(n) zeros(n,m); zeros(m, n+m)])
+    Σ_XU = Symmetric(XU*XU')
+    mod = Σ_XU/(Σ_XU + c*Diagonal([ones(n); zeros(m)]))#[I(n) zeros(n,m); zeros(m, n+m)])
     L[1:n,:] .= L[1:n,:]*mod
     L
 end

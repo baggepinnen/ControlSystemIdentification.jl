@@ -37,7 +37,12 @@ function getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb)
 end
 getARXregressor(d::AbstractIdData, na, nb) = getARXregressor(output(d),input(d), na, nb)
 
-getARregressor(y, na) = getARregressor(output(y), na)
+function getARregressor(dy::AbstractIdData, na)
+    noutputs(dy) == 1 || throw(ArgumentError("Only 1d time series supported"))
+    y = time1(output(dy))
+    getARregressor(vec(y), na)
+ end
+
 function getARregressor(y::AbstractVector, na)
     m    = na+1 # Start of yr
     n    = length(y) - m + 1 # Final length of yr
@@ -119,9 +124,10 @@ Supports MISO estimation by supplying a matrix `u` where times is first dim, wit
 """
 function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\, stochastic=false)
     y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
+    @assert obslength(y) == length(y) "arx only supports single output."
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
-    y_train, A = getARXregressor(y,u, na, nb)
+    y_train, A = getARXregressor(vec(y), u, na, nb)
     w = ls(A,y_train,λ,estimator)
     a,b = params2poly(w,na,nb)
     model = tf(b,a,h)
@@ -152,7 +158,8 @@ Estimate an AR transfer function (only poles).
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 """
 function ar(d::AbstractIdData, na; λ = 0, estimator=\, scaleB=false, stochastic=false)
-    y = time1(output(d))
+    noutputs(d) == 1 || throw(ArgumentError("Only 1d time series supported"))
+    y = vec(time1(output(d)))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARregressor(y, na)
     w = ls(A,y_train,λ,estimator)

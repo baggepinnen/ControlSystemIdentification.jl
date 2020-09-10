@@ -24,6 +24,12 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
 @testset "ControlSystemIdentification.jl" begin
 
 
+    @testset "Frequency weights" begin
+        @info "Testing Frequency weights"
+        include("test_frequency_weights.jl")
+    end
+
+
     @testset "Utils" begin
         @info "Testing Utils"
         v = zeros(2)
