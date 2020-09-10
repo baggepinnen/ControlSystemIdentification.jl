@@ -67,6 +67,13 @@ function Base.length(d::AbstractIdData)
 	return length(y)
 end
 
+function Base.getproperty(d::AbstractIdData, s::Symbol)
+	if s === :fs || s === :Fs
+		return 1/d.Ts
+	end
+	return getfield(d, s)
+end
+
 timevec(d::AbstractIdData) = range(0, step=sampletime(d), length=length(d))
 
 
