@@ -116,16 +116,17 @@ function Base.hcat(d1::InputOutputData, d2::InputOutputData)
 	iddata([d1.y d2.y], [d1.u d2.u], d1.Ts)
 end
 
-struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace
+struct StateSpaceNoise{T, MT<:AbstractMatrix{T}} <: ControlSystems.AbstractStateSpace{Discrete{Float64}}
 	A::MT
 	B::MT
 	K::MT
-	Ts::Float64
+	Ts::Discrete{Float64}
 	nx::Int
 	nu::Int
 	ny::Int
-	function StateSpaceNoise(A::MT, B::MT, K::MT, Ts::Float64) where MT
-		nx,nu,ny = ControlSystems.state_space_validation(A,B,K',zeros(size(K',1), size(B,2)),Ts)
+	function StateSpaceNoise(A::MT, B::MT, K::MT, Ts::Union{Real, Discrete{Float64}}) where MT
+		Ts = Ts isa Real ? Discrete(Float64(Ts)) : Float64(Ts)
+		nx,nu,ny = ControlSystems.state_space_validation(A,B,K',zeros(size(K',1), size(B,2)), Ts)
 		new{eltype(A), typeof(A)}(A, B, K, Ts, nx, nu, ny)
 	end
 end
@@ -169,7 +170,7 @@ function Base.getindex(sys::StateSpaceNoise, inds...)
 	return StateSpaceNoise(copy(sys.A), sys.B[:, cols], sys.K[:, rows], sys.Ts)
 end
 
-struct SysFilter{T<:AbstractStateSpace, FT}
+struct SysFilter{T<:AbstractStateSpace{<:Discrete}, FT}
 	sys::T
 	state::Vector{FT}
 	yh::Vector{FT}

@@ -120,11 +120,11 @@ Fit a transfer Function to data using an ARX model and equation error minimizati
 The number of free parameters is `na+nb`
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 
-Supports MISO estimation by supplying a matrix `u` where times is first dim, with nb = [nb₁, nb₂...]
+Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...]
 """
 function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\, stochastic=false)
     y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
-    @assert obslength(y) == length(y) "arx only supports single output."
+    @assert size(y,2) == 1 "arx only supports single output."
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARXregressor(vec(y), u, na, nb)
@@ -149,7 +149,7 @@ end
 
 Estimate an AR transfer function (only poles).
 
-#Arguments:
+# Arguments:
 - `d`: iddata
 - `na`: order of the model
 - `λ`: reg param
@@ -238,7 +238,7 @@ const armax = plr
 Estimate a Autoregressive Moving Average model with `na` coefficients in the denominator and `nc` coefficients in the numerator.
 Returns the model and the estimated noise sequence driving the system.
 
-#Arguments:
+# Arguments:
 - `d`: iddata
 - `initial_order`: An initial AR model of this order is used to estimate the residuals
 - `estimator`: A function `(A,y)->minimizeₓ(Ax-y)` default is `\` but another option is `wtls_estimator(1:length(y)-initial_order,na,nc,ones(nc))`
@@ -273,7 +273,7 @@ end
 
 DOCSTRING
 
-#Arguments:
+# Arguments:
 - `d`: iddata
 - `na`: number of denominator parameters
 - `nc`: number of numerator parameters
