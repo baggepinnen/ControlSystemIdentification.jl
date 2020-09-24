@@ -20,6 +20,12 @@ Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
 +(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
 -(f::FRD, f2)    = FRD(f.w, f.r .- vec(f2))
+
+# Below are required for ambiguities
+*(f::FRD, f2::FRD)    = FRD(f.w, f.r .* f2.r)
++(f::FRD, f2::FRD)    = FRD(f.w, f.r .+ f2.r)
+-(f::FRD, f2::FRD)    = FRD(f.w, f.r .- f2.r)
+
 -(f::FRD)        = FRD(f.w, -f.r)
 length(f::FRD)   = length(f.w)
 Base.size(f::FRD)   = (1,1) # Size in the ControlSystems sense
@@ -36,6 +42,7 @@ getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
 getindex(f::FRD, i::Int) = f.r[i]
 getindex(f::FRD, i::Int, j::Int) = (@assert(i==1 && j==1); f)
 
+sensitivity(P::FRD,K) = FRD(P.w,1.0./(1. .+ vec(P).*vec(K)))
 feedback(P::FRD,K) = FRD(P.w,vec(P)./(1. .+ vec(P).*vec(K)))
 feedback(P,K::FRD) = FRD(K.w,vec(P)./(1. .+ vec(P).*vec(K)))
 feedback(P::FRD,K::FRD) = feedback(P,vec(K))
@@ -230,4 +237,14 @@ impulseestplot
     @series begin
         t, -2 .*sqrt.(diag(Σ))
     end
+end
+
+
+function ControlSystems.gangoffour(P::FRD,C::FRD, ω=nothing)
+    ω === nothing || ω == P.ω || error("Incosistent frequency vectors")
+    S = sensitivity(P,C)
+    D = (P*S)
+    N = (C*S)
+    T = (P*N)
+    return S, D, N, T
 end
