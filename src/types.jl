@@ -271,6 +271,7 @@ Base.length(i::SimulationErrorIterator) = length(i.oi)
 	layout --> n
 	legend --> false
 	xguide --> "Time"
+	link --> :x
 	xvec = range(0,step=sampletime(d), length=length(d))
 
 	for i in 1:size(y,2)

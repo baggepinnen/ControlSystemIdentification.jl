@@ -43,7 +43,7 @@ end
 
 DOCSTRING
 
-#Arguments:
+# Arguments:
 - `f`: the model-estimation function, e.g., `ar,arma`
 - `h`: The sample time
 - `args`: arguments to `f`

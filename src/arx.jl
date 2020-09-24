@@ -124,7 +124,7 @@ Supports MISO estimation by supplying a matrix `u` where times is first dim, wit
 """
 function arx(d::AbstractIdData, na, nb; λ = 0, estimator=\, stochastic=false)
     y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
-    @assert obslength(y) == length(y) "arx only supports single output."
+    @assert prod(size(y)) == length(y) "arx only supports single output."
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARXregressor(vec(y), u, na, nb)

@@ -25,6 +25,11 @@ end
     throw(ArgumentError("Cannot convert a matrix with both dimensions greater than 1 to a vector."))
 end
 
+@inline function Base.oftype(x::Vector{<:Number}, y::Vector{<:Vector})
+    size(y,1) == 1 || size(y,2) == 1 || throw(ArgumentError("Cannot convert a matrix with both dimensions greater than 1 to a vector."))
+    reduce(vcat, y)
+end
+
 @inline Base.oftype(::Type{Matrix}, y::Vector{<:Number}) = reshape(y,1,:)
 @inline Base.oftype(::Type{Matrix}, y::Vector{<:Vector}) = reduce(hcat,y)
 @inline Base.oftype(::Type{Matrix}, y::Matrix) = y
@@ -33,8 +38,18 @@ end
 
 @inline time1(y::Vector) = y
 @inline time1(y::Vector{<:Vector}) = reduce(hcat,y)'
-@inline time1(y::Matrix) = y'
-@inline time1(y::AbstractMatrix) = Matrix(y')
+@inline function time1(y::Matrix)
+    if size(y,1) == 1
+        return vec(y)
+    end
+    Matrix(y')
+end
+@inline function time1(y::AbstractMatrix)
+    if size(y,1) == 1
+        return vec(y)
+    end
+    Matrix(y')
+end
 
 @inline time2(y::Vector) = oftype(Matrix, y)
 @inline time2(y::Vector{<:Vector}) = oftype(Matrix, y)
