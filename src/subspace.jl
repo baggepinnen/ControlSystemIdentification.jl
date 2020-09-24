@@ -62,6 +62,7 @@ function n4sid(data::InputOutputData,r = :auto;
                     i = r === :auto ? min(length(data)÷20,20) : r+10,
                     γ = nothing,
 					Wf = nothing,
+                    zeroD = false,
                     svd::F1 = svd,
                     estimator::F2 = \) where {F1,F2}
 
@@ -127,9 +128,18 @@ function n4sid(data::InputOutputData,r = :auto;
     Xi = estimator(Γi,  Zi)
     Xip1 = estimator(Γim1, [L¹ᵢp1 L³ᵢp1] * [U0i; Y0i])
 
-    XY = [Xip1 ; hankel(y,i,i)]
-    XU = [Xi ; hankel(u,i,i)]
-    L = estimator(XU', XY')'
+	XY = [Xip1 ; hankel(y,i,i)]
+	XU = [Xi ; hankel(u,i,i)]
+	if zeroD
+		L = estimator(XU', Xip1')'
+		C = estimator(Xi', hankel(y,i,i)')'
+		D = zeros(eltype(C), l, m)
+		L = [L; [C D]]
+	else
+	    L = estimator(XU', XY')'
+		C = L[n+1:end,1:n]
+		D = L[n+1:end,n+1:end]
+	end
 
     A = L[1:n,1:n]
     if γ !== nothing
@@ -141,8 +151,6 @@ function n4sid(data::InputOutputData,r = :auto;
         end
     end
     B = L[1:n,n+1:end]
-    C = L[n+1:end,1:n]
-    D = L[n+1:end,n+1:end]
 
 
     errors = XY - L*XU
@@ -216,7 +224,7 @@ function simulate(res::N4SIDStateSpace, d::AbstractIdData, x0=res.x[:,1]; stocha
 	kf = KalmanFilter(res,x0)
 	u = input(d)
 	yh = map(observations(u,u)) do (ut,_)
-		yh = C*state(kf) + D*ut
+		yh = vec(C*state(kf) + D*ut)
 		predict!(kf, ut)
 		stochastic ? StaticParticles(MvNormal(yh,Symmetric(C*covariance(kf)*C' + kf.R2))) : yh
 	end
