@@ -232,7 +232,6 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
             @test kf.A == res.A
             @test kf.B == res.B
             @test kf.C == res.C
-            @test all(iszero, kf.D)
 
         end
 

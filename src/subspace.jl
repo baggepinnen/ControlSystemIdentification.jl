@@ -13,7 +13,7 @@
 - `s`: The singular values
 - `fve`: Fraction of variance explained by singular values
 """
-struct N4SIDStateSpace <: AbstractStateSpace
+struct N4SIDStateSpace <: AbstractStateSpace{Discrete{Float64}}
     sys
     Q
     R
