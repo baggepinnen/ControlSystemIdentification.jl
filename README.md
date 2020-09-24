@@ -272,7 +272,7 @@ T  = 1000
 fs = 1
 s = sin.((1:1/fs:T) .* 2pi/10) + 0.5randn(T)
 S1 = spectrogram(s,window=hanning, fs=fs)            # Standard spectrogram
-estimator = model_spectrum(ar,fs,6)
+estimator = model_spectrum(ar,1/fs,6)
 S2 = spectrogram(s,estimator,window=rect, fs=fs)     # Model-based spectrogram
 plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Requires the package LPVSpectral.jl
 ```
