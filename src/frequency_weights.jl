@@ -11,11 +11,25 @@ function frequency_weight(system, N)
     Φ = freqz(G, ω)
     acf = irfft(abs2.(Φ), 2length(Φ)-1)[1:end÷2+1]
     n = length(acf)
-    W = similar(acf, n, n)
-    for di = -n+1:n-1
-        W[diagind(W,di)] .= acf[abs(di)+1]
+
+
+    lastlarge = findlast(x->abs(x) > 1e-5*acf[1], acf)
+    if lastlarge === nothing || lastlarge == n
+        lastlarge = n-1
     end
-    Symmetric(W)
+    bands = [0=>Fill(acf[1], n)]
+    for i = 1:lastlarge
+        slice = Fill(acf[i+1], n-i)
+        push!(bands,  i=>slice)
+        push!(bands, -i=>slice)
+    end
+    W = BandedMatrix((bands...,), (n,n))
+
+    # W = similar(acf, n, n)
+    # for di = -n+1:n-1
+    #     W[diagind(W,di)] .= acf[abs(di)+1]
+    # end
+    # Symmetric(W)
 end
 
 weighted_estimator(H::FilterType) = (A,y) -> wls(A,y,frequency_weight(H, size(y,1)))

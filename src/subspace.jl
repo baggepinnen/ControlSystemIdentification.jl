@@ -26,7 +26,7 @@ struct N4SIDStateSpace <: AbstractStateSpace{Discrete{Float64}}
 end
 
 @inline function Base.getproperty(res::N4SIDStateSpace, p::Symbol)
-	if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts)
+	if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
 		return getproperty(res.sys, p)
 	end
 	return getfield(res,p)
