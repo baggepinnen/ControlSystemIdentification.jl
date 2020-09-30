@@ -32,12 +32,14 @@ Estimate a statespace model using the n4sid method. Returns an object of type `N
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
 
 The frequency weighting is borrowing ideas from
-*"Frequency Weighted Subspace Based System Identication in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
+*"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 
 ### ERA and OKID
 See
-- `sys = era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r)`
-- `H   = okid(d::AbstractIdData, r, l = 5r)`
+```julia
+sys = era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r)
+H   = okid(d::AbstractIdData, r, l = 5r)
+```
 
 ### Filtering and simulation
 Models can be simulated using `lsim` from ControlSystems.jl and using `simulate`. You may also convert the model to a `KalmanFilter` from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
