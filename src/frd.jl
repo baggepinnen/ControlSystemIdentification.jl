@@ -155,7 +155,7 @@ end
 
 @userplot Coherenceplot
 """
-coherenceplot(d, [(;n=..., noverlap=...); hz=false)
+    coherenceplot(d, [(;n=..., noverlap=...); hz=false)
 
 Calculates and plots the (squared) coherence Function κ. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
 
@@ -191,24 +191,25 @@ coherenceplot
 end
 
 """
-ir, t, Σ = impulseest(h,y,u,n)
+    ir, t, Σ = impulseest(d::AbstractIdData, n; λ=0, estimator=ls)
 
 Estimates the system impulse response by fitting an `n`:th order FIR model. Returns impulse-response estimate, time vector and covariance matrix.
 See also `impulseestplot`
 """
-function impulseest(h,y,u,n,λ=0)
-    N = min(length(u),length(y))
-    @views yt,A = getARXregressor(y[1:N],u[1:N],0,n)
-    ir = ls(A,yt,λ)
-    t = range(h,length=n, step=h)
+function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls)
+    h, y, u = d.Ts, time1(output(d)), time1(input(d))
+    N = min(length(u), length(y))
+    @views yt, A = getARXregressor(y[1:N], u[1:N], 0, n)
+    ir = estimator(A, yt, λ)
+    t = range(h, length = n, step = h)
     Σ = parameter_covariance(yt, A, ir, λ)
-    ir./h, t, Σ
+    ir ./ h, t, Σ
 end
 
 @userplot Impulseestplot
 
 """
-impulseestplot(data,n)
+    impulseestplot(data,n)
 
 Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% confidence band.
 See also `impulseestplot`
@@ -216,10 +217,9 @@ See also `impulseestplot`
 impulseestplot
 @recipe function impulseestplot(p::Impulseestplot)
     d = p.args[1]
-    y,u,h = output(d), input(d), sampletime(d)
     n = length(p.args) >= 2 ? p.args[2] : 25
     λ = length(p.args) >= 3 ? p.args[3] : 0
-    ir,t,Σ = impulseest(h,y,u,n,λ)
+    ir,t,Σ = impulseest(d,n,λ)
     title --> "Estimated Impulse Response"
     xguide --> "Time [s]"
 
