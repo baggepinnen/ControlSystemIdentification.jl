@@ -13,7 +13,7 @@ function frequency_weight(system, N)
     n = length(acf)
 
 
-    lastlarge = findlast(x->abs(x) > 1e-5*acf[1], acf)
+    lastlarge = findlast(x->abs(x) > sqrt(eps())*acf[1], acf)
     if lastlarge === nothing || lastlarge == n
         lastlarge = n-1
     end
