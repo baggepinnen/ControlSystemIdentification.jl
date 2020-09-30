@@ -634,7 +634,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         y  = sim(sys, u) + 0.1randn(length(t))
 
         d = iddata(y,u,h)
-        impulseestplot(d,Int(50/h), 0)
+        impulseestplot(d,Int(50/h), λ=0)
         impulseplot!(sys,50, l=(:dash,:blue))
     end
 

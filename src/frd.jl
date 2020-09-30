@@ -215,11 +215,10 @@ Estimates the system impulse response by fitting an `n`:th order FIR model and p
 See also `impulseestplot`
 """
 impulseestplot
-@recipe function impulseestplot(p::Impulseestplot)
+@recipe function impulseestplot(p::Impulseestplot; λ=0)
     d = p.args[1]
     n = length(p.args) >= 2 ? p.args[2] : 25
-    λ = length(p.args) >= 3 ? p.args[3] : 0
-    ir,t,Σ = impulseest(d,n,λ)
+    ir,t,Σ = impulseest(d,n;λ=λ)
     title --> "Estimated Impulse Response"
     xguide --> "Time [s]"
 
