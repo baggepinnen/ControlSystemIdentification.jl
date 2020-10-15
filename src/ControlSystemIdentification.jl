@@ -1,6 +1,6 @@
 module ControlSystemIdentification
 
-using DSP, LinearAlgebra, Statistics, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase, FFTW, Roots, MonteCarloMeasurements, LowLevelParticleFilters, BandedMatrices
+using DSP, LinearAlgebra, Statistics, StatsBase, Random, Optim, ControlSystems, FillArrays, Parameters, TotalLeastSquares, RecipesBase, FFTW, Roots, MonteCarloMeasurements, LowLevelParticleFilters, BandedMatrices
 import MatrixEquations
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates

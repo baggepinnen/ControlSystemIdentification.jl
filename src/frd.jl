@@ -130,11 +130,12 @@ function wcfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
     Syy,Suu,Syu
 end
 
-function wfft_corr(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
+function wfft_corr(y,u, σ=Inf; n = length(y)÷10, noverlap = n÷2, window=hamming)
     win, norm2 = DSP.Periodograms.compute_window(window, n)
-    Cyu = xcorr(y,u)
-    Cyy = xcorr(y,y)
-    Cuu = xcorr(u,u)
+    w = gaussian(2length(y)-1,σ)
+    Cyu = w.*xcorr(y,u)
+    Cyy = w.*xcorr(y,y)
+    Cuu = w.*xcorr(u,u)
     uw  = arraysplit(Cuu,n,noverlap,nextfastfft(n),win)
     yw  = arraysplit(Cyy,n,noverlap,nextfastfft(n),win)
     yuw = arraysplit(Cyu,n,noverlap,nextfastfft(n),win)
@@ -235,6 +236,39 @@ impulseestplot
     end
     @series begin
         t, -2 .*sqrt.(diag(Σ))
+    end
+end
+
+
+@userplot Crosscorplot
+@recipe function crosscorplot(p::Crosscorplot)
+    d = p.args[1]
+    N = length(d)
+    lags = length(p.args) >= 2 ? p.args[2] : -max(N÷10, 100):max(N÷2, 100)
+    xc = crosscor(time1(d.u), time1(d.y), lags, demean=true)
+    title --> "Input-Output cross correlation"
+    xguide --> "Lag [s]"
+
+    @series begin
+        seriestype --> :sticks
+        label --> ""
+        lags.*d.Ts, xc
+    end
+    linestyle := :dash
+
+    seriescolor := :black
+    label := ""
+    primary := false
+    # Ni = N .- abs.(lags)
+    @series begin
+        seriestype := :hline
+        # lags.*d.Ts, 2 .*sqrt.(1 ./ Ni) # The denominator in crosscorr already takes care of this
+        lags.*d.Ts, [2 .*sqrt.(1 ./ N)]
+    end
+    @series begin
+        seriestype := :hline
+        # lags.*d.Ts, -2 .*sqrt.(1 ./ Ni)
+        lags.*d.Ts, [-2 .*sqrt.(1 ./ N)]
     end
 end
 
