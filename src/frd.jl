@@ -14,7 +14,7 @@ struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
     r::RT
 end
 
-FRD(w, s::LTISystem) = FRD(w, freqresp(s,w)[:,1,1])
+FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 import Base: +, -, *, length, sqrt, getindex
 Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
@@ -22,38 +22,39 @@ Base.vec(f::FRD) = f.r
 -(f::FRD, f2)    = FRD(f.w, f.r .- vec(f2))
 
 # Below are required for ambiguities
-*(f::FRD, f2::FRD)    = FRD(f.w, f.r .* f2.r)
-+(f::FRD, f2::FRD)    = FRD(f.w, f.r .+ f2.r)
--(f::FRD, f2::FRD)    = FRD(f.w, f.r .- f2.r)
+*(f::FRD, f2::FRD) = FRD(f.w, f.r .* f2.r)
++(f::FRD, f2::FRD) = FRD(f.w, f.r .+ f2.r)
+-(f::FRD, f2::FRD) = FRD(f.w, f.r .- f2.r)
 
--(f::FRD)        = FRD(f.w, -f.r)
-length(f::FRD)   = length(f.w)
-Base.size(f::FRD)   = (1,1) # Size in the ControlSystems sense
+-(f::FRD) = FRD(f.w, -f.r)
+length(f::FRD) = length(f.w)
+Base.size(f::FRD) = (1, 1) # Size in the ControlSystems sense
 Base.lastindex(f::FRD) = length(f)
 function Base.getproperty(f::FRD, s::Symbol)
-    s === :Ts && return 1/((f.w[2]-f.w[2])/(2π))
-    getfield(f,s)
+    s === :Ts && return 1 / ((f.w[2] - f.w[2]) / (2π))
+    getfield(f, s)
 end
 ControlSystems.noutputs(f::FRD) = 1
 ControlSystems.ninputs(f::FRD) = 1
 
-sqrt(f::FRD)     = FRD(f.w, sqrt.(f.r))
+sqrt(f::FRD) = FRD(f.w, sqrt.(f.r))
 getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
 getindex(f::FRD, i::Int) = f.r[i]
-getindex(f::FRD, i::Int, j::Int) = (@assert(i==1 && j==1); f)
+getindex(f::FRD, i::Int, j::Int) = (@assert(i == 1 && j == 1); f)
 
-Base.isapprox(f1::FRD, f2::FRD; kwargs...) = (f1.w == f2.w) && isapprox(f1.r, f2.r; kwargs...)
+Base.isapprox(f1::FRD, f2::FRD; kwargs...) =
+    (f1.w == f2.w) && isapprox(f1.r, f2.r; kwargs...)
 Base.:(==)(f1::FRD, f2::FRD) = (f1.w == f2.w) && ==(f1.r, f2.r)
 
-sensitivity(P::FRD,K) = FRD(P.w,1.0./(1. .+ vec(P).*vec(K)))
-feedback(P::FRD,K) = FRD(P.w,vec(P)./(1. .+ vec(P).*vec(K)))
-feedback(P,K::FRD) = FRD(K.w,vec(P)./(1. .+ vec(P).*vec(K)))
-feedback(P::FRD,K::FRD) = feedback(P,vec(K))
+sensitivity(P::FRD, K) = FRD(P.w, 1.0 ./ (1.0 .+ vec(P) .* vec(K)))
+feedback(P::FRD, K) = FRD(P.w, vec(P) ./ (1.0 .+ vec(P) .* vec(K)))
+feedback(P, K::FRD) = FRD(K.w, vec(P) ./ (1.0 .+ vec(P) .* vec(K)))
+feedback(P::FRD, K::FRD) = feedback(P, vec(K))
 
-feedback(P::FRD,K::LTISystem) = feedback(P,freqresp(K,P.w)[:,1,1])
-feedback(P::LTISystem,K::FRD) = feedback(freqresp(P,K.w)[:,1,1],K)
+feedback(P::FRD, K::LTISystem) = feedback(P, freqresp(K, P.w)[:, 1, 1])
+feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
 
-@recipe function plot_frd(frd::FRD; hz=false)
+@recipe function plot_frd(frd::FRD; hz = false)
     yscale --> :log10
     xscale --> :log10
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
@@ -61,14 +62,14 @@ feedback(P::LTISystem,K::FRD) = feedback(freqresp(P,K.w)[:,1,1],K)
     title --> "Bode Plot"
     legend --> false
     @series begin
-        inds = findall(x->x==0, frd.w)
+        inds = findall(x -> x == 0, frd.w)
         useinds = setdiff(1:length(frd.w), inds)
-        (hz ? 1/(2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
+        (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
     end
     nothing
 end
 
-freqvec(h,k) = LinRange(0,π/h, length(k))
+freqvec(h, k) = LinRange(0, π / h, length(k))
 
 """
     H, N = tfest(data, σ = 0.05)
@@ -81,22 +82,22 @@ Estimate a transfer function model using the Correlogram approach.
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
 function tfest(d, σ = 0.05)
-    y,u,h = time1(output(d)),time1(input(d)),sampletime(d)
-    Syy,Suu,Syu = fft_corr(y,u,σ)
-    w   = freqvec(h,Syu)
-    H   = FRD(w, Syu./Suu)
-    N   = FRD(w, @.(Syy - abs2(Syu)/Suu)./length(y))
+    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
+    Syy, Suu, Syu = fft_corr(y, u, σ)
+    w = freqvec(h, Syu)
+    H = FRD(w, Syu ./ Suu)
+    N = FRD(w, @.(Syy - abs2(Syu) / Suu) ./ length(y))
     return H, N
 end
 
-function fft_corr(y,u,σ = 0.05)
+function fft_corr(y, u, σ = 0.05)
     n = length(y)
-    w = gaussian(2n-1,σ)
+    w = gaussian(2n - 1, σ)
 
-    Syu = rfft(ifftshift(w.*xcorr(y,u)))
-    Syy = rfft(ifftshift(w.*xcorr(y,y)))
-    Suu = rfft(ifftshift(w.*xcorr(u,u)))
-    Syy,Suu,Syu
+    Syu = rfft(ifftshift(w .* xcorr(y, u)))
+    Syy = rfft(ifftshift(w .* xcorr(y, y)))
+    Suu = rfft(ifftshift(w .* xcorr(u, u)))
+    Syy, Suu, Syu
 end
 
 
@@ -108,29 +109,29 @@ Calculates the magnitude-squared coherence Function. κ close to 1 indicates a g
 κ: Coherence function (not squared)
 N: Noise model
 """
-function coherence(d; n = length(d)÷10, noverlap = n÷2, window=hamming)
-    y,u,h = time1(output(d)), time1(input(d)), sampletime(d)
-    Syy,Suu,Syu = wcfft(y,u,n=n,noverlap=noverlap,window=window)
-    k = (abs2.(Syu)./(Suu.*Syy))#[end÷2+1:end]
-    Sch = FRD(freqvec(h,k),k)
+function coherence(d; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
+    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
+    Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
+    k = (abs2.(Syu) ./ (Suu .* Syy))#[end÷2+1:end]
+    Sch = FRD(freqvec(h, k), k)
     return Sch
 end
 
-function wcfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
+function wcfft(y, u; n = length(y) ÷ 10, noverlap = n ÷ 2, window = hamming)
     win, norm2 = DSP.Periodograms.compute_window(window, n)
-    uw  = arraysplit(u,n,noverlap,nextfastfft(n),win)
-    yw  = arraysplit(y,n,noverlap,nextfastfft(n),win)
-    Syy = zeros(length(uw[1])÷2 + 1)
-    Suu = zeros(length(uw[1])÷2 + 1)
-    Syu = zeros(ComplexF64,length(uw[1])÷2 + 1)
+    uw = arraysplit(u, n, noverlap, nextfastfft(n), win)
+    yw = arraysplit(y, n, noverlap, nextfastfft(n), win)
+    Syy = zeros(length(uw[1]) ÷ 2 + 1)
+    Suu = zeros(length(uw[1]) ÷ 2 + 1)
+    Syu = zeros(ComplexF64, length(uw[1]) ÷ 2 + 1)
     for i in eachindex(uw)
-        xy      = rfft(yw[i])
-        xu      = rfft(uw[i])
-        Syu .+= xy.*conj.(xu)
+        xy = rfft(yw[i])
+        xu = rfft(uw[i])
+        Syu .+= xy .* conj.(xu)
         Syy .+= abs2.(xy)
         Suu .+= abs2.(xu)
     end
-    Syy,Suu,Syu
+    Syy, Suu, Syu
 end
 
 
@@ -147,8 +148,9 @@ Keyword arguments to `coherence` are supplied as a named tuple as a second posit
 """
 coherenceplot
 
-@recipe function cp(p::Coherenceplot; hz=false)
-    ae = ArgumentError("Call like this: coherenceplot(iddata), where h is sample time and y/u are vectors of equal length.")
+@recipe function cp(p::Coherenceplot; hz = false)
+    ae =
+        ArgumentError("Call like this: coherenceplot(iddata), where h is sample time and y/u are vectors of equal length.")
     d = p.args[1]
     d isa AbstractIdData || throw(ae)
     if length(p.args) >= 2
@@ -156,18 +158,18 @@ coherenceplot
     else
         kwargs = NamedTuple()
     end
-    y,u,h = output(d), input(d), sampletime(d)
+    y, u, h = output(d), input(d), sampletime(d)
     yscale --> :identity
     xscale --> :log10
-    ylims --> (0,1)
+    ylims --> (0, 1)
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     title --> "Coherence"
     legend --> false
     frd = coherence(d; kwargs...)
     @series begin
-        inds = findall(x->x==0, frd.w)
+        inds = findall(x -> x == 0, frd.w)
         useinds = setdiff(1:length(frd.w), inds)
-        (hz ? 1/(2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
+        (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
     end
     nothing
 end
@@ -197,35 +199,35 @@ Estimates the system impulse response by fitting an `n`:th order FIR model and p
 See also `impulseestplot`
 """
 impulseestplot
-@recipe function impulseestplot(p::Impulseestplot; λ=0)
+@recipe function impulseestplot(p::Impulseestplot; λ = 0)
     d = p.args[1]
     n = length(p.args) >= 2 ? p.args[2] : 25
-    ir,t,Σ = impulseest(d,n;λ=λ)
+    ir, t, Σ = impulseest(d, n; λ = λ)
     title --> "Estimated Impulse Response"
     xguide --> "Time [s]"
 
     @series begin
         label --> ""
-        t,ir
+        t, ir
     end
     linestyle := :dash
     color := :black
     label := ""
     seriestype := :hline
     @series begin
-        t, 2 .*sqrt.(diag(Σ))
+        t, 2 .* sqrt.(diag(Σ))
     end
     @series begin
-        t, -2 .*sqrt.(diag(Σ))
+        t, -2 .* sqrt.(diag(Σ))
     end
 end
 
 
-function ControlSystems.gangoffour(P::FRD,C::FRD, ω=nothing)
+function ControlSystems.gangoffour(P::FRD, C::FRD, ω = nothing)
     ω === nothing || ω == P.ω || error("Incosistent frequency vectors")
-    S = sensitivity(P,C)
-    D = (P*S)
-    N = (C*S)
-    T = (P*N)
+    S = sensitivity(P, C)
+    D = (P * S)
+    N = (C * S)
+    T = (P * N)
     return S, D, N, T
 end

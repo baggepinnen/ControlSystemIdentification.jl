@@ -1,31 +1,67 @@
-import DSP.Periodograms: PSDOnly,nextfastfft,Spectrogram,spectrogram,stft,fft2pow!,fft2oneortwosided!, compute_window,arraysplit,stfttype
+import DSP.Periodograms:
+    PSDOnly,
+    nextfastfft,
+    Spectrogram,
+    spectrogram,
+    stft,
+    fft2pow!,
+    fft2oneortwosided!,
+    compute_window,
+    arraysplit,
+    stfttype
 
-function DSP.spectrogram(s::AbstractVector{T}, estimator::Function, n::Int=length(s)>>3, noverlap::Int=n>>1;
-                     onesided::Bool=eltype(s)<:Real,
-                     nfft::Int=nextfastfft(n), fs::Real=1,
-                     window::Union{Function,AbstractVector,Nothing}=nothing) where T
+function DSP.spectrogram(
+    s::AbstractVector{T},
+    estimator::Function,
+    n::Int = length(s) >> 3,
+    noverlap::Int = n >> 1;
+    onesided::Bool = eltype(s) <: Real,
+    nfft::Int = nextfastfft(n),
+    fs::Real = 1,
+    window::Union{Function,AbstractVector,Nothing} = nothing,
+) where {T}
 
-    out = stft(s, estimator, n, noverlap, PSDOnly(); onesided=onesided, nfft=nfft, fs=fs, window=window)
-    Spectrogram(out, onesided ? DSP.rfftfreq(nfft, fs) : DSP.fftfreq(nfft, fs),
-                (n/2 : n-noverlap : (size(out,2)-1)*(n-noverlap)+n/2) / fs)
+    out = stft(
+        s,
+        estimator,
+        n,
+        noverlap,
+        PSDOnly();
+        onesided = onesided,
+        nfft = nfft,
+        fs = fs,
+        window = window,
+    )
+    Spectrogram(
+        out,
+        onesided ? DSP.rfftfreq(nfft, fs) : DSP.fftfreq(nfft, fs),
+        (n/2:n-noverlap:(size(out, 2)-1)*(n-noverlap)+n/2) / fs,
+    )
 
 end
 
-function stft(s::AbstractVector{T}, estimator::Function, n::Int=length(s)>>3, noverlap::Int=n>>1,
-              psdonly::Union{Nothing,PSDOnly}=nothing;
-              onesided::Bool=eltype(s)<:Real, nfft::Int=nextfastfft(n), fs::Real=1,
-              window::Union{Function,AbstractVector,Nothing}=nothing) where T
+function stft(
+    s::AbstractVector{T},
+    estimator::Function,
+    n::Int = length(s) >> 3,
+    noverlap::Int = n >> 1,
+    psdonly::Union{Nothing,PSDOnly} = nothing;
+    onesided::Bool = eltype(s) <: Real,
+    nfft::Int = nextfastfft(n),
+    fs::Real = 1,
+    window::Union{Function,AbstractVector,Nothing} = nothing,
+) where {T}
 
 
     win, norm2 = compute_window(window, n)
     sig_split = arraysplit(s, n, noverlap, nfft, win)
-    nout = onesided ? (nfft >> 1)+1 : nfft
+    nout = onesided ? (nfft >> 1) + 1 : nfft
     out = zeros(stfttype(T, psdonly), nout, length(sig_split))
 
     freqs = onesided ? DSP.rfftfreq(nfft, fs) : DSP.fftfreq(nfft, fs)
-    r = fs*norm2/sqrt(length(freqs))
+    r = fs * norm2 / sqrt(length(freqs))
     offset = 0
-    for (i,sig) in enumerate(sig_split)
+    for (i, sig) in enumerate(sig_split)
         # mul!(tmp, plan, sig)
         tmp = estimator(sig, freqs)
         if isa(psdonly, PSDOnly)
@@ -60,11 +96,11 @@ S2 = spectrogram(s,estimator,window=rect)
 plot(plot(S1),plot(S2)) # Requires the package LPVSpectral.jl
 ```
 """
-function model_spectrum(f,h,args...;kwargs...)
-    function (s::AbstractArray{T}, freqs) where T
-        d = iddata(s,h)
-        model = f(d, args...;kwargs...)
-        tmp = vec(Complex{T}.(freqresp(model,T(2pi) .* freqs)))
+function model_spectrum(f, h, args...; kwargs...)
+    function (s::AbstractArray{T}, freqs) where {T}
+        d = iddata(s, h)
+        model = f(d, args...; kwargs...)
+        tmp = vec(Complex{T}.(freqresp(model, T(2pi) .* freqs)))
     end
 end
 
