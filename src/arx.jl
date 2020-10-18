@@ -35,7 +35,7 @@ function getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb)
     end
     return y,A
 end
-getARXregressor(d::AbstractIdData, na, nb) = getARXregressor(output(d),input(d), na, nb)
+getARXregressor(d::AbstractIdData, na, nb) = getARXregressor(time1(output(d)),time1(input(d)), na, nb)
 
 function getARregressor(dy::AbstractIdData, na)
     noutputs(dy) == 1 || throw(ArgumentError("Only 1d time series supported"))

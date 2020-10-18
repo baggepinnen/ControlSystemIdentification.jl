@@ -74,6 +74,13 @@ function Base.getproperty(d::AbstractIdData, s::Symbol)
 	return getfield(d, s)
 end
 
+function Base.:(==)(d1::T, d2::T) where T <: AbstractIdData
+	all(fieldnames(T)) do field
+		getfield(d1, field) == getfield(d2, field)
+	end
+end
+
+
 timevec(d::AbstractIdData) = range(0, step=sampletime(d), length=length(d))
 
 
@@ -95,7 +102,7 @@ function apply_fun(fun, d::InputOutputStateData, Ts = d.Ts)
 end
 
 function Base.getindex(d::Union{InputOutputData, InputOutputStateData}, i, j)
-	iddata(d.y[i,:], d.u[j,:], d.Ts)
+	iddata(d.y[i:i,:], d.u[j:j,:], d.Ts)
 end
 
 function Base.getindex(d::AbstractIdData, i)
@@ -269,7 +276,7 @@ Base.length(i::SimulationErrorIterator) = length(i.oi)
 		u = time1(input(d))
 		n += ninputs(d)
 	end
-	layout --> n
+	layout --> (n,1)
 	legend --> false
 	xguide --> "Time"
 	link --> :x

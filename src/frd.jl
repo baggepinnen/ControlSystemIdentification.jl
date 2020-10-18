@@ -42,6 +42,9 @@ getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
 getindex(f::FRD, i::Int) = f.r[i]
 getindex(f::FRD, i::Int, j::Int) = (@assert(i==1 && j==1); f)
 
+Base.isapprox(f1::FRD, f2::FRD; kwargs...) = (f1.w == f2.w) && isapprox(f1.r, f2.r; kwargs...)
+Base.:(==)(f1::FRD, f2::FRD) = (f1.w == f2.w) && ==(f1.r, f2.r)
+
 sensitivity(P::FRD,K) = FRD(P.w,1.0./(1. .+ vec(P).*vec(K)))
 feedback(P::FRD,K) = FRD(P.w,vec(P)./(1. .+ vec(P).*vec(K)))
 feedback(P,K::FRD) = FRD(K.w,vec(P)./(1. .+ vec(P).*vec(K)))
@@ -130,27 +133,6 @@ function wcfft(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
     Syy,Suu,Syu
 end
 
-function wfft_corr(y,u; n = length(y)÷10, noverlap = n÷2, window=hamming)
-    win, norm2 = DSP.Periodograms.compute_window(window, n)
-    Cyu = xcorr(y,u)
-    Cyy = xcorr(y,y)
-    Cuu = xcorr(u,u)
-    uw  = arraysplit(Cuu,n,noverlap,nextfastfft(n),win)
-    yw  = arraysplit(Cyy,n,noverlap,nextfastfft(n),win)
-    yuw = arraysplit(Cyu,n,noverlap,nextfastfft(n),win)
-    Syy = zeros(ComplexF64,length(uw[1])÷2 + 1)
-    Suu = zeros(ComplexF64,length(uw[1])÷2 + 1)
-    Syu = zeros(ComplexF64,length(uw[1])÷2 + 1)
-    for i in eachindex(uw)
-        xy    = rfft(yw[i])
-        xu    = rfft(uw[i])
-        xyu   = rfft(yuw[i])
-        Syu .+= xyu
-        Syy .+= xy
-        Suu .+= xu
-    end
-    Syy,Suu,Syu
-end
 
 
 @userplot Coherenceplot

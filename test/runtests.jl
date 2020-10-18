@@ -60,28 +60,38 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         @info "Testing iddata"
         @testset "vectors" begin
             T = 100
-            y = randn(T)
+            y = randn(1,T)
             @show d = iddata(y)
             @test d isa ControlSystemIdentification.OutputData
             @test length(d) == T
             @test output(d) == y
             @test !hasinput(d)
-            @test ControlSystemIdentification.time1(y) == y
+            @test ControlSystemIdentification.time2(y) == y
             @test sampletime(d) == 1
+            @test d[1:10] isa typeof(d)
+            @test length(d[1:10]) == 10
+            @test length(timevec(d)) == length(d)
 
             @test_nowarn plot(d)
 
-            u = randn(T)
+            u = randn(1,T)
             @show d = iddata(y,u)
             @test d isa ControlSystemIdentification.InputOutputData
             @test length(d) == T
             @test output(d) == y
             @test hasinput(d)
             @test input(d) == u
-            @test ControlSystemIdentification.time1(y) == y
+            @test ControlSystemIdentification.time2(y) == y
             @test sampletime(d) == 1
+            @test d[1,1] == d
+            @test d[1:10] isa typeof(d)
 
-            @test oftype(Matrix, output(d)) == y'
+            @test length([d d]) == 2length(d)
+
+            @test oftype(Matrix, output(d)) == y
+
+            yr,A = getARXregressor(d, 2, 2)
+            @test size(A,2) == 4
 
             @test_nowarn plot(d)
         end
@@ -574,6 +584,26 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         coherenceplot!(dn, subplot=3)
         plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
         plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
+
+
+        for op in (+,-,*)
+            @test op(G,G) isa FRD
+        end
+
+
+
+        ω = exp10.(LinRange(-2, 2, 100))
+        P,C = tf(1.0,[1,1]), pid(kp=1, ki=1)
+        S, D, N, T = gangoffour(P,C)
+        S2, D2, N2, T2 = gangoffour(FRD(ω, P),FRD(ω, C))
+
+        @test ninputs(S2) == noutputs(S2) == 1
+        @test size(S2) (1,1)
+        @test S2 == S2
+        @test FRD(ω, S) ≈ S2
+        @test FRD(ω, D) ≈ D2
+        @test FRD(ω, N) ≈ N2
+        @test FRD(ω, T) ≈ T2
 
     end
 
