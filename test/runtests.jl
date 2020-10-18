@@ -598,7 +598,7 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         S2, D2, N2, T2 = gangoffour(FRD(ω, P),FRD(ω, C))
 
         @test ninputs(S2) == noutputs(S2) == 1
-        @test size(S2) (1,1)
+        @test size(S2) == (1,1)
         @test S2 == S2
         @test FRD(ω, S) ≈ S2
         @test FRD(ω, D) ≈ D2
