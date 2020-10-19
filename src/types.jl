@@ -55,22 +55,22 @@ iddata(
 ) = InputOutputStateData(autodim(y), autodim(u), x, Ts)
 
 
-output(d::AbstractIdData)                        = d.y
-input(d::AbstractIdData)                         = d.u
+output(d::AbstractIdData) = d.y
+input(d::AbstractIdData) = d.u
 LowLevelParticleFilters.state(d::AbstractIdData) = d.x
-output(d::AbstractArray)                         = d
-input(d::AbstractArray)                          = d
-LowLevelParticleFilters.state(d::AbstractArray)  = d
-hasinput(::OutputData)                           = false
-hasinput(::AbstractIdData)                       = true
-hasinput(::AbstractArray)                        = true
-hasinput(::ControlSystems.LTISystem)             = true
-ControlSystems.noutputs(d::AbstractIdData)       = obslength(d.y)
-ControlSystems.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(d.u) : 0
-ControlSystems.nstates(d::AbstractIdData)        = 0
-ControlSystems.nstates(d::InputOutputStateData)  = obslength(d.x)
-obslength(d::AbstractIdData)                     = ControlSystems.noutputs(d)
-sampletime(d::AbstractIdData)                    = d.Ts === nothing ? 1.0 : d.Ts
+output(d::AbstractArray) = d
+input(d::AbstractArray) = d
+LowLevelParticleFilters.state(d::AbstractArray) = d
+hasinput(::OutputData) = false
+hasinput(::AbstractIdData) = true
+hasinput(::AbstractArray) = true
+hasinput(::ControlSystems.LTISystem) = true
+ControlSystems.noutputs(d::AbstractIdData) = obslength(d.y)
+ControlSystems.ninputs(d::AbstractIdData) = hasinput(d) ? obslength(d.u) : 0
+ControlSystems.nstates(d::AbstractIdData) = 0
+ControlSystems.nstates(d::InputOutputStateData) = obslength(d.x)
+obslength(d::AbstractIdData) = ControlSystems.noutputs(d)
+sampletime(d::AbstractIdData) = d.Ts === nothing ? 1.0 : d.Ts
 function Base.length(d::AbstractIdData)
     y = output(d)
     y isa AbstractMatrix && return size(y, 2)

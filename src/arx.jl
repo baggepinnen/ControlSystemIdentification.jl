@@ -379,7 +379,7 @@ w = [a;b]
 """
 function params(G::TransferFunction)
     am, bm = -denvec(G)[1][2:end], numvec(G)[1]
-    wm     = [am; bm]
+    wm = [am; bm]
     wm, am, bm
 end
 
@@ -421,7 +421,7 @@ function ControlSystems.TransferFunction(
     N = 500,
 )
     wm, am, bm = params(G)
-    na, nb     = length(am), length(bm)
+    na, nb = length(am), length(bm)
     if nb == 1 && size(Σ, 1) < length(wm)
         p = T(N, MvNormal(wm[1:end-1], Σ))
         a, b = params2poly(p, na)

@@ -185,14 +185,14 @@ end
 function stabilize(L, XU, i, j, m, n, γ)
     UtXt = XU[[n+1:end; 1:n], :]'
 
-    F   = qr(UtXt)
+    F = qr(UtXt)
     R22 = F.R[m+1:end, m+1:end]
-    Σ   = R22'R22
-    P2  = -γ^2 * I(n^2)
-    P1  = -γ^2 * kron(I(n), Σ) - γ^2 * kron(Σ, I(n))
-    A   = L[1:n, 1:n]
-    AΣ  = A * Σ
-    P0  = kron(AΣ, AΣ) - γ^2 * kron(Σ, Σ)
+    Σ = R22'R22
+    P2 = -γ^2 * I(n^2)
+    P1 = -γ^2 * kron(I(n), Σ) - γ^2 * kron(Σ, I(n))
+    A = L[1:n, 1:n]
+    AΣ = A * Σ
+    P0 = kron(AΣ, AΣ) - γ^2 * kron(Σ, Σ)
 
     θ = eigvals(Matrix([0I(n^2) -I(n^2); P0 P1]), -Matrix([I(n^2) 0I(n^2); 0I(n^2) P2]))
     c = maximum(abs.(θ[(imag.(θ).==0).*(real.(θ).>0)]))

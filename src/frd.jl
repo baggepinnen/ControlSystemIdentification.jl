@@ -17,9 +17,9 @@ end
 FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 import Base: +, -, *, length, sqrt, getindex
 Base.vec(f::FRD) = f.r
-*(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
-+(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
--(f::FRD, f2)    = FRD(f.w, f.r .- vec(f2))
+*(f::FRD, f2) = FRD(f.w, f.r .* vec(f2))
++(f::FRD, f2) = FRD(f.w, f.r .+ vec(f2))
+-(f::FRD, f2) = FRD(f.w, f.r .- vec(f2))
 
 # Below are required for ambiguities
 *(f::FRD, f2::FRD) = FRD(f.w, f.r .* f2.r)

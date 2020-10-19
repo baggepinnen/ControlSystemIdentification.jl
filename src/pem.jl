@@ -4,19 +4,19 @@ function mats(p, nx, ny, nu)
     for i = ny:nx-1
         A[i-ny+1, i+1] = 1
     end
-    s, e       = 1, nx * ny
+    s, e = 1, nx * ny
     A[:, 1:ny] = reshape(p[s:e], nx, ny)
-    s, e       = e + 1, e + nu * nx
-    B          = reshape(p[s:e], nx, nu)
-    s, e       = e + 1, e + ny * nx
-    K          = reshape(p[s:e], nx, ny)
+    s, e = e + 1, e + nu * nx
+    B = reshape(p[s:e], nx, nu)
+    s, e = e + 1, e + ny * nx
+    K = reshape(p[s:e], nx, ny)
     A, B, K
 end
 function model_from_params(p, nx, ny, nu)
     A, B, K = mats(p, nx, ny, nu)
-    x0      = copy(p[end-nx+1:end])
-    sys     = StateSpaceNoise(A, B, K, 1.0)
-    sysf    = SysFilter(sys, x0, similar(x0, ny))
+    x0 = copy(p[end-nx+1:end])
+    sys = StateSpaceNoise(A, B, K, 1.0)
+    sysf = SysFilter(sys, x0, similar(x0, ny))
 end
 
 function pem_costfun(p, y, u, nx, metric::F) where {F} # To ensure specialization on metric
@@ -66,17 +66,17 @@ p = [A[:];B[:];K[:];x0]
 function pem(
     d;
     nx,
-    solver              = BFGS(),
-    focus               = :prediction,
-    metric              = sse,
-    regularizer         = p -> 0,
-    iterations          = 100,
+    solver = BFGS(),
+    focus = :prediction,
+    metric = sse,
+    regularizer = p -> 0,
+    iterations = 100,
     stabilize_predictor = true,
-    difficult           = false,
-    A                   = 0.0001randn(nx, obslength(output(d))),
-    B                   = 0.001randn(nx, obslength(input(d))),
-    K                   = 0.001randn(nx, obslength(output(d))),
-    x0                  = 0.001randn(nx),
+    difficult = false,
+    A = 0.0001randn(nx, obslength(output(d))),
+    B = 0.001randn(nx, obslength(input(d))),
+    K = 0.001randn(nx, obslength(output(d))),
+    x0 = 0.001randn(nx),
     kwargs...,
 )
     y, u = output(d), input(d)
@@ -125,16 +125,16 @@ function pem(
 end
 
 function stabilize(model)
-    s            = model.sys
+    s = model.sys
     @unpack A, K = s
-    C            = s.C
-    poles        = eigvals(A - K * C)
-    newpoles     = map(poles) do p
+    C = s.C
+    poles = eigvals(A - K * C)
+    newpoles = map(poles) do p
         ap = abs(p)
         ap <= 1 && (return p)
         p / (ap + sqrt(eps()))
     end
-    K2           = ControlSystems.acker(A', C', newpoles)' .|> real
+    K2 = ControlSystems.acker(A', C', newpoles)' .|> real
     all(abs(p) <= 1 for p in eigvals(A - K * C)) || @warn("Failed to stabilize predictor")
     s.K .= K2
     model

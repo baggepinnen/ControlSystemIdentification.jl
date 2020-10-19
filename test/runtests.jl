@@ -9,10 +9,10 @@ function ⟂(x)
 end
 function generate_system(nx, ny, nu)
     U, S = ⟂(randn(nx, nx)), diagm(0 => 0.2 .+ 0.78rand(nx))
-    A    = S * U
-    B    = randn(nx, nu)
-    C    = randn(ny, nx)
-    sys  = ss(A, B, C, 0, 1)
+    A = S * U
+    B = randn(nx, nu)
+    C = randn(ny, nx)
+    sys = ss(A, B, C, 0, 1)
 end
 
 
@@ -280,11 +280,11 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         σu = 0
         σy = 0
 
-        u  = randn(nu, T)
+        u = randn(nu, T)
         un = u + sim(sysn, σu * randn(size(u)), 0 * x0)
-        y  = sim(sys, un, x0)
+        y = sim(sys, un, x0)
         yn = y + sim(sysn, σy * randn(size(u)), 0 * x0)
-        d  = iddata(yn, un)
+        d = iddata(yn, un)
 
         # using BenchmarkTools
         # @btime begin
@@ -511,11 +511,11 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
     @testset "arma" begin
         @info "Testing arma"
 
-        N  = 2000     # Number of time steps
-        t  = 1:N
+        N = 2000     # Number of time steps
+        t = 1:N
         Δt = 1        # Sample time
-        u  = randn(N) # A random control input
-        a  = 0.9
+        u = randn(N) # A random control input
+        a = 0.9
 
         G = tf([1, 0.1], [1, -a, 0], 1)
         y, t, x = lsim(G, u, 1:N) .|> vec
@@ -561,19 +561,19 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
     @testset "frd" begin
         Random.seed!(1)
         ##
-        T           = 100000
-        h           = 1
-        t           = range(0, step = h, length = T)
+        T = 100000
+        h = 1
+        t = range(0, step = h, length = T)
         sim(sys, u) = lsim(sys, u, t)[1][:]
-        σy          = 0.5
-        sys         = tf(1, [1, 2 * 0.1, 0.1])
-        ωn          = sqrt(0.3)
-        sysn        = tf(σy * ωn, [1, 2 * 0.1 * ωn, ωn^2])
+        σy = 0.5
+        sys = tf(1, [1, 2 * 0.1, 0.1])
+        ωn = sqrt(0.3)
+        sysn = tf(σy * ωn, [1, 2 * 0.1 * ωn, ωn^2])
 
-        u  = randn(T)
-        y  = sim(sys, u)
+        u = randn(T)
+        y = sim(sys, u)
         yn = y + sim(sysn, randn(size(u)))
-        d  = iddata(y, u, h)
+        d = iddata(y, u, h)
         dn = iddata(yn, u, 1)
 
         # using BenchmarkTools
@@ -591,10 +591,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         bodeplot(
             [sys, sysn],
             exp10.(range(-3, stop = log10(pi), length = 200)),
-            layout    = (1, 3),
+            layout = (1, 3),
             plotphase = false,
-            subplot   = [1, 2],
-            size      = (3 * 800, 600),
+            subplot = [1, 2],
+            size = (3 * 800, 600),
             linecolor = :blue,
         )#, ylims=(0.1,300))
 
@@ -639,16 +639,16 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         sys = tf(1, [1, 2 * 0.1, 0.1])
         sysn = tf(σy, [1, 2 * 0.1, 0.3])
 
-        u  = randn(nu, T)
+        u = randn(nu, T)
         un = u + 0.1randn(size(u))
-        y  = sim(sys, u)
+        y = sim(sys, u)
         yn = y + sim(sysn, σy * randn(size(u)))
         dd = iddata(yn, un, 1)
 
-        uv  = randn(nu, T)
-        yv  = sim(sys, uv)
+        uv = randn(nu, T)
+        yv = sim(sys, uv)
         ynv = yv + sim(sysn, σy * randn(size(uv)))
-        dv  = iddata(yv, uv)
+        dv = iddata(yv, uv)
         dnv = iddata(ynv, uv)
         ##
 
