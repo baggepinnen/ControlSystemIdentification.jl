@@ -1,33 +1,33 @@
 
 function mats(p, nx, ny, nu)
-	A         = zeros(eltype(p), nx, nx)
-	for i = ny:nx-1
-		A[i-ny+1,i+1] = 1
-	end
-	s,e       = 1,nx*ny
-	A[:,1:ny] = reshape(p[s:e], nx, ny)
-	s,e       = e+1,e+nu*nx
-	B         = reshape(p[s:e], nx, nu)
-	s,e       = e+1,e+ny*nx
-	K         = reshape(p[s:e], nx, ny)
-	A,B,K
+    A = zeros(eltype(p), nx, nx)
+    for i = ny:nx-1
+        A[i-ny+1, i+1] = 1
+    end
+    s, e       = 1, nx * ny
+    A[:, 1:ny] = reshape(p[s:e], nx, ny)
+    s, e       = e + 1, e + nu * nx
+    B          = reshape(p[s:e], nx, nu)
+    s, e       = e + 1, e + ny * nx
+    K          = reshape(p[s:e], nx, ny)
+    A, B, K
 end
 function model_from_params(p, nx, ny, nu)
-	A,B,K = mats(p, nx, ny, nu)
-	x0    = copy(p[end-nx+1:end])
-	sys   = StateSpaceNoise(A,B,K,1.)
-	sysf  = SysFilter(sys,x0,similar(x0,ny))
+    A, B, K = mats(p, nx, ny, nu)
+    x0      = copy(p[end-nx+1:end])
+    sys     = StateSpaceNoise(A, B, K, 1.0)
+    sysf    = SysFilter(sys, x0, similar(x0, ny))
 end
 
-function pem_costfun(p,y,u,nx,metric::F) where F # To ensure specialization on metric
-	nu,ny = obslength(u),obslength(y)
-	model = model_from_params(p, nx, ny, nu)
-	return mean(metric(e) for e in prediction_errors(model,y,u))
+function pem_costfun(p, y, u, nx, metric::F) where {F} # To ensure specialization on metric
+    nu, ny = obslength(u), obslength(y)
+    model = model_from_params(p, nx, ny, nu)
+    return mean(metric(e) for e in prediction_errors(model, y, u))
 end
-function sem_costfun(p,y,u,nx,metric::F) where F # To ensure specialization on metric
-	nu,ny = obslength(u),obslength(y)
-	model = model_from_params(p, nx, ny, nu)
-	return mean(metric(e) for e in simulation_errors(model,y,u))
+function sem_costfun(p, y, u, nx, metric::F) where {F} # To ensure specialization on metric
+    nu, ny = obslength(u), obslength(y)
+    model = model_from_params(p, nx, ny, nu)
+    return mean(metric(e) for e in simulation_errors(model, y, u))
 end
 
 
@@ -125,34 +125,34 @@ function pem(
 end
 
 function stabilize(model)
-	s           = model.sys
-	@unpack A,K = s
-	C           = s.C
-	poles       = eigvals(A-K*C)
-	newpoles = map(poles) do p
-		ap = abs(p)
-		ap <= 1 && (return p)
-		p / (ap + sqrt(eps()))
-	end
-	K2   = ControlSystems.acker(A',C', newpoles)' .|> real
-	all(abs(p) <= 1 for p in eigvals(A-K*C)) || @warn("Failed to stabilize predictor")
-	s.K .= K2
-	model
+    s            = model.sys
+    @unpack A, K = s
+    C            = s.C
+    poles        = eigvals(A - K * C)
+    newpoles     = map(poles) do p
+        ap = abs(p)
+        ap <= 1 && (return p)
+        p / (ap + sqrt(eps()))
+    end
+    K2           = ControlSystems.acker(A', C', newpoles)' .|> real
+    all(abs(p) <= 1 for p in eigvals(A - K * C)) || @warn("Failed to stabilize predictor")
+    s.K .= K2
+    model
 end
 
 function stabilize(model, solver, options, cfi)
-	s = model.sys
-	cost = function(p)
-		maximum(abs.(eigvals(s.A-p*s.K*s.C)))-0.9999999
-	end
-	p = fzero(cost,1e-9,1-1e-9)
-	s.K .*= p
-	model
+    s = model.sys
+    cost = function (p)
+        maximum(abs.(eigvals(s.A - p * s.K * s.C))) - 0.9999999
+    end
+    p = fzero(cost, 1e-9, 1 - 1e-9)
+    s.K .*= p
+    model
 end
 
-function stabfun(nx,ny,nu)
-	function (p)
-		model = model_from_params(p,nx,nu,ny)
-		isstable(model.sys)
-	end
+function stabfun(nx, ny, nu)
+    function (p)
+        model = model_from_params(p, nx, nu, ny)
+        isstable(model.sys)
+    end
 end
