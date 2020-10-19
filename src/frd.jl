@@ -227,15 +227,15 @@ end
 @recipe function crosscorplot(p::Crosscorplot)
     d = p.args[1]
     N = length(d)
-    lags = length(p.args) >= 2 ? p.args[2] : -max(N÷10, 100):max(N÷2, 100)
-    xc = crosscor(time1(d.u), time1(d.y), lags, demean=true)
+    lags = length(p.args) >= 2 ? p.args[2] : -max(N ÷ 10, 100):max(N ÷ 2, 100)
+    xc = crosscor(time1(d.u), time1(d.y), lags, demean = true)
     title --> "Input-Output cross correlation"
     xguide --> "Lag [s]"
 
     @series begin
         seriestype --> :sticks
         label --> ""
-        lags.*d.Ts, xc
+        lags .* d.Ts, xc
     end
     linestyle := :dash
 
@@ -246,17 +246,17 @@ end
     @series begin
         seriestype := :hline
         # lags.*d.Ts, 2 .*sqrt.(1 ./ Ni) # The denominator in crosscorr already takes care of this
-        lags.*d.Ts, [2 .*sqrt.(1 ./ N)]
+        lags .* d.Ts, [2 .* sqrt.(1 ./ N)]
     end
     @series begin
         seriestype := :hline
         # lags.*d.Ts, -2 .*sqrt.(1 ./ Ni)
-        lags.*d.Ts, [-2 .*sqrt.(1 ./ N)]
+        lags .* d.Ts, [-2 .* sqrt.(1 ./ N)]
     end
 end
 
 
-function ControlSystems.gangoffour(P::FRD,C::FRD, ω=nothing)
+function ControlSystems.gangoffour(P::FRD, C::FRD, ω = nothing)
     ω === nothing || ω == P.ω || error("Incosistent frequency vectors")
     S = sensitivity(P, C)
     D = (P * S)

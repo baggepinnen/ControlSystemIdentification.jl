@@ -599,7 +599,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         )#, ylims=(0.1,300))
 
         coherenceplot!(dn, subplot = 3)
-        crosscorplot!(dn, -10:100, subplot=4)
+        crosscorplot!(dn, -10:100, subplot = 4)
         plot!(G, subplot = 1, lab = "G Est", alpha = 0.3, title = "Process model")
         plot!(√N, subplot = 2, lab = "N Est", alpha = 0.3, title = "Noise model")
 
