@@ -569,9 +569,10 @@ freqresptest(G,model,tol) = freqresptest(G,model) < tol
         G,N = tfest(dn, 0.02)
         noisemodel = innovation_form(ss(sys), syse=ss(sysn))
         noisemodel.D .*= 0
-        bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2], size=(3*800, 600), linecolor=:blue)#, ylims=(0.1,300))
+        bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,4), plotphase=false, subplot=[1,2], size=(3*800, 600), linecolor=:blue)#, ylims=(0.1,300))
 
         coherenceplot!(dn, subplot=3)
+        crosscorplot!(dn, -10:100, subplot=4)
         plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
         plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
