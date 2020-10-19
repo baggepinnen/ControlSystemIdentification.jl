@@ -67,6 +67,8 @@ function Base.length(d::AbstractIdData)
 	return length(y)
 end
 
+Base.lastindex(d::AbstractIdData) = length(d)
+
 function Base.getproperty(d::AbstractIdData, s::Symbol)
 	if s === :fs || s === :Fs
 		return 1/d.Ts
