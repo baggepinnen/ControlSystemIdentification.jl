@@ -86,7 +86,7 @@ Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
 find_nanb
 @recipe function find_nanb(p::Find_nanb; logrms = false)
     d, na, nb = p.args[1:3]
-    y, u = output(d), input(d)
+    y, u = time1(output(d)), time1(input(d))
     error = zeros(na, nb, 2)
     for i = 1:na, j = 1:nb
         yt, A = getARXregressor(y, u, i, j)
