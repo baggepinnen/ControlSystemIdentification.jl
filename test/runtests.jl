@@ -212,6 +212,13 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             @test mean(abs2, y - yp') / mean(abs2, y) < 0.01
 
 
+            res = n4sid(d, r, i = r+1)
+            freqresptest(G, res.sys) < 0.2 * m * l
+            w = exp10.(LinRange(-5, log10(pi), 600))
+            bodeplot(G, w)
+            bodeplot!(res.sys, w)
+
+
             G = ss(0.2randn(r, r), randn(r, m), randn(l, r), 0 * randn(l, m), 1)
             u = randn(N, m)
 
@@ -227,7 +234,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             @test norm(res.S) < ϵ
             @test freqresptest(G, res.sys) < 0.2 * m * l
 
-            if m == l == 1
+            if m == l # == 1
                 iy, it, ix = impulse(G, 20)
                 H = okid(d, r, 20)
                 @test norm(iy - permutedims(H, (3, 1, 2))) < 0.05
@@ -763,3 +770,42 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         ) >= CartesianIndex(-1, 0)
     end
 end
+
+
+
+
+
+##
+# using TotalLeastSquares
+# using LinearAlgebra: QRIteration
+# using Random
+# plotly(size=(600,400))
+# N = 500
+# ivec = 1:5:50
+# res = tmap(ivec) do i
+#     Random.seed!(i)
+#     r = 10
+#     A = Matrix{Float64}(I(r))
+#     A[1, 1] = 1.01
+#     G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+#     r = G.nx
+#     res = map(1:20) do _
+#         u = randn(N, G.nu)
+#         x0 = randn(r)
+#         y, t, x = lsim(G, u, 1:N, x0 = x0)
+#         @test sum(!isfinite, y) == 0
+#         yn = y + 0.1randn(size(y))
+#         d = iddata(yn, u, 1)
+#
+#         # res = n4sid(d, r, i = r+i, svd = x->svd(x, alg = QRIteration()))
+#         res = n4sid2(d, r, i = r+i)
+#         # freqresptest(G, res.sys) < 0.2 * m * l
+#         w = exp10.(LinRange(-2, log10(pi), 600))
+#         b1,_ = bode(G, w)
+#         b2,_ = bode(res.sys, w)
+#         mean(abs2, log.(b1)-log.(b2))
+#     end
+#     mean(res)
+# end
+#
+# plot(ivec, res)

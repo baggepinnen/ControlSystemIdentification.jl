@@ -91,7 +91,8 @@ function n4sid(
     U0i = hankel(u, 0, i)
     UY0 = [U0im1; hankel(u, i, 2i - 1); Y0im1]
     UY1 = [U0i; hankel(u, i + 1, 2i - 1); Y0i]
-    proj(A, B) = A * B' / (B * B')
+    proj(A, B) = A * (B' / (B * B'))
+    # proj(A, B) = (A * B') / (B * B')
     Li = proj(hankel(y, i, 2i - 1), UY0)
     Lip1 = proj(hankel(y, i + 1, 2i - 1), UY1)
 
@@ -291,12 +292,12 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
             Y[i, j, :] = YY[i, j, 2:end]
         end
     end
-    H, H2 = similar(YY, m * nout, n * nin), similar(YY, m * nout, n * nin)
+    H, H2 = zeros(eltype(YY), m * nout, n * nin), zeros(eltype(YY), m * nout, n * nin)
     for i = 1:m
         for j = 1:n
             for Q = 1:nout
                 for P = 1:nin
-                    i1 = nout * (i - 1) + P
+                    i1 = nout * (i - 1) + Q
                     i2 = nin * (j - 1) + P
                     H[i1, i2] = Y[Q, P, i+j-1]
                     H2[i1, i2] = Y[Q, P, i+j]
@@ -305,6 +306,7 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
         end
     end
     # return H
+    any(!isfinite, H) && error("Got infinite stuff in H")
     U, S, V = svd(H)
     Ur = U[:, 1:r]
     Vr = V[:, 1:r]
@@ -316,27 +318,29 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
 end
 
 """
-    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r)
+    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; λ=0)
 
 Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as an initial step.
 
 # Arguments:
 - `r`: Model order
 - `l`: Number of Markov parameters to estimate.
+- `λ`: Regularization parameter
 """
-era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r) = era(okid(d, r, l), d.Ts, r, m, n)
+era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; kwargs...) = era(okid(d, r, l; kwargs...), d.Ts, r, m, n)
 
 
 """
-    H = okid(d::AbstractIdData, r, l = 5r)
+    H = okid(d::AbstractIdData, r, l = 5r; λ=0)
 
 Observer Kalman filter identification. Returns the Markov parameters `H` size `n_out×n_in×l+1`
 
 # Arguments:
 - `r`: Model order
 - `l`: Number of Markov parameters to estimate.
+- `λ`: Regularization parameter
 """
-function okid(d::AbstractIdData, r, l = 5r)
+function okid(d::AbstractIdData, r, l = 5r; λ=0)
     y, u = time2(output(d)), time2(input(d))
     p, m = size(y) # p is the number of outputs
     q = size(u, 1) # q is the number of inputs
@@ -352,7 +356,11 @@ function okid(d::AbstractIdData, r, l = 5r)
             V[q+(i-2)*(q+p)+1:q+(i-1)*(q+p), i+j-1] = vtemp
         end
     end
-    Ybar = y * pinv(V)
+    if λ > 0
+        Ybar = [y zeros(size(y,1), size(V,1))] / [V λ*I]
+    else
+        Ybar = y / V
+    end
     # @show size(Ybar,1),p,q
 
     D = Ybar[:, 1:q] # Feed-through term (D) is first term

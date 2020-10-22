@@ -162,4 +162,7 @@ function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = zeros(sys.nx))
     simulate(sys, input(u), x0)
 end
 
+ControlSystems.innovation_form(sys::Union{StateSpaceNoise, N4SIDStateSpace}) =
+    ss(sys.A, sys.K, sys.C, Matrix(Eye(sys.ny)), sys.Ts) # innovation model
+
 end # module

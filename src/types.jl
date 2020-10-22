@@ -196,9 +196,6 @@ function Base.getproperty(sys::StateSpaceNoise, p::Symbol)
     return getfield(sys, p)
 end
 
-ControlSystems.innovation_form(sys::StateSpaceNoise) =
-    ss(sys.A, sys.K, sys.C, Matrix(Eye(sys.ny)), sys.Ts) # innovation model
-
 
 
 
