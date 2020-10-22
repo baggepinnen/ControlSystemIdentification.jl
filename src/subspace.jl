@@ -233,7 +233,7 @@ function simulate(
     u = input(d)
     yh = map(observations(u, u)) do (ut, _)
         yh = vec(C * state(kf) + D * ut)
-        predict!(kf, ut)
+        LowLevelParticleFilters.predict!(kf, ut)
         stochastic ?
         StaticParticles(MvNormal(yh, Symmetric(C * covariance(kf) * C' + kf.R2))) : yh
     end

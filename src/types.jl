@@ -21,7 +21,7 @@ struct InputOutputStateData{Y,U,X,T} <: AbstractIdData
 end
 
 autodim(x::Vector{<:AbstractVector}) = x
-autodim(x::AbstractVector) = x
+autodim(x::AbstractVector) = x'
 function autodim(x)
     r = size(x, 1)
     c = size(x, 2)
@@ -94,7 +94,7 @@ end
 
 
 timevec(d::AbstractIdData) = range(0, step = sampletime(d), length = length(d))
-
+timevec(d::AbstractVector, h::Real) = range(0, step=h, length=length(d))
 
 function apply_fun(fun, d::OutputData, Ts = d.Ts)
     iddata(fun(d.y), Ts)
@@ -128,7 +128,14 @@ dr = resample(d::InputOutputData, f)
 
 Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
 """
-DSP.resample(d::AbstractIdData, f) = apply_fun(y -> resample(y, f), d, d.Ts / f)
+function DSP.resample(d::AbstractIdData, f)
+    apply_fun(d, d.Ts / f) do y
+        yr = mapslices(y, dims=2) do y
+            resample(y, f)
+        end
+        yr
+    end
+end
 
 function Base.hcat(d1::InputOutputData, d2::InputOutputData)
     @assert d1.Ts == d2.Ts

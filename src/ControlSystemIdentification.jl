@@ -16,6 +16,7 @@ using DSP,
     MonteCarloMeasurements,
     LowLevelParticleFilters,
     BandedMatrices
+import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates
