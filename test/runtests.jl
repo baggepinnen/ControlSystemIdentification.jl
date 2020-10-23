@@ -212,7 +212,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             @test mean(abs2, y - yp') / mean(abs2, y) < 0.01
 
 
-            res = n4sid(d, r, i = r+1)
+            res = n4sid(d, r, i = r + 1)
             freqresptest(G, res.sys) < 0.2 * m * l
             w = exp10.(LinRange(-5, log10(pi), 600))
             bodeplot(G, w)

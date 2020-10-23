@@ -327,7 +327,8 @@ Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as a
 - `l`: Number of Markov parameters to estimate.
 - `λ`: Regularization parameter
 """
-era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; kwargs...) = era(okid(d, r, l; kwargs...), d.Ts, r, m, n)
+era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; kwargs...) =
+    era(okid(d, r, l; kwargs...), d.Ts, r, m, n)
 
 
 """
@@ -340,7 +341,7 @@ Observer Kalman filter identification. Returns the Markov parameters `H` size `n
 - `l`: Number of Markov parameters to estimate.
 - `λ`: Regularization parameter
 """
-@views function okid(d::AbstractIdData, r, l = 5r; λ=0)
+@views function okid(d::AbstractIdData, r, l = 5r; λ = 0)
     y, u = time2(output(d)), time2(input(d))
     p, m = size(y) # p is the number of outputs
     q = size(u, 1) # q is the number of inputs
@@ -357,7 +358,7 @@ Observer Kalman filter identification. Returns the Markov parameters `H` size `n
         end
     end
     if λ > 0
-        Ȳ = [y zeros(size(y,1), size(V,1))] / [V λ*I]
+        Ȳ = [y zeros(size(y, 1), size(V, 1))] / [V λ * I]
     else
         Ȳ = y / V
     end
