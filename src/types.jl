@@ -94,7 +94,7 @@ end
 
 
 timevec(d::AbstractIdData) = range(0, step = sampletime(d), length = length(d))
-timevec(d::AbstractVector, h::Real) = range(0, step=h, length=length(d))
+timevec(d::AbstractVector, h::Real) = range(0, step = h, length = length(d))
 
 function apply_fun(fun, d::OutputData, Ts = d.Ts)
     iddata(fun(d.y), Ts)
@@ -130,7 +130,7 @@ Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
 """
 function DSP.resample(d::AbstractIdData, f)
     apply_fun(d, d.Ts / f) do y
-        yr = mapslices(y, dims=2) do y
+        yr = mapslices(y, dims = 2) do y
             resample(y, f)
         end
         yr
