@@ -186,7 +186,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         N = 200
         r = 2
         m = 2
-        l = 1
+        l = 2
         for r = 1:5, m = 1:2, l = 1:2
             Random.seed!(0)
             @show r, m, l

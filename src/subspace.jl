@@ -340,12 +340,12 @@ Observer Kalman filter identification. Returns the Markov parameters `H` size `n
 - `l`: Number of Markov parameters to estimate.
 - `λ`: Regularization parameter
 """
-function okid(d::AbstractIdData, r, l = 5r; λ=0)
+@views function okid(d::AbstractIdData, r, l = 5r; λ=0)
     y, u = time2(output(d)), time2(input(d))
     p, m = size(y) # p is the number of outputs
     q = size(u, 1) # q is the number of inputs
 
-    # Step 2, form y, V, solve for observer Markov params, Ybar
+    # Step 2, form y, V, solve for observer Markov params, Ȳ
     V = zeros(eltype(y), q + (q + p) * l, m)
     for i = 1:m
         V[1:q, i] = u[1:q, i]
@@ -357,30 +357,30 @@ function okid(d::AbstractIdData, r, l = 5r; λ=0)
         end
     end
     if λ > 0
-        Ybar = [y zeros(size(y,1), size(V,1))] / [V λ*I]
+        Ȳ = [y zeros(size(y,1), size(V,1))] / [V λ*I]
     else
-        Ybar = y / V
+        Ȳ = y / V
     end
-    # @show size(Ybar,1),p,q
+    # @show size(Ȳ,1),p,q
 
-    D = Ybar[:, 1:q] # Feed-through term (D) is first term
-    Ybar1, Ybar2 = similar(Ybar, p, q, l), similar(Ybar, p, q, l)
-    Y = similar(Ybar, p, q, l)
-    # Ybar1(1:PP,1:QQ,i) = Ybar(:,QQ+1+(QQ+PP)*(i-1):QQ+(QQ+PP)*(i-1)+QQ);
-    # Ybar2(1:PP,1:QQ,i) = Ybar(:,QQ+1+(QQ+PP)*(i-1)+QQ:QQ+(QQ+PP)*i);
+    D = Ȳ[:, 1:q] # Feed-through term (D) is first term
+    Ȳ1, Ȳ2 = similar(Ȳ, p, q, l), similar(Ȳ, p, q, l)
+    Y = similar(Ȳ, p, q, l)
+    # Ȳ1(1:PP,1:QQ,i) = Ȳ(:,QQ+1+(QQ+PP)*(i-1):QQ+(QQ+PP)*(i-1)+QQ);
+    # Ȳ2(1:PP,1:QQ,i) = Ȳ(:,QQ+1+(QQ+PP)*(i-1)+QQ:QQ+(QQ+PP)*i);
     for i = 1:l
         # @show ind1 = q+1+(q+p)*(i-1):2q+(q+p)*(i-1)
         # @show ind2 = 2q+1+(q+p)*(i-1):q+(q+p)*i
         ind1 = q+1+(q+p)*(i-1):2q+(q+p)*(i-1)
         ind2 = 2q+1+(q+p)*(i-1):q+(q+p)*i
-        Ybar1[:, :, i] = Ybar[:, ind1]
-        Ybar2[:, :, i] = Ybar[:, ind2]
+        Ȳ1[:, :, i] = Ȳ[:, ind1]
+        Ȳ2[:, :, i] = Ȳ[:, ind2]
     end
-    Y[:, :, 1] = Ybar1[:, :, 1] + Ybar2[:, :, 1] * D
+    Y[:, :, 1] = Ȳ1[:, :, 1] + Ȳ2[:, :, 1] * D
     for k = 2:l
-        Y[:, :, k] = Ybar1[:, :, k] + Ybar2[:, :, k] * D
+        Y[:, :, k] = Ȳ1[:, :, k] + Ȳ2[:, :, k] * D
         for i = 1:k-1
-            Y[:, :, k] = Y[:, :, k] + Ybar2[:, :, i] * Y[:, :, k-i]
+            Y[:, :, k] = Y[:, :, k] + Ȳ2[:, :, i] * Y[:, :, k-i]
         end
     end
     H = similar(D, size(D)..., l + 1)
