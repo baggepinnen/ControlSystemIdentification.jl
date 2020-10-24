@@ -277,6 +277,7 @@ end
         data::FRD,
         p0,
         link = log ∘ abs;
+        freq_weight = sqrt(data.w[1]*data.w[end]),
         opt = BFGS(),
         opts = Optim.Options(
             store_trace       = true,
@@ -299,6 +300,7 @@ Fit a parametric transfer function to frequency-domain data.
 - `data`: An `FRD` onbject with frequency domain data.
 - `p0`: Initial parameter guess. Can be a `NamedTuple` or `ComponentVector` with fields `b,a` specifying numerator and denominator as they appear in the call to `tf`, i.e., `(b = [1.0], a = [1.0,1.0,1.0])`. Can also be an instace of `TransferFunction`.
 - `link`: By default, phase information is discarded in the fitting. To include phase, change to `link = log`.
+- `freq_weight`: Apply weighting wit the inverse frequency. The value determines the cutoff frequency before which the weight is constant, after which the weight decreases linearly. Defaults to the geometric mean of the smallest and largest frequency.
 - `opt`: The Optim optimizer to use.
 - `opts`: `Optim.Options` controlling the solver options.
 """
@@ -306,12 +308,13 @@ function arma(
     data::FRD,
     p0,
     link = log ∘ abs;
+    freq_weight = sqrt(data.w[2]*data.w[end]),
     opt = BFGS(),
     opts = Optim.Options(
         store_trace       = true,
         show_trace        = true,
         show_every        = 1,
-        iterations        = 100,
+        iterations        = 1000,
         allow_f_increases = false,
         time_limit        = 100,
         x_tol             = 0,
@@ -323,13 +326,19 @@ function arma(
 )
 
     ladr = @. link(data.r)
+    if freq_weight > 0
+        wv = 1 ./ (data.w .+ freq_weight)
+    end
 
     function loss(p)
         a, b = p.a, p.b
         G = tf(b, a)
         mag = vec(freqresp(G, data.w))
         @. mag = link(mag) - ladr
-        sum(abs2, mag)
+        if freq_weight > 0
+            mag .*= wv
+        end
+        mean(abs2, mag)
     end
 
 
@@ -340,6 +349,7 @@ end
 
 function arma(data::FRD, G::LTISystem, args...; kwargs...)
     ControlSystems.issiso(G) || throw(ArgumentError("Can only fit SISO model to FRD"))
+    ControlSystems.isdiscrete(G) && throw(DomainError("Continuous-time model expected"))
     b,a = numvec(G)[], denvec(G)[]
     arma(data, (; b=b, a=a), args...; kwargs...)
 end

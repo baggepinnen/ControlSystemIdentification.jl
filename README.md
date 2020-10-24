@@ -327,6 +327,8 @@ G = arma(d::FRD, G0)
 ```
 Internally, Optim is using a gradient-based optimizer to find the optimal fit of the bode curve of the system. The defaut optimizer `BFGS` can be changed, see the docstring `?arma`.
 
+For a comparison between estimation in the time and frequency domains, see [this notebook](https://nbviewer.jupyter.org/github/JuliaControl/ControlExamples.jl/blob/master/identification_time_vs_freq.ipynb).
+
 # Impulse-response estimation
 The functions `impulseest(h,y,u,order)` and `impulseestplot` performs impulse-response estimation by fitting a high-order FIR model.
 
@@ -348,7 +350,7 @@ impulseplot!(sys,50, lab="True system")
 ![window](figs/impulse.svg)
 
 See the [example notebooks](
-https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
+https://github.com/JuliaControl/ControlExamples.jl) for more details.
 
 # Validation
 A number of functions are made available to assist in validation of the estimated models. We illustrate by an example
