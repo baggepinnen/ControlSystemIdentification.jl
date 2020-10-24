@@ -271,6 +271,77 @@ function arma(d::AbstractIdData, na, nc; initial_order = 20, estimator = \)
 end
 
 
+
+"""
+    arma(
+        data::FRD,
+        p0,
+        link = log ∘ abs;
+        opts = Optim.Options(
+            store_trace       = true,
+            show_trace        = true,
+            show_every        = 1,
+            iterations        = 100,
+            allow_f_increases = false,
+            time_limit        = 100,
+            x_tol             = 0,
+            f_tol             = 0,
+            g_tol             = 1e-8,
+            f_calls_limit     = 0,
+            g_calls_limit     = 0,
+        ),
+    )
+
+Fit a parametric transfer function to frequency-domain data.
+
+# Arguments:
+- `data`: An `FRD` onbject with frequency domain data.
+- `p0`: Initial parameter guess. Can be a `NamedTuple` or `ComponentVector` with fields `b,a` specifying numerator and denominator as they appear in the call to `tf`, i.e., `(b = [1.0], a = [1.0,1.0,1.0])`. Can also be an instace of `TransferFunction`.
+- `link`: By default, phase information is discarded in the fitting. To include phase, change to `link = log`.
+- `opts`: `Optim.Options` controlling the solver options.
+"""
+function arma(
+    data::FRD,
+    p0,
+    link = log ∘ abs;
+    opts = Optim.Options(
+        store_trace       = true,
+        show_trace        = true,
+        show_every        = 1,
+        iterations        = 100,
+        allow_f_increases = false,
+        time_limit        = 100,
+        x_tol             = 0,
+        f_tol             = 0,
+        g_tol             = 1e-8,
+        f_calls_limit     = 0,
+        g_calls_limit     = 0,
+    ),
+)
+
+    ladr = @. link(data.r)
+
+    function loss(p)
+        a, b = p.a, p.b
+        G = tf(b, a)
+        mag = vec(freqresp(G, data.w))
+        @. mag = link(mag) - ladr
+        sum(abs2, mag)
+    end
+
+
+    res = Optim.optimize(loss, ComponentVector(p0), BFGS(), opts, autodiff = :forward)
+
+    tf(res.minimizer.b, res.minimizer.a)
+end
+
+function arma(data::FRD, G::LTISystem, args...; kwargs...)
+    ControlSystems.issiso(G) || throw(ArgumentError("Can only fit SISO model to FRD"))
+    b,a = numvec(G)[], denvec(G)[]
+    arma(data, (; b=b, a=a), args...; kwargs...)
+end
+
+
 """
     arma_ssa(d::AbstractIdData, na, nc; L=nothing, estimator=\\, robust=false)
 

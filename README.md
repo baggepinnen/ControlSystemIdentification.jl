@@ -281,6 +281,7 @@ plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Re
 ![window](figs/ar_spectrogram.svg)
 
 # Transfer-function estimation using spectral techniques
+## Nonparametric estimation
 Non-parametric estimation is provided through spectral estimation. To illustrate, we once again simulate some data:
 ```julia
 T          = 100000
@@ -317,6 +318,13 @@ The left figure displays the Bode magnitude of the true system, together with th
 
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
+
+## Parametric estimation
+To estimate a parametric, rational transfer function from frequency-domain data, `arma` with an `FRD` object and an initial guess for the system model. This initial guess determines the number of coefficients in the numerator and denominator of the estimated model.
+```julia
+G0 = tf(1.0, [1,1,1]) # Initial guess
+G = arma(d::FRD, G0)
+```
 
 # Impulse-response estimation
 The functions `impulseest(h,y,u,order)` and `impulseestplot` performs impulse-response estimation by fitting a high-order FIR model.
