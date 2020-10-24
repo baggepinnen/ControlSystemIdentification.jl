@@ -320,11 +320,12 @@ See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 ## Parametric estimation
-To estimate a parametric, rational transfer function from frequency-domain data, `arma` with an `FRD` object and an initial guess for the system model. This initial guess determines the number of coefficients in the numerator and denominator of the estimated model.
+To estimate a parametric, rational transfer function from frequency-domain data, call `arma` with an `FRD` object and an initial guess for the system model. This initial guess determines the number of coefficients in the numerator and denominator of the estimated model.
 ```julia
 G0 = tf(1.0, [1,1,1]) # Initial guess
 G = arma(d::FRD, G0)
 ```
+Internally, Optim is using a gradient-based optimizer to find the optimal fit of the bode curve of the system. The defaut optimizer `BFGS` can be changed, see the docstring `?arma`.
 
 # Impulse-response estimation
 The functions `impulseest(h,y,u,order)` and `impulseestplot` performs impulse-response estimation by fitting a high-order FIR model.

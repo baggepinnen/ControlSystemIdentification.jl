@@ -12,6 +12,10 @@ Gest = arma(data, p0)
 @test pole(Gtest) ≈ pole(Gest)
 @test dcgain(Gtest) ≈ dcgain(Gest)
 
+Gest = arma(data, p0, opt = NewtonTrustRegion())
+@test pole(Gtest) ≈ pole(Gest)
+@test dcgain(Gtest) ≈ dcgain(Gest)
+
 
 Gest = arma(data, tf(p0.b, p0.a))
 @test pole(Gtest) ≈ pole(Gest)

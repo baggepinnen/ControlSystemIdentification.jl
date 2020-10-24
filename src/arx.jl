@@ -277,6 +277,7 @@ end
         data::FRD,
         p0,
         link = log ∘ abs;
+        opt = BFGS(),
         opts = Optim.Options(
             store_trace       = true,
             show_trace        = true,
@@ -298,12 +299,14 @@ Fit a parametric transfer function to frequency-domain data.
 - `data`: An `FRD` onbject with frequency domain data.
 - `p0`: Initial parameter guess. Can be a `NamedTuple` or `ComponentVector` with fields `b,a` specifying numerator and denominator as they appear in the call to `tf`, i.e., `(b = [1.0], a = [1.0,1.0,1.0])`. Can also be an instace of `TransferFunction`.
 - `link`: By default, phase information is discarded in the fitting. To include phase, change to `link = log`.
+- `opt`: The Optim optimizer to use.
 - `opts`: `Optim.Options` controlling the solver options.
 """
 function arma(
     data::FRD,
     p0,
     link = log ∘ abs;
+    opt = BFGS(),
     opts = Optim.Options(
         store_trace       = true,
         show_trace        = true,
@@ -330,7 +333,7 @@ function arma(
     end
 
 
-    res = Optim.optimize(loss, ComponentVector(p0), BFGS(), opts, autodiff = :forward)
+    res = Optim.optimize(loss, ComponentVector(p0), opt, opts, autodiff = :forward)
 
     tf(res.minimizer.b, res.minimizer.a)
 end
