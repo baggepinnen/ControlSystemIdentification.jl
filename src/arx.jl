@@ -273,7 +273,7 @@ end
 
 
 """
-    arma(
+    tfest(
         data::FRD,
         p0,
         link = log ∘ abs;
@@ -304,7 +304,7 @@ Fit a parametric transfer function to frequency-domain data.
 - `opt`: The Optim optimizer to use.
 - `opts`: `Optim.Options` controlling the solver options.
 """
-function arma(
+function tfest(
     data::FRD,
     p0,
     link = log ∘ abs;
@@ -347,11 +347,11 @@ function arma(
     tf(res.minimizer.b, res.minimizer.a)
 end
 
-function arma(data::FRD, G::LTISystem, args...; kwargs...)
+function tfest(data::FRD, G::LTISystem, args...; kwargs...)
     ControlSystems.issiso(G) || throw(ArgumentError("Can only fit SISO model to FRD"))
     ControlSystems.isdiscrete(G) && throw(DomainError("Continuous-time model expected"))
     b,a = numvec(G)[], denvec(G)[]
-    arma(data, (; b=b, a=a), args...; kwargs...)
+    tfest(data, (; b=b, a=a), args...; kwargs...)
 end
 
 
