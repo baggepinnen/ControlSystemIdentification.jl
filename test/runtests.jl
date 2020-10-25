@@ -26,7 +26,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
     @testset "FRD arma fit" begin
         @info "Testing FRD arma fit"
-        include("test_frq_arma.jl")
+        include("test_frq_tf.jl")
     end
 
 
