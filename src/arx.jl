@@ -314,7 +314,7 @@ function tfest(
         store_trace       = true,
         show_trace        = true,
         show_every        = 1,
-        iterations        = 1000,
+        iterations        = 10000,
         allow_f_increases = false,
         time_limit        = 100,
         x_tol             = 0,
