@@ -50,7 +50,7 @@ export getARXregressor,
     wtls_estimator,
     plr,
     estimate_residuals
-export FRD, tfest, coherence, coherenceplot, simplot, simplot!, predplot, predplot!
+export FRD, tfest, coherence, coherenceplot, simplot, simplot!, predplot, predplot!, Hz, rad
 
 export model_spectrum
 

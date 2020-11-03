@@ -14,6 +14,16 @@ struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
     r::RT
 end
 
+struct Hz <: Number
+    i
+end
+Base.:*(i, ::Type{Hz}) = Hz(i)
+struct rad <: Number
+    i
+end
+Base.:*(i, ::Type{rad}) = rad(i)
+(::Colon)(start::Union{Hz, rad}, stop::Union{Hz, rad}) = (start, stop)
+
 FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 import Base: +, -, *, length, sqrt, getindex
 Base.vec(f::FRD) = f.r
@@ -41,7 +51,16 @@ sqrt(f::FRD) = FRD(f.w, sqrt.(f.r))
 getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
 getindex(f::FRD, i::Int) = f.r[i]
 getindex(f::FRD, i::Int, j::Int) = (@assert(i == 1 && j == 1); f)
-
+function getindex(f::FRD, r::Tuple{Hz,Hz})
+    s = findfirst(2pi*r[1].i .< f.w)
+    e = findlast(f.w .< 2pi*r[2].i)
+    f[s:e]
+end
+function getindex(f::FRD, r::Tuple{rad,rad})
+    s = findfirst(r[1].i .< f.w)
+    e = findlast(f.w .< r[2].i)
+    f[s:e]
+end
 Base.isapprox(f1::FRD, f2::FRD; kwargs...) =
     (f1.w == f2.w) && isapprox(f1.r, f2.r; kwargs...)
 Base.:(==)(f1::FRD, f2::FRD) = (f1.w == f2.w) && ==(f1.r, f2.r)
