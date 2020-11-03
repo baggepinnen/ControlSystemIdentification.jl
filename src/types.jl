@@ -95,6 +95,7 @@ end
 
 timevec(d::AbstractIdData) = range(0, step = sampletime(d), length = length(d))
 timevec(d::AbstractVector, h::Real) = range(0, step = h, length = length(d))
+timevec(d::AbstractMatrix, h::Real) = range(0, step = h, length = maximum(size(d)))
 
 function apply_fun(fun, d::OutputData, Ts = d.Ts)
     iddata(fun(d.y), Ts)
@@ -134,6 +135,12 @@ function DSP.resample(d::AbstractIdData, f)
             resample(y, f)
         end
         yr
+    end
+end
+
+function DSP.resample(M::AbstractMatrix, f)
+    mapslices(M, dims = 1) do y
+        resample(y, f)
     end
 end
 
