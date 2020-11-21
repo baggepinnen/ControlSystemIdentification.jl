@@ -44,6 +44,8 @@ function Base.getproperty(f::FRD, s::Symbol)
     s === :Ts && return 1 / ((f.w[2] - f.w[2]) / (2π))
     getfield(f, s)
 end
+Base.propertynames(f::FRD, private::Bool=false) =
+    (fieldnames(typeof(f))..., :Ts)
 ControlSystems.noutputs(f::FRD) = 1
 ControlSystems.ninputs(f::FRD) = 1
 
