@@ -114,9 +114,13 @@ function apply_fun(fun, d::InputOutputStateData, Ts = d.Ts)
     iddata(fun(d.y), fun(d.u), fun(d.x), Ts)
 end
 
+torange(x::Number) = x:x
+torange(x) = x
+
 function Base.getindex(d::Union{InputOutputData,InputOutputStateData}, i, j)
-    iddata(d.y[i:i, :], d.u[j:j, :], d.Ts)
+    iddata(d.y[torange(i), :], d.u[torange(j), :], d.Ts)
 end
+
 
 function Base.getindex(d::AbstractIdData, i)
     apply_fun(d) do y
