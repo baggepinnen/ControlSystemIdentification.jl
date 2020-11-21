@@ -267,12 +267,12 @@ end
     @series begin
         seriestype := :hline
         # lags.*d.Ts, 2 .*sqrt.(1 ./ Ni) # The denominator in crosscorr already takes care of this
-        lags .* d.Ts, [2 .* sqrt.(1 ./ N)]
+        [2 .* sqrt.(1 ./ N)]
     end
     @series begin
         seriestype := :hline
         # lags.*d.Ts, -2 .*sqrt.(1 ./ Ni)
-        lags .* d.Ts, [-2 .* sqrt.(1 ./ N)]
+        [-2 .* sqrt.(1 ./ N)]
     end
 end
 
