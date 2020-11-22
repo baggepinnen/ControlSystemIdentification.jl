@@ -95,7 +95,7 @@ sim(sys,u,x0=x0) = lsim(sys, u', 1:T, x0=x0)[1]' # Helper function
 sys = generate_system(nx,nu,ny)
 u   = randn(nu,T)               # Generate random input
 y   = sim(sys, u, x0)           # Simulate system
-d   = iddata(y,u)
+d   = iddata(y,u,1)
 
 sysh,x0h,opt = pem(d, nx=nx, focus=:prediction) # Estimate model
 
@@ -112,7 +112,7 @@ sysn = generate_system(nx,nu,ny)             # Noise system
 un   = u + sim(sysn, σu*randn(size(u)),0*x0) # Input + load disturbance
 y    = sim(sys, un, x0)
 yn   = y + sim(sysn, σy*randn(size(u)),0*x0) # Output + measurement noise
-dn   = iddata(yn,un)
+dn   = iddata(yn,un,1)
 ```
 The system now has `3nx` poles, `nx` for the system dynamics, and `nx` for each noise model, we indicated this to the main estimation function `pem`:
 ```julia
@@ -150,9 +150,9 @@ https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 ### Call signature
 `sys, x0, opt = pem(d; nx, kwargs...)`
 #### Arguments:
-- `d`: Identification data object, created using `iddata(y,u [,sampletime=nothing])`
-- `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
-- `u`: Control signals, same structure as `y`
+- `d`: Identification data object, created using `iddata(y, u sampletime)`
+    - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
+    - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `sse` (e'e), but any Function such as `norm`, `e->sum(abs,e)` or `e -> e'Q*e` could be used.
@@ -161,8 +161,9 @@ https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 - `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
 
 #### Structure of parameter vector `p`
+The parameter vector is of type [`ComponentVector`](https://github.com/jonniedie/ComponentArrays.jl) and the fields `A,B,K,x0` can be accessed as `p.A` etc. The internal storage is according to
 ```julia
-A  = size(nx,ny)
+A  = size(nx,nx)
 B  = size(nx,nu)
 K  = size(nx,ny)
 x0 = size(nx)
@@ -371,17 +372,17 @@ sysn       = tf(σy,[1,2*0.1,0.3])
 u          = randn(nu,T)
 y          = sim(sys, u)
 yn         = y + sim(sysn, randn(size(u)))
-dn         = iddata(yn,u)
+dn         = iddata(yn,u,1)
 # Validation data
 uv         = randn(nu,T)
 yv         = sim(sys, uv)
 ynv        = yv + sim(sysn, randn(size(uv)))
-dv         = iddata(yv,uv)
-dnv        = iddata(ynv,uv)
+dv         = iddata(yv,uv,1)
+dnv        = iddata(ynv,uv,1)
 ```
 We then fit a couple of models, the flag `difficult=true` causes `pem` to solve an initial global optimization problem with constraints on the stability of `A-KC` to provide a good guess for the gradient-based solver
 ```julia
-res = [pem(dn,nx=nx, iterations=100, difficult=true, focus=:prediction) for nx = [1,3,4]]
+res = [pem(dn,nx=nx, iterations=1000, difficult=true, focus=:prediction) for nx = [1,3,4]]
 ```
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
 ```julia

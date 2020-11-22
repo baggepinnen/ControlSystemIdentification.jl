@@ -1,32 +1,21 @@
-
-function mats(p, nx, ny, nu)
-    A = zeros(eltype(p), nx, nx)
-    for i = ny:nx-1
-        A[i-ny+1, i+1] = 1
-    end
-    s, e       = 1, nx * ny
-    A[:, 1:ny] = reshape(p[s:e], nx, ny)
-    s, e       = e + 1, e + nu * nx
-    B          = reshape(p[s:e], nx, nu)
-    s, e       = e + 1, e + ny * nx
-    K          = reshape(p[s:e], nx, ny)
-    A, B, K
+function mats(p)
+    p.A, p.B, p.K
 end
-function model_from_params(p, nx, ny, nu)
-    A, B, K = mats(p, nx, ny, nu)
-    x0      = copy(p[end-nx+1:end])
-    sys     = StateSpaceNoise(A, B, K, 1.0)
+function model_from_params(p, h, ny)
+    A, B, K = mats(p)
+    x0      = copy(p.x0)
+    sys     = StateSpaceNoise(A, B, K, h)
     sysf    = SysFilter(sys, x0, similar(x0, ny))
 end
 
-function pem_costfun(p, y, u, nx, metric::F) where {F} # To ensure specialization on metric
+function pem_costfun(p, y, u, h, metric::F) where {F} # To ensure specialization on metric
     nu, ny = obslength(u), obslength(y)
-    model = model_from_params(p, nx, ny, nu)
+    model = model_from_params(p, h, ny)
     return mean(metric(e) for e in prediction_errors(model, y, u))
 end
-function sem_costfun(p, y, u, nx, metric::F) where {F} # To ensure specialization on metric
+function sem_costfun(p, y, u, h, metric::F) where {F} # To ensure specialization on metric
     nu, ny = obslength(u), obslength(y)
-    model = model_from_params(p, nx, ny, nu)
+    model = model_from_params(p, h, ny)
     return mean(metric(e) for e in simulation_errors(model, y, u))
 end
 
@@ -70,28 +59,33 @@ function pem(
     focus               = :prediction,
     metric              = sse,
     regularizer         = p -> 0,
-    iterations          = 100,
+    iterations          = 1000,
     stabilize_predictor = true,
     difficult           = false,
-    A                   = 0.0001randn(nx, obslength(output(d))),
+    A                   = 0.0001randn(nx, nx),
     B                   = 0.001randn(nx, obslength(input(d))),
+    # C                   = 0.001randn(obslength(output(d)), nx),
     K                   = 0.001randn(nx, obslength(output(d))),
     x0                  = 0.001randn(nx),
     kwargs...,
 )
+
     y, u = output(d), input(d)
     nu, ny = obslength(u), obslength(y)
-
-    p = [A[:]; B[:]; K[:]; x0]
+    if size(A,1) != size(A,2) # Old API
+        A = [A zeros(nx, nx-ny)] 
+    end
+    p = ComponentVector((; A, B, K, x0))
     options = Options(; iterations = iterations, kwargs...)
-    cost_pred = p -> pem_costfun(p, y, u, nx, metric) + regularizer(p)
+    cost_pred = p -> pem_costfun(p, y, u, d.Ts, metric) + regularizer(p)
     if difficult
-        stabilizer = p -> 10000 * !stabfun(nx, nu, ny)(p)
+        stabilizer = p -> 10000 * !stabfun(d.Ts, ny)(p)
         options0 = Options(; iterations = iterations, kwargs...)
         opt = optimize(
             p -> cost_pred(p) + stabilizer(p),
             1000p,
-            ParticleSwarm(n_particles = 100length(p)),
+            # ParticleSwarm(n_particles = 100length(p)),
+            NelderMead(),
             options0,
         )
         p = minimizer(opt)
@@ -100,7 +94,7 @@ function pem(
     println(opt)
     if focus == :simulation
         @info "Focusing on simulation"
-        cost_sim = p -> sem_costfun(p, y, u, nx, metric) + regularizer(p)
+        cost_sim = p -> sem_costfun(p, y, u, d.Ts, metric) + regularizer(p)
         opt = optimize(
             cost_sim,
             minimizer(opt),
@@ -110,7 +104,7 @@ function pem(
         )
         println(opt)
     end
-    model = model_from_params(minimizer(opt), nx, ny, nu)
+    model = model_from_params(minimizer(opt), d.Ts, ny)
     if !isstable(model.sys)
         @warn("Estimated system does not have a stable prediction filter (A-KC)")
         if stabilize_predictor
@@ -150,9 +144,9 @@ function stabilize(model, solver, options, cfi)
     model
 end
 
-function stabfun(nx, ny, nu)
+function stabfun(h, ny)
     function (p)
-        model = model_from_params(p, nx, nu, ny)
+        model = model_from_params(p, h, ny)
         isstable(model.sys)
     end
 end

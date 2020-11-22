@@ -199,10 +199,12 @@ ControlSystems.ss(sys::StateSpaceNoise) = convert(StateSpace, sys)
 ControlSystems.tf(sys::StateSpaceNoise) = tf(ss(sys))
 
 function Base.getproperty(sys::StateSpaceNoise, p::Symbol)
-    if p == :C
+    if p === :C
         return [I zeros(sys.ny, sys.nx - sys.ny)]
-    elseif p == :D
+    elseif p === :D
         return zeros(sys.ny, sys.nu)
+    elseif p === :timeevol
+        return sys.Ts
     end
     return getfield(sys, p)
 end
