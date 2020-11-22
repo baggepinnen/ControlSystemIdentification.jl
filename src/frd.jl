@@ -15,14 +15,14 @@ struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
 end
 
 struct Hz <: Number
-    i
+    i::Any
 end
 Base.:*(i, ::Type{Hz}) = Hz(i)
 struct rad <: Number
-    i
+    i::Any
 end
 Base.:*(i, ::Type{rad}) = rad(i)
-(::Colon)(start::Union{Hz, rad}, stop::Union{Hz, rad}) = (start, stop)
+(::Colon)(start::Union{Hz,rad}, stop::Union{Hz,rad}) = (start, stop)
 
 FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 import Base: +, -, *, length, sqrt, getindex
@@ -44,8 +44,7 @@ function Base.getproperty(f::FRD, s::Symbol)
     s === :Ts && return 1 / ((f.w[2] - f.w[2]) / (2π))
     getfield(f, s)
 end
-Base.propertynames(f::FRD, private::Bool=false) =
-    (fieldnames(typeof(f))..., :Ts)
+Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts)
 ControlSystems.noutputs(f::FRD) = 1
 ControlSystems.ninputs(f::FRD) = 1
 
@@ -54,8 +53,8 @@ getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
 getindex(f::FRD, i::Int) = f.r[i]
 getindex(f::FRD, i::Int, j::Int) = (@assert(i == 1 && j == 1); f)
 function getindex(f::FRD, r::Tuple{Hz,Hz})
-    s = findfirst(2pi*r[1].i .< f.w)
-    e = findlast(f.w .< 2pi*r[2].i)
+    s = findfirst(2pi * r[1].i .< f.w)
+    e = findlast(f.w .< 2pi * r[2].i)
     f[s:e]
 end
 function getindex(f::FRD, r::Tuple{rad,rad})
