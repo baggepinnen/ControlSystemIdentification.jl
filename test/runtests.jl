@@ -301,7 +301,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         # using BenchmarkTools
         # @btime begin
         # Random.seed!(0)
-        sysh, x0h, opt = pem(d, nx = nx, focus = :prediction, iterations=1000)
+        sysh, x0h, opt = pem(d, nx = nx, focus = :prediction, iterations=5000)
         # bodeplot([sys,ss(sysh)], exp10.(range(-3, stop=log10(pi), length=150)), legend=false, ylims=(0.01,100))
         # end
         # 462ms 121 29

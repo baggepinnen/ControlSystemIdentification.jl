@@ -21,14 +21,14 @@ end
 
 
 """
-sys, x0, opt = pem(data; nx, kwargs...)
+    sys, x0, opt = pem(data; nx, kwargs...)
 
-System identification using the prediction error method.
+System identification using the prediction-error method.
 
 # Arguments:
 - `data`: iddata object containing `y` and `u`.
-- `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
-- `u`: Control signals, same structure as `y`
+    - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
+    - `u`: Control signals, same structure as `y`
 - `nx`: Number of poles in the estimated system. Thus number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
 - `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
 - `metric`: A Function determining how the size of the residuals is measured, default `sse` (e'e), but any Function such as `norm`, `e->sum(abs,e)` or `e -> e'Q*e` could be used.
@@ -44,12 +44,13 @@ System identification using the prediction error method.
 - `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 
 ## Structure of parameter vector `p`
+The parameter vector is of type [`ComponentVector`](https://github.com/jonniedie/ComponentArrays.jl) and the fields `A,B,K,x0` can be accessed as `p.A` etc. The internal storage is according to
 ```julia
-A = size(nx,ny)
+A = size(nx,nx)
 B = size(nx,nu)
 K = size(nx,ny)
 x0 = size(nx)
-p = [A[:];B[:];K[:];x0]
+p = [A[:]; B[:]; K[:]; x0]
 ```
 """
 function pem(
