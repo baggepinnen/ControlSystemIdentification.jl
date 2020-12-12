@@ -101,7 +101,7 @@ Estimate a transfer function model using the Correlogram approach.
 - `H` = Syu/Suu             Process transfer function
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
-function tfest(d, σ = 0.05)
+function tfest(d, σ::Real = 0.05)
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
     Syy, Suu, Syu = fft_corr(y, u, σ)
     w = freqvec(h, Syu)

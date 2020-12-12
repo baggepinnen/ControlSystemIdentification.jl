@@ -300,13 +300,13 @@ Fit a parametric transfer function to frequency-domain data.
 - `data`: An `FRD` onbject with frequency domain data.
 - `p0`: Initial parameter guess. Can be a `NamedTuple` or `ComponentVector` with fields `b,a` specifying numerator and denominator as they appear in the call to `tf`, i.e., `(b = [1.0], a = [1.0,1.0,1.0])`. Can also be an instace of `TransferFunction`.
 - `link`: By default, phase information is discarded in the fitting. To include phase, change to `link = log`.
-- `freq_weight`: Apply weighting wit the inverse frequency. The value determines the cutoff frequency before which the weight is constant, after which the weight decreases linearly. Defaults to the geometric mean of the smallest and largest frequency.
+- `freq_weight`: Apply weighting with the inverse frequency. The value determines the cutoff frequency before which the weight is constant, after which the weight decreases linearly. Defaults to the geometric mean of the smallest and largest frequency.
 - `opt`: The Optim optimizer to use.
 - `opts`: `Optim.Options` controlling the solver options.
 """
 function tfest(
     data::FRD,
-    p0,
+    p0::Union{NamedTuple, ComponentArray},
     link = log ∘ abs;
     freq_weight = sqrt(data.w[2] * data.w[end]),
     opt = BFGS(),
@@ -346,6 +346,8 @@ function tfest(
 
     tf(res.minimizer.b, res.minimizer.a)
 end
+
+tfest(data, G::LTISystem, args...; kwargs...) = tfest(tfest(data)[1], G, args...; kwargs...)
 
 function tfest(data::FRD, G::LTISystem, args...; kwargs...)
     ControlSystems.issiso(G) || throw(ArgumentError("Can only fit SISO model to FRD"))
