@@ -97,7 +97,7 @@ freqvec(h, k) = LinRange(0, π / h, length(k))
 Estimate a transfer function model using the Correlogram approach.
     Both `H` and `N` are of type `FRD` (frequency-response data).
 
-`σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT.
+`σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT. A larger `σ` implies less smoothing.
 - `H` = Syu/Suu             Process transfer function
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
