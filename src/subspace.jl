@@ -281,8 +281,9 @@ Eigenvalue realization algorithm.
 """
 function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
     nout, nin, T = size(YY)
-    size(YY, 3) >= m + n ||
-        throw(ArgumentError("hankel size too large for input size. $(size(YY,3)) < m+n ($(m+n))"))
+    size(YY, 3) >= m + n || throw(
+        ArgumentError("hankel size too large for input size. $(size(YY,3)) < m+n ($(m+n))"),
+    )
 
     Dr = similar(YY, nout, nin)
     Y = similar(YY, nout, nin, T - 1)
