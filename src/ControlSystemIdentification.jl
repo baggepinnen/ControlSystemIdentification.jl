@@ -58,6 +58,8 @@ export KalmanFilter
 
 export weighted_estimator, Bandpass, Bandstop, Lowpass, Highpass
 
+export kautz, laguerre, laguerre_oo, adhocbasis, sum_basis, basis_responses, filter_bank, basislength, ωζ2complex
+
 include("utils.jl")
 include("types.jl")
 include("pem.jl")
@@ -66,6 +68,7 @@ include("arx.jl")
 include("subspace.jl")
 include("spectrogram.jl")
 include("frequency_weights.jl")
+include("basis_functions.jl")
 
 predict(sys, d::AbstractIdData, args...) =
     hasinput(sys) ? predict(sys, output(d), input(d), args...) :

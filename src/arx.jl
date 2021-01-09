@@ -357,6 +357,53 @@ function tfest(data::FRD, G::LTISystem, args...; kwargs...)
 end
 
 
+function tfest(data::FRD, basis::AbstractStateSpace; 
+    opt = NelderMead(),
+    opts = Optim.Options(
+        store_trace       = true,
+        show_trace        = true,
+        show_every        = 1000,
+        iterations        = 10000,
+        allow_f_increases = false,
+        time_limit        = 100,
+        x_tol             = 0,
+        f_tol             = 0,
+        g_tol             = 1e-8,
+        f_calls_limit     = 0,
+        g_calls_limit     = 0,
+    ),
+)
+    ω = data.w
+    Fs = basis_responses(basis, ω, inverse=false)
+    p0 = randn(length(Fs))
+    resp_P = abs2.(data.r) .|> log
+    Gmat = reduce(hcat, Fs)             
+    Gθ = similar(Gmat, size(Gmat, 1))
+
+    function loss(p)
+        mul!(Gθ, Gmat, p)
+        c = zero(eltype(p))
+        @inbounds for i in eachindex(ω)
+            fp = log(abs2(Gθ[i]))
+            c += abs2(fp - resp_P[i]) / (ω[i] + ω[2])
+        end
+        c/length(ω)
+    end
+    
+    res = Optim.optimize(
+        loss,
+        p0,
+        opt,
+        opts,
+        # autodiff=:forward
+    )
+    F = sum_basis(basis, res.minimizer)
+    # res = abs2.(Gmat) \ abs2.(data.r)
+    # res = Gmat \ data.r
+    # F = sum_basis(basis, res)
+    F, res
+end
+
 """
     arma_ssa(d::AbstractIdData, na, nc; L=nothing, estimator=\\, robust=false)
 

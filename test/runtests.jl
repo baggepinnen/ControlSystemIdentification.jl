@@ -24,6 +24,11 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
 @testset "ControlSystemIdentification.jl" begin
 
+    @testset "basis functions" begin
+        @info "Testing basis functions"
+        include("test_basis_functions.jl")
+    end
+
     @testset "FRD arma fit" begin
         @info "Testing FRD arma fit"
         include("test_frq_tf.jl")

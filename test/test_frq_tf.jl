@@ -20,3 +20,19 @@ if isinteractive()
     bodeplot(Gtest, w)
     bodeplot!(Gest, w)
 end
+
+
+##
+a = exp10.(LinRange(-1, 1, 7))
+poles = ωζ2complex.(a, 0.1)
+poles = [poles; conj.(poles)]
+# poles = a
+basis = kautz(poles, 1/(200))
+
+Gest,p = tfest(data, basis)
+# @test dcgain(Gtest) ≈ dcgain(Gest)
+
+if isinteractive()
+    bodeplot(Gtest, w)
+    bodeplot!(Gest, w)
+end
