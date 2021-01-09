@@ -27,12 +27,15 @@ a = exp10.(LinRange(-1, 1, 7))
 poles = ωζ2complex.(a, 0.1)
 poles = [poles; conj.(poles)]
 # poles = a
-basis = kautz(poles, 1/(200))
+# basis = kautz(poles, 1/(200))
+basis = laguerre_oo(1, 55)
 
 Gest,p = tfest(data, basis)
-# @test dcgain(Gtest) ≈ dcgain(Gest)
+r_est = FRD(w, Gest)
+
+@test mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.01
 
 if isinteractive()
-    bodeplot(Gtest, w)
-    bodeplot!(Gest, w)
+    bodeplot(Gtest, w, show=false)
+    bodeplot!(Gest, w, show=true)
 end

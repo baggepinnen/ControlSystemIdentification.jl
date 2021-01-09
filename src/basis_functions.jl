@@ -124,9 +124,9 @@ function sum_basis(basis::AbstractStateSpace, p::AbstractVector)
     # @show size.((A,B,C,D,p))
     @assert all(iszero, D)
     if ninputs(basis) > 1
-        ss(A,B*p,C,0)
+        isdiscrete(basis) ? ss(A,B*p,C,basis.Ts) : ss(A,B*p,C,0)
     else
-        ss(A,B,p'C,0)
+        isdiscrete(basis) ? ss(A,B,p'C,basis.Ts) : ss(A,B,p'C,0)
     end
 end
 

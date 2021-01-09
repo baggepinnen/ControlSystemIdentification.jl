@@ -358,7 +358,7 @@ end
 
 
 function tfest(data::FRD, basis::AbstractStateSpace; 
-    opt = NelderMead(),
+    opt = BFGS(),
     opts = Optim.Options(
         store_trace       = true,
         show_trace        = true,
