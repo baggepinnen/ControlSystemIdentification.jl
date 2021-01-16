@@ -59,7 +59,7 @@ isinteractive() && bodeplot(
 )
 # plot!(2pi .* P.freq, sqrt.(P.power), l=(:black, 2, :dash), xlims=extrema(ωvec))
 
-
+Random.seed!(0)
 N = 2000
 e = randn(N)
 t = range(0, length = N, step = h)

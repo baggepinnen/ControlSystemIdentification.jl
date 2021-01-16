@@ -24,8 +24,8 @@ end
 Base.:*(i, ::Type{rad}) = rad(i)
 (::Colon)(start::Union{Hz,rad}, stop::Union{Hz,rad}) = (start, stop)
 
-FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 import Base: +, -, *, length, sqrt, getindex
+FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
 +(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
@@ -35,6 +35,10 @@ Base.vec(f::FRD) = f.r
 *(f::FRD, f2::FRD) = FRD(f.w, f.r .* f2.r)
 +(f::FRD, f2::FRD) = FRD(f.w, f.r .+ f2.r)
 -(f::FRD, f2::FRD) = FRD(f.w, f.r .- f2.r)
+
+*(f::FRD, f2::LTISystem) = *(f, FRD(f.w, f2))
++(f::FRD, f2::LTISystem) = +(f, FRD(f.w, f2))
+-(f::FRD, f2::LTISystem) = -(f, FRD(f.w, f2))
 
 -(f::FRD) = FRD(f.w, -f.r)
 length(f::FRD) = length(f.w)
@@ -74,17 +78,27 @@ feedback(P::FRD, K::FRD) = feedback(P, vec(K))
 feedback(P::FRD, K::LTISystem) = feedback(P, freqresp(K, P.w)[:, 1, 1])
 feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
 
-@recipe function plot_frd(frd::FRD; hz = false)
+@recipe function plot_frd(frd::FRD; hz = false, plotphase=false)
     yscale --> :log10
     xscale --> :log10
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     yguide --> "Magnitude"
     title --> "Bode Plot"
     legend --> false
+    layout --> (plotphase ? 2 : 1)
     @series begin
         inds = findall(x -> x == 0, frd.w)
+        subplot --> 1
         useinds = setdiff(1:length(frd.w), inds)
         (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
+    end
+    if plotphase
+        @series begin
+            inds = findall(x -> x == 0, frd.w)
+            subplot --> 2
+            useinds = setdiff(1:length(frd.w), inds)
+            (hz ? 1 / (2π) : 1) .* frd.w[useinds], unwrap(angle.(frd.r[useinds]))
+        end
     end
     nothing
 end

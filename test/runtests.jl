@@ -24,6 +24,11 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
 @testset "ControlSystemIdentification.jl" begin
 
+    @testset "basis functions" begin
+        @info "Testing basis functions"
+        include("test_basis_functions.jl")
+    end
+
     @testset "FRD arma fit" begin
         @info "Testing FRD arma fit"
         include("test_frq_tf.jl")
@@ -634,6 +639,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test FRD(ω, D) ≈ D2
         @test FRD(ω, N) ≈ N2
         @test FRD(ω, T) ≈ T2
+
+        @test FRD(ω, P)*P ≈ FRD(ω, P)*FRD(ω, P)
+        @test FRD(ω, P)-P ≈ FRD(ω, P)-FRD(ω, P)
+        @test FRD(ω, P)+P ≈ FRD(ω, P)+FRD(ω, P)
 
     end
 
