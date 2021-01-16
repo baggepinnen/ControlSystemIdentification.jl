@@ -358,34 +358,36 @@ end
 
 
 function tfest(data::FRD, basis::AbstractStateSpace; 
+    freq_weight = 1 ./ (data.w .+ data.w[2]),
     opt = BFGS(),
+    metric::M = abs2,
     opts = Optim.Options(
         store_trace       = true,
         show_trace        = true,
-        show_every        = 1000,
-        iterations        = 10000,
+        show_every        = 50,
+        iterations        = 1000000,
         allow_f_increases = false,
         time_limit        = 100,
-        x_tol             = 0,
+        x_tol             = 1e-5,
         f_tol             = 0,
         g_tol             = 1e-8,
         f_calls_limit     = 0,
         g_calls_limit     = 0,
     ),
-)
-    ω = data.w
-    Fs = basis_responses(basis, ω, inverse=false)
-    p0 = randn(length(Fs))
+) where M
+    ω      = data.w
+    Fs     = basis_responses(basis, ω, inverse=false)
+    p0     = randn(length(Fs))
     resp_P = abs2.(data.r) .|> log
-    Gmat = reduce(hcat, Fs)             
-    Gθ = similar(Gmat, size(Gmat, 1))
+    Gmat   = reduce(hcat, Fs)
+    Gθ     = similar(Gmat, size(Gmat, 1))
 
     function loss(p)
         mul!(Gθ, Gmat, p)
         c = zero(eltype(p))
         @inbounds for i in eachindex(ω)
             fp = log(abs2(Gθ[i]))
-            c += abs2(fp - resp_P[i]) / (ω[i] + ω[2])
+            c += metric(fp - resp_P[i]) * freq_weight[i]
         end
         c/length(ω)
     end
@@ -398,9 +400,10 @@ function tfest(data::FRD, basis::AbstractStateSpace;
         # autodiff=:forward
     )
     F = sum_basis(basis, res.minimizer)
-    # res = abs2.(Gmat) \ abs2.(data.r)
-    # res = Gmat \ data.r
-    # F = sum_basis(basis, res)
+    if dcgain(F)[] < 0
+        F = -F
+        res.minimizer .= .- res.minimizer
+    end
     F, res
 end
 

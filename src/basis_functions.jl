@@ -43,7 +43,7 @@ function kautz(a::AbstractVector, h)
 end
 
 
-function laguerre_oo(a, Nq)
+function laguerre_oo(a::Number, Nq)
     A = diagm(fill(-a, Nq))
     for i = 2:Nq
         A[diagind(A, i-1)] .+= 2a*(-1)^i
@@ -92,6 +92,24 @@ function basislength(v::LTISystem)
     n == 1 ? noutputs(v) : n
 end
 
+function add_poles(basis::AbstractStateSpace, sys::LTISystem)
+    add_poles(basis, ss(sys).A)
+end
+
+function add_poles(basis::AbstractStateSpace, Ad)
+    A,B,C,D = ssdata(basis)
+    T = eltype(A)
+    nx,nu,ny = basis.nx,basis.nu,basis.ny
+    nn = size(Ad, 1)
+    @assert size(A) == size(B) "only supports laguerre_oo basis"
+    B == I || @warn("B was not identity, the B matrix will be overwritten with I")
+
+    Ae = [A zeros(size(A,1), nn); zeros(T, nn, nx) Ad]
+    # Be = [B; zeros(T, nn, nu)]
+    Ce = [C ones(T, ny, nn)]
+    ss(Ae,I(nn+nx),Ce,0)
+end
+
 
 function ControlSystems.freqresp(P::LTISystem, basis::SomeBasis, ω::AbstractVector, p)
     @assert ninputs(P) == noutputs(P) == 1 "Only supports SISO"
@@ -111,22 +129,17 @@ function sum_basis(basis::AbstractVector, p::AbstractVector)
     out = ss(p[1]*basis[1])
     for i in 2:length(p)
         out = out + balreal(p[i] * basis[i])[1]
-        # try
-        #     out = minreal(out) # this introduced error in the tests
-        # catch
-        # end
     end
     out
 end
 
 function sum_basis(basis::AbstractStateSpace, p::AbstractVector)
     A,B,C,D = ssdata(basis)
-    # @show size.((A,B,C,D,p))
     @assert all(iszero, D)
     if ninputs(basis) > 1
-        isdiscrete(basis) ? ss(A,B*p,C,basis.Ts) : ss(A,B*p,C,0)
+        isdiscrete(basis) ? ss(A,B*p,C,0,basis.Ts) : ss(A,B*p,C,0)
     else
-        isdiscrete(basis) ? ss(A,B,p'C,basis.Ts) : ss(A,B,p'C,0)
+        isdiscrete(basis) ? ss(A,B,p'C,0,basis.Ts) : ss(A,B,p'C,0)
     end
 end
 
@@ -167,3 +180,25 @@ end
 Base.one(::TransferFunction{Continuous, ControlSystems.SisoRational{Float64}}) = tf(1)
 
 
+reflect(x) = complex(-abs(real(x)), imag(x))
+function minimum_phase(G::TransferFunction)
+    z,p,k = zpkdata(G) .|> first
+    z = reflect.(z)
+    p = reflect.(p)
+    Gmp = tf(zpk(z,p,k))
+    if sign(dcgain(G)[]) != sign(dcgain(Gmp)[])
+        Gmp = -Gmp
+    end
+    Gmp
+end
+
+function minimum_phase(G::StateSpace)
+    H = tf(G)
+    G = ss(minimum_phase(H))
+    G = ControlSystems.balance_statespace(G)[1]
+    try
+        G = balreal(G)[1]
+    catch
+    end
+    G
+end
