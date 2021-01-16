@@ -1,7 +1,6 @@
 # ControlSystemIdentification
 
 [![CI](https://github.com/baggepinnen/ControlSystemIdentification.jl/workflows/CI/badge.svg)](https://github.com/baggepinnen/ControlSystemIdentification.jl/actions)
-[![PkgEval](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/C/ControlSystemIdentification.svg)](https://juliaci.github.io/NanosoldierReports/pkgeval_badges/report.html)
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
 System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
@@ -329,6 +328,12 @@ G = tfest(d::FRD, G0)
 Internally, Optim is using a gradient-based optimizer to find the optimal fit of the bode curve of the system. The defaut optimizer `BFGS` can be changed, see the docstring `?tfest`.
 
 For a comparison between estimation in the time and frequency domains, see [this notebook](https://nbviewer.jupyter.org/github/JuliaControl/ControlExamples.jl/blob/master/identification_time_vs_freq.ipynb).
+
+If the above problem is hard to solve, you may parametrize the model using, e.g., a Laguerre basis expansion, example:
+```julia
+basis = laguerre_oo(1, 50) # Use 50 basis functions, the final model order may be reduced with baltrunc
+Gest,p = tfest(d::FRD, basis)
+```
 
 # Impulse-response estimation
 The functions `impulseest(h,y,u,order)` and `impulseestplot` performs impulse-response estimation by fitting a high-order FIR model.
