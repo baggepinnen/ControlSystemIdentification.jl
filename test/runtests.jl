@@ -640,6 +640,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test FRD(ω, N) ≈ N2
         @test FRD(ω, T) ≈ T2
 
+        @test FRD(ω, P)*P ≈ FRD(ω, P)*FRD(ω, P)
+        @test FRD(ω, P)-P ≈ FRD(ω, P)-FRD(ω, P)
+        @test FRD(ω, P)+P ≈ FRD(ω, P)+FRD(ω, P)
+
     end
 
 

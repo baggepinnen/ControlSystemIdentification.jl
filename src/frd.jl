@@ -24,8 +24,8 @@ end
 Base.:*(i, ::Type{rad}) = rad(i)
 (::Colon)(start::Union{Hz,rad}, stop::Union{Hz,rad}) = (start, stop)
 
-FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 import Base: +, -, *, length, sqrt, getindex
+FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
 Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
 +(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
@@ -35,6 +35,10 @@ Base.vec(f::FRD) = f.r
 *(f::FRD, f2::FRD) = FRD(f.w, f.r .* f2.r)
 +(f::FRD, f2::FRD) = FRD(f.w, f.r .+ f2.r)
 -(f::FRD, f2::FRD) = FRD(f.w, f.r .- f2.r)
+
+*(f::FRD, f2::LTISystem) = *(f, FRD(f.w, f2))
++(f::FRD, f2::LTISystem) = +(f, FRD(f.w, f2))
+-(f::FRD, f2::LTISystem) = -(f, FRD(f.w, f2))
 
 -(f::FRD) = FRD(f.w, -f.r)
 length(f::FRD) = length(f.w)
