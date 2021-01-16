@@ -91,8 +91,8 @@ function n4sid(
     U0i = hankel(u, 0, i)
     UY0 = [U0im1; hankel(u, i, 2i - 1); Y0im1]
     UY1 = [U0i; hankel(u, i + 1, 2i - 1); Y0i]
-    # proj(A, B) = A * (B' / (B * B'))
-    proj(A, B) = (A * B') / (B * B')
+    proj(A, B) = A * (B' / (B * B'))
+    # proj(A, B) = (A * B') / (B * B') # This version results in singular exception on CI
     Li = proj(hankel(y, i, 2i - 1), UY0)
     Lip1 = proj(hankel(y, i + 1, 2i - 1), UY1)
 
