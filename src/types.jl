@@ -174,7 +174,6 @@ struct StateSpaceNoise{T,MT<:AbstractMatrix{T}} <:
             B,
             K',
             zeros(size(K', 1), size(B, 2)),
-            Ts,
         )
         new{eltype(A),typeof(A)}(A, B, K, Ts, nx, nu, ny)
     end
