@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "1.3.0"
+version = "1.3.1"
 
 [deps]
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
@@ -24,15 +24,15 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 
 [compat]
-BandedMatrices = "0.15"
+BandedMatrices = "0.15, 0.16"
 ComponentArrays = "0.8"
-ControlSystems = "0.7, 0.8"
+ControlSystems = "0.9"
 DSP = "0.6.1"
 FFTW = "1.1"
 FillArrays = "<0.9, 0.9, 0.11"
 LowLevelParticleFilters = "1.0"
 MatrixEquations = "1.1"
-MonteCarloMeasurements = "0.1.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9"
+MonteCarloMeasurements = "0.1.2, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 0.10"
 Optim = "<0.20, 0.20, 0.21, 0.22, 1.0"
 Parameters = "<0.13"
 RecipesBase = "<0.8, 0.8, 1.0"
