@@ -128,11 +128,11 @@ function arx(d::AbstractIdData, na, nb; λ = 0, estimator = \, stochastic = fals
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
     @assert size(y, 2) == 1 "arx only supports single output."
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
-    na >= 1 || throw(ArgumentError("na must be positive"))
+    na >= 0 || throw(ArgumentError("na must be positive"))
     y_train, A = getARXregressor(vec(y), u, na, nb)
     w = ls(A, y_train, λ, estimator)
     a, b = params2poly(w, na, nb)
-    model = tf(b, a, h)
+    model = minreal(tf(b, a, h))
     if stochastic
         local Σ
         try
@@ -495,11 +495,14 @@ end
 Used to get numerator and denominator polynomials after arx fitting
 """
 function params2poly(w, na, nb)
+    maxb = maximum(nb)
     a = [1; -w[1:na]]
+    a = [a; zeros(max(0, maxb - na))] # if nb > na
     w = w[na+1:end]
     b = map(nb) do nb
         b = w[1:nb]
         w = w[nb+1:end]
+        b = [b; zeros(maxb - nb)] # compensate for different nbs
         b
     end
     a, b
