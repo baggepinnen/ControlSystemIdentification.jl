@@ -1,10 +1,10 @@
 """
-    getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb)
+    getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb; inputdelay = zeros(Int, size(nb)))
 Returns a shortened output signal `y` and a regressor matrix `A` such that the least-squares ARX model estimate of order `na,nb` is `y\\A`
 Return a regressor matrix used to fit an ARX model on, e.g., the form
 `A(z)y = B(z)f(u)`
-with output `y` and input `u` where the order of autoregression is `na` and
-the order of input moving average is `nb`
+with output `y` and input `u` where the order of autoregression is `na`,
+the order of input moving average is `nb` and an optional input delay `inputdelay`.
 # Example
 Here we test the model with the Function `f(u) = √(|u|)`
 ```julia
@@ -116,14 +116,14 @@ end
 
 
 """
-    Gtf = arx(d::AbstractIdData, na, nb; λ = 0, estimator=\\, stochastic=false)
+    Gtf = arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator=\\, stochastic=false)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
-- `nb` and `na` are the length of the numerator and denominator polynomials.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
+- `nb` and `na` are the length of the numerator and denominator polynomials. Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-1`.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
 The number of free parameters is `na+nb`
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 
-Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...]
+Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...] and optional inputdelay = [d₁, d₂...]
 """
 function arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator = \, stochastic = false)
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
@@ -493,7 +493,7 @@ function wtls_estimator(y, na, nb, σu = 0)
 end
 
 """
-    a,b = params2poly(params,na,nb)
+    a,b = params2poly(params,na,nb; inputdelay = zeros(Int, size(nb)))
 Used to get numerator and denominator polynomials after arx fitting
 """
 function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))
