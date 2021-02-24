@@ -501,10 +501,11 @@ function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))
     a = [1; -w[1:na]]
     a = [a; zeros(max(0, maxb - na))] # if nb > na
     w = w[na+1:end]
-    b = map(enumerate(nb)) do (i, nb)
-        b = w[1:nb]
-        w = w[nb+1:end]
-        b = [zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb)] # compensate for different nbs and delay
+    b = map(1:length(nb)) do i
+        b = w[1:nb[i]]
+        w = w[nb[i]+1:end]
+        b = [zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
+        b
     end
     a, b
 end
