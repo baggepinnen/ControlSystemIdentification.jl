@@ -409,7 +409,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         pars = ControlSystemIdentification.params(G)
         @test pars == ([0.9, 0.8], [0.9], [0.8])
-        @test ControlSystemIdentification.params2poly(pars[1], 1, 1) == ([1, -0.9], [0.8])
+        @test ControlSystemIdentification.params2poly(pars[1], 1, 1) == ([1, -0.9], [[0.8]])
 
         na, nb = 1, 1
         yr, A = getARXregressor(y, u, na, nb)
@@ -469,6 +469,29 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
         @test Gest ≈ G1
+
+        # Test inputdelay
+        ## SISO
+        na, nb, inputdelay = 1, 1, 1
+        G1 =  tf([0,1], [1, -0.5,0], 1)
+        u = randn(N)
+        y = lsim(G1, u, t)[1][:]
+        d = iddata(y, u, 1)
+        Gest = arx(d, na, nb, inputdelay = inputdelay)
+        @test Gest ≈ G1
+
+        ## MISO
+        na, nb, inputdelay = 1, [1, 1], [1, 2]
+        G1 =  tf([0,1], [1, -0.5,0], 1)
+        G2 =  tf([0,0,1], [1, -0.5,0,0], 1)
+        G = [G1 G2]
+        u1 = randn(N)
+        u2 = randn(N)
+        u = [u1 u2]
+        y = lsim(G, u, 1:N)[1][:]
+        d = iddata(y, u, 1)
+        Gest = arx(d, na, nb, inputdelay = inputdelay)
+        @test Gest ≈ G
     end
 
     @testset "ar" begin
