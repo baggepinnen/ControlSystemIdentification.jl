@@ -33,7 +33,6 @@ function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputde
     for i = 1:length(nb)
         nb[i] <= 0 && continue
         s = m - inputdelay[i]
-
         A = [A toeplitz(u[s:s+n-1, i], u[s:-1:s-(nb[i])+1, i])]
     end
     return y, A
