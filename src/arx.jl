@@ -18,7 +18,7 @@ plot([yr A*x], lab=["Signal" "Prediction"])
 ```
 For nonlinear ARX-models, see [BasisFunctionExpansions.jl](https://github.com/baggepinnen/BasisFunctionExpansions.jl/). See also `arx`
 """
-function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputdelay = zeros(Int, size(nb)))
+function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputdelay = zeros(Int, size(nb)), direct::Union{Bool, Vector{Bool}} = fill(false, size(nb)))
     length(nb) == size(u, 2) ||
         throw(ArgumentError("Length of nb must equal number of input signals"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
@@ -33,12 +33,17 @@ function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputde
     for i = 1:length(nb)
         nb[i] <= 0 && continue
         s = m - 1 - inputdelay[i]
-        A = [A toeplitz(u[s:s+n-1, i], u[s:-1:s-nb[i]+1, i])]
+        # s = m - 1 + direct[i] - inputdelay[i]
+        if direct
+            A = [A u[m:m+n-1] toeplitz(u[s:s+n-1, i], u[s:-1:s-(nb[i])+1, i])]
+        else
+            A = [A toeplitz(u[s:s+n-1, i], u[s:-1:s-(nb[i])+1, i])]
+        end
     end
     return y, A
 end
-getARXregressor(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb))) =
-    getARXregressor(time1(output(d)), time1(input(d)), na, nb; inputdelay = inputdelay)
+getARXregressor(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), direct::Union{Bool, Vector{Bool}} = fill(false, size(nb))) =
+    getARXregressor(time1(output(d)), time1(input(d)), na, nb; inputdelay = inputdelay, direct = direct)
 
 function getARregressor(dy::AbstractIdData, na)
     noutputs(dy) == 1 || throw(ArgumentError("Only 1d time series supported"))
@@ -125,15 +130,15 @@ The number of free parameters is `na+nb`
 
 Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...] and optional inputdelay = [d₁, d₂...]
 """
-function arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator = \, stochastic = false)
+function arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator = \, stochastic = false, direct::Union{Bool, Vector{Bool}} = fill(false, size(nb)))
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
     @assert size(y, 2) == 1 "arx only supports single output."
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 0 || throw(ArgumentError("na must be positive"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
-    y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay)
+    y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay, direct = direct)
     w = ls(A, y_train, λ, estimator)
-    a, b = params2poly(w, na, nb, inputdelay = inputdelay)
+    a, b = params2poly(w, na, nb, inputdelay = inputdelay, direct = direct)
     model = minreal(tf(b, a, h))
     if stochastic
         local Σ
@@ -496,15 +501,16 @@ end
     a,b = params2poly(params,na,nb; inputdelay = zeros(Int, size(nb)))
 Used to get numerator and denominator polynomials after arx fitting
 """
-function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))
+function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)), direct = fill(false, size(nb)))
     maxb = maximum(nb .+ inputdelay)
     a = [1; -w[1:na]]
     a = [a; zeros(max(0, maxb - na))] # if nb > na
     w = w[na+1:end]
     b = map(1:length(nb)) do i
-        b = w[1:nb[i]]
-        w = w[nb[i]+1:end]
-        b = [zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
+        directb = direct[i] ? w[1] : typeof(w)[]
+        b = w[1 + direct[i]:nb[i] + direct[i]]
+        w = w[nb[i]+direct[i]+1:end]
+        b = [directb; zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
         b
     end
     a, b
