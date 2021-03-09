@@ -1,5 +1,5 @@
 """
-    getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb; inputdelay = zeros(Int, size(nb)))
+    getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb; inputdelay = ones(Int, size(nb)))
 Returns a shortened output signal `y` and a regressor matrix `A` such that the least-squares ARX model estimate of order `na,nb` is `y\\A`
 Return a regressor matrix used to fit an ARX model on, e.g., the form
 `A(z)y = B(z)f(u)`
@@ -117,7 +117,7 @@ end
 
 
 """
-    Gtf = arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator=\\, stochastic=false)
+    Gtf = arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator=\\, stochastic=false)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
 - `nb` and `na` are the length of the numerator and denominator polynomials. Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-1`.  An `inputdelay = 0` results in a direct term.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
