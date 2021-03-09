@@ -4,7 +4,7 @@ Returns a shortened output signal `y` and a regressor matrix `A` such that the l
 Return a regressor matrix used to fit an ARX model on, e.g., the form
 `A(z)y = B(z)f(u)`
 with output `y` and input `u` where the order of autoregression is `na`,
-the order of input moving average is `nb` and an optional input delay `inputdelay`.
+the order of input moving average is `nb` and an optional input delay `inputdelay`. An `inputdelay = 0` results in a direct term. 
 # Example
 Here we test the model with the Function `f(u) = √(|u|)`
 ```julia
@@ -18,11 +18,11 @@ plot([yr A*x], lab=["Signal" "Prediction"])
 ```
 For nonlinear ARX-models, see [BasisFunctionExpansions.jl](https://github.com/baggepinnen/BasisFunctionExpansions.jl/). See also `arx`
 """
-function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputdelay = zeros(Int, size(nb)), direct::Union{Bool, Vector{Bool}} = fill(false, size(nb)))
+function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputdelay = ones(Int, size(nb)))
     length(nb) == size(u, 2) ||
         throw(ArgumentError("Length of nb must equal number of input signals"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
-    m = max(na, maximum(nb .+ inputdelay)) + 1 # Start of yr
+    m = max(na, maximum(nb .+ inputdelay .- 1)) + 1 # Start of yr
     @assert m >= 1
     n = length(y) - m + 1 # Final length of yr
     @assert n <= length(y)
@@ -32,18 +32,14 @@ function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputde
     A = A[:, 2:end]
     for i = 1:length(nb)
         nb[i] <= 0 && continue
-        s = m - 1 - inputdelay[i]
-        # s = m - 1 + direct[i] - inputdelay[i]
-        if direct
-            A = [A u[m:m+n-1] toeplitz(u[s:s+n-1, i], u[s:-1:s-(nb[i])+1, i])]
-        else
-            A = [A toeplitz(u[s:s+n-1, i], u[s:-1:s-(nb[i])+1, i])]
-        end
+        s = m - inputdelay[i]
+
+        A = [A toeplitz(u[s:s+n-1, i], u[s:-1:s-(nb[i])+1, i])]
     end
     return y, A
 end
-getARXregressor(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), direct::Union{Bool, Vector{Bool}} = fill(false, size(nb))) =
-    getARXregressor(time1(output(d)), time1(input(d)), na, nb; inputdelay = inputdelay, direct = direct)
+getARXregressor(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb))) =
+    getARXregressor(time1(output(d)), time1(input(d)), na, nb; inputdelay = inputdelay)
 
 function getARregressor(dy::AbstractIdData, na)
     noutputs(dy) == 1 || throw(ArgumentError("Only 1d time series supported"))
@@ -124,21 +120,21 @@ end
     Gtf = arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator=\\, stochastic=false)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
-- `nb` and `na` are the length of the numerator and denominator polynomials. Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-1`.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
+- `nb` and `na` are the length of the numerator and denominator polynomials. Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-1`.  An `inputdelay = 0` results in a direct term.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
 The number of free parameters is `na+nb`
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 
 Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...] and optional inputdelay = [d₁, d₂...]
 """
-function arx(d::AbstractIdData, na, nb; inputdelay = zeros(Int, size(nb)), λ = 0, estimator = \, stochastic = false, direct::Union{Bool, Vector{Bool}} = fill(false, size(nb)))
+function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator = \, stochastic = false)
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
     @assert size(y, 2) == 1 "arx only supports single output."
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 0 || throw(ArgumentError("na must be positive"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
-    y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay, direct = direct)
+    y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay)
     w = ls(A, y_train, λ, estimator)
-    a, b = params2poly(w, na, nb, inputdelay = inputdelay, direct = direct)
+    a, b = params2poly2(w, na, nb, inputdelay = inputdelay)
     model = minreal(tf(b, a, h))
     if stochastic
         local Σ
@@ -501,20 +497,37 @@ end
     a,b = params2poly(params,na,nb; inputdelay = zeros(Int, size(nb)))
 Used to get numerator and denominator polynomials after arx fitting
 """
-function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)), direct = fill(false, size(nb)))
+function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))
     maxb = maximum(nb .+ inputdelay)
     a = [1; -w[1:na]]
     a = [a; zeros(max(0, maxb - na))] # if nb > na
     w = w[na+1:end]
     b = map(1:length(nb)) do i
-        directb = direct[i] ? w[1] : typeof(w)[]
-        b = w[1 + direct[i]:nb[i] + direct[i]]
-        w = w[nb[i]+direct[i]+1:end]
-        b = [directb; zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
+        b = w[1:nb[i]]
+        w = w[nb[i]+1:end]
+        b = [zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
         b
     end
-    a, b
+    return a, b
 end
+"""
+    a,b = params2poly2(params,na,nb; inputdelay = ones(Int, size(nb)))
+Used to get numerator and denominator polynomials after arx fitting. Updated version supporting a direct term.
+"""
+function params2poly2(w, na, nb; inputdelay = ones(Int, size(nb)))
+    maxb = maximum(nb .+ inputdelay)
+    a = [1; -w[1:na]]
+    a = [a; zeros(max(0, maxb - na -1))] # if nb > na
+    w = w[na+1:end]
+    b = map(1:length(nb)) do i
+        b = w[1:nb[i]]
+        w = w[nb[i]+1:end]
+        b = [zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
+        b
+    end
+    return a, b
+end
+
 function params2poly(w, na)
     a = [1; -w]
     b = 1
