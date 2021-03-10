@@ -472,7 +472,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         # Test inputdelay
         ## SISO
-        na, nb, inputdelay = 1, 1, 1
+        na, nb, inputdelay = 1, 1, 2
         G1 =  tf([0,1], [1, -0.5,0], 1)
         u = randn(N)
         y = lsim(G1, u, t)[1][:]
@@ -481,7 +481,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test Gest ≈ G1
 
         ## MISO
-        na, nb, inputdelay = 1, [1, 1], [1, 2]
+        na, nb, inputdelay = 1, [1, 1], [2, 3]
         G1 =  tf([0,1], [1, -0.5,0], 1)
         G2 =  tf([0,0,1], [1, -0.5,0,0], 1)
         G = [G1 G2]
@@ -492,6 +492,24 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb, inputdelay = inputdelay)
         @test Gest ≈ G
+
+        # direct input
+        G1 =  tf([0.3, 1], [1, -0.5], 1)
+        u = randn(N)
+        y = lsim(G1, u, t)[1][:]
+        d = iddata(y, u, 1)
+        na, nb, inputdelay = 1,2,0
+        Gest = arx(d, na, nb, inputdelay = inputdelay)
+        @test Gest ≈ G1
+        
+        ## with inputdelay
+        G1 =  tf([0.3,0, 1], [1, -0.5, 0], 1)
+        u = randn(N)
+        y = lsim(G1, u, t)[1][:]
+        d = iddata(y, u, 1)
+        na, nb, inputdelay = 1,3,0
+        Gest = arx(d, na, nb, inputdelay = inputdelay)
+        @test Gest ≈ G1
     end
 
     @testset "ar" begin
