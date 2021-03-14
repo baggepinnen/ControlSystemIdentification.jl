@@ -626,7 +626,7 @@ function ControlSystems.TransferFunction(
     if nb != 1 ## AR can now have length(bm) > 1
         isAR = bm[1] == 1 && all(bm[2:end] .== 0)
     else
-        isAr = true
+        isAR = true
     end
 
     if isAR && size(Σ, 1) < length(wm)
