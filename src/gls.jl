@@ -3,7 +3,7 @@
 """
     G, H = gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int)
 
-Estimate the model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalized least-squares.  
+Estimate the model `Ay = Bu + He`, where `H = 1/D`, using generalized least-squares.  
 
 # Arguments:
 - `d`: iddata
@@ -15,7 +15,7 @@ Estimate the model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalize
 - `H`: prior knowledge about the noise model
 - `inputdelay`: optinal delay of input, inputdelay = 0 results in a direct term, takes the form inputdelay = [d₁, d₂...] in MISO estimation 
 - `λ`: reg param
-- `estimator`: e.g. `\\,tls,irls,rtls`
+- `estimator`: e.g. `\\,tls,irls,rtls`, the latter three require `using TotalLeastSquares`.
 - `δmin`: Minimal change in the power of v, that specifies convergence.
 - `maxiter`: maximum number of iterations.
 - `verbose`: if true, more informmation is printed
@@ -72,7 +72,7 @@ function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; 
         # 3. Evaluate residuals
 		# yest = lsim(GF, input(d)', timeVec)[1][:]
         # v = output(d)' .- yest # This is different # -> this worked in my head but it does not
-        v = residue(GF, d)
+        v = residuals(GF, d)
 
         # 4. check if converged
         e = var(v)
@@ -107,13 +107,13 @@ function getResidual(ar::TransferFunction, y)
   end
 
 # -> calculates the residual e = Ay - Bu, there must be a smarter way for this
-function residue(Gest, d)
-    denumerator = den(Gest[1, 1])[1]
-    A = impRes2tf(denumerator)
+function residuals(Gest, d)
+    denominator = den(Gest[1, 1])[1]
+    A = impRes2tf(denominator)
     res = lsim(A, output(d)', 1:length(d))[1][:]
     for i in 1:ninputs(d)
         numinator = num(Gest[1, i])[1]
-        pad = zeros(max(0, (length(denumerator) - length(numinator))))
+        pad = zeros(max(0, (length(denominator) - length(numinator))))
         B = impRes2tf([pad; numinator])
         res -= lsim(B, input(d)[i,:], 1:length(d))[1][:]
     end   
