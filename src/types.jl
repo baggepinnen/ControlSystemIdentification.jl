@@ -47,6 +47,27 @@ end
 iddata(y::AbstractArray, Ts::Union{Real,Nothing} = nothing) = OutputData(autodim(y), Ts)
 iddata(y::AbstractArray, u::AbstractArray, Ts::Union{Real,Nothing} = nothing) =
     InputOutputData(autodim(y), autodim(u), Ts)
+
+"""
+    iddata(y, u, x, Ts = nothing)
+
+Returns the appropriate IdData object, depending on the input.
+
+# Arguments
+- `y::AbstractArray`: output data
+- `u::AbstractArray`: input data
+- `x::AbstractArray`: state data
+- `Ts::Union{Real,Nothing} = nothing`: optional sample time
+
+# Examples
+```jldoctest
+julia> iddata(randn(10))
+Output data of length 10 with 1 outputs
+
+julia> iddata(randn(10), randn(10), 1)
+InputOutput data of length 10 with 1 outputs and 1 inputs
+```
+"""
 iddata(
     y::AbstractArray,
     u::AbstractArray,
