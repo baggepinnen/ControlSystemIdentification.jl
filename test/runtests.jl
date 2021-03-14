@@ -516,14 +516,18 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         N = 10000
         t = 1:N
         y = zeros(N)
-        y[1] = randn()
+        y[1] = -0.2
+        u = copy(y)
         for i = 2:N
             y[i] = 0.9y[i-1]
         end
-        G = tf(1, [1, -0.9], 1)
+        # G = tf(1, [1, -0.9], 1)
+        G = tf([1, 0], [1, -0.9], 1)
+        y2 = lsim(G, u, t)[1][:]
+        @test all(y .== y2)
 
         na = 1
-        yr, A = ControlSystemIdentification.getARregressor(y, na)
+        yr, A = getARregressor(y, na)
         @test length(yr) == N - na
         @test size(A) == (N - na, na)
 
@@ -533,7 +537,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y, 1)
         Gh = ar(d, na)
         @test Gh ≈ G # We should be able to recover this transfer function
-
+        uh = lsim(1/Gh, y, t)[1][:]
+        @test u ≈ uh atol = eps()
+        
         N = 10000
         t = 1:N
         y = zeros(N)
@@ -550,9 +556,6 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         Gh2 = ar(d, na, stochastic = true)
         @test denvec(Gh2)[1][end] ≈ denvec(Gh)[1][end]
-
-
-
     end
 
 
