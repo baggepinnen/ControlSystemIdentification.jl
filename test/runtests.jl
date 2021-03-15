@@ -408,7 +408,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         y = lsim(G, u, t)[1][:]
 
         pars = ControlSystemIdentification.params(G)
-        @test pars == ([0.9, 0.8], [0.9], [0.8])
+        @test pars == ([0.9, 0.8], [0.9], [[0.8]])
         @test ControlSystemIdentification.params2poly(pars[1], 1, 1) == ([1, -0.9], [[0.8]])
 
         na, nb = 1, 1

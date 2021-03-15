@@ -152,9 +152,12 @@ function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; 
         GF = arx(dF, na, nb, estimator = estimator, λ = λ)
 
         # 3. Evaluate residuals
-		# yest = lsim(GF, input(d)', timeVec)[1][:]
-        # v = output(d)' .- yest # This is different # -> this worked in my head but it does not
         v = residuals(GF, d)
+        # yr, Ar = getARXregressor(d, na, nb)
+        # w = params(GF)[1]
+        # yest = Ar * w
+        # v = yr .- yest
+
 
         # 4. check if converged
         e = var(v)
@@ -172,27 +175,54 @@ function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; 
     end
 
     # Return AR residuals
-    e = lsim(1/H, v, timeVec)[1][:]
+    e = lsim(1/H, v, 1:length(v))[1][:]
     return (G = GF, H = H, e = e)
 end
 
-# -> calculates the arx residuals v = Ay - Bu, there must be a smarter way for this
-function residuals(Gest::TransferFunction, d::InputOutputData)
-    denumerator = den(Gest[1, 1])[1]
-    A = impRes2tf(denumerator) # A complicated way to split up the tf G = B/A into A and B, to use lsim for filtering
-    res = lsim(A, output(d)', 1:length(d))[1][:]
-    for i in 1:ninputs(d)
-        numerator = num(Gest[1, i])[1]
-        pad = zeros(max(0, (length(denumerator) - length(numerator))))
-        B = impRes2tf([pad; numerator])
-        res -= lsim(B, input(d)[i,:], 1:length(d))[1][:]
-    end   
-    return res 
+# calculates the arx residuals v = Ay - Bu
+function residuals(ARX::TransferFunction, d::InputOutputData)
+    size(ARX, 2) == ninputs(d) || throw(DomainError(d, "number of inputs $(ninputs(d)) does not match ARX model (expects $(size(ARX, 2)) inputs)"))
+
+    w, a, b = params(ARX)
+    na = length(a)
+    nb = map(length, vec(b))
+    
+    y, A = getARXregressor(d, na, nb)
+    ypred = A * w
+    v = y .- ypred
+    return v
 end
 
-# impulse response to tf, helper that pads zeros to the denominator to make the tf proper
-function impRes2tf(h::Vector{<:Real})
-    den = zeros(length(h))
-    den[1] = 1
-    return tf(h, den, 1)
+# predict, inspired, by the predict for ar
+function predict(ARX::TransferFunction, d::InputOutputData)
+    size(ARX, 2) == ninputs(d) || throw(DomainError(d, "number of inputs $(ninputs(d)) does not match ARX model (expects $(size(ARX, 2)) inputs)"))
+
+    w, a, b = params(ARX)
+    na = length(a)
+    nb = map(length, vec(b))
+    
+    y, A = getARXregressor(d, na, nb)
+    ypred = A * w
+    return ypred
 end
+
+# # -> calculates the arx residuals v = Ay - Bu, there must be a smarter way for this
+# function residuals(Gest::TransferFunction, d::InputOutputData)
+#     denumerator = den(Gest[1, 1])[1]
+#     A = impRes2tf(denumerator) # A complicated way to split up the tf G = B/A into A and B, to use lsim for filtering
+#     res = lsim(A, output(d)', 1:length(d))[1][:]
+#     for i in 1:ninputs(d)
+#         numerator = num(Gest[1, i])[1]
+#         pad = zeros(max(0, (length(denumerator) - length(numerator))))
+#         B = impRes2tf([pad; numerator])
+#         res -= lsim(B, input(d)[i,:], 1:length(d))[1][:]
+#     end   
+#     return res 
+# end
+
+# # impulse response to tf, helper that pads zeros to the denominator to make the tf proper
+# function impRes2tf(h::Vector{<:Real})
+#     den = zeros(length(h))
+#     den[1] = 1
+#     return tf(h, den, 1)
+# end

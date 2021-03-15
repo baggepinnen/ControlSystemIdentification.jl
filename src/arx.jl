@@ -574,13 +574,24 @@ function params2poly(w, na)
     b = [1; zeros(na)]
     return a, b
 end
+
+# """
+# w, a, b = params(G::TransferFunction)
+# w = [a;b]
+# """
+# function params(G::TransferFunction)
+#     am, bm = -denvec(G)[1][2:end], numvec(G)[1]
+#     wm     = [am; bm]
+#     wm, am, bm
+# end
 """
 w, a, b = params(G::TransferFunction)
-w = [a;b]
+w = [a; vcat(b...)]
 """
 function params(G::TransferFunction)
-    am, bm = -denvec(G)[1][2:end], numvec(G)[1]
-    wm     = [am; bm]
+    am = -denvec(G)[1][2:end]
+    bm = vec(numvec(G)) 
+    wm = [am; vcat(bm...) ]
     wm, am, bm
 end
 
@@ -622,15 +633,17 @@ function ControlSystems.TransferFunction(
     N = 500,
 )
     wm, am, bm = params(G)
-    na, nb     = length(am), length(bm)
-    if nb != 1 ## AR can now have length(bm) > 1
-        isAR = bm[1] == 1 && all(bm[2:end] .== 0)
+    na = length(am)
+    nb = map(length, vec(bm))
+    if length(nb) == 1 ## SISO
+        b = bm[1]
+        isAR = b[1] == 1 && all(b[2:end] .== 0)
     else
-        isAR = true
+        isAR = false # MISO -> ARX
     end
 
     if isAR && size(Σ, 1) < length(wm)
-        p = T(N, MvNormal(wm[1:end-nb], Σ))
+        p = T(N, MvNormal(wm[1:end-nb[1]], Σ))
         a, b = params2poly(p, na)
     else
         p = T(N, MvNormal(wm, Σ))
