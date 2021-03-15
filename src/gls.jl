@@ -1,7 +1,8 @@
 
+import StatsBase.residuals
 
 """
-    G, H = gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int)
+    G, H, e = gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int)
 
 Estimate the model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalized least-squares.  
 
@@ -14,14 +15,96 @@ Estimate the model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalize
 # Keyword Arguments:
 - `H`: prior knowledge about the noise model
 - `inputdelay`: optinal delay of input, inputdelay = 0 results in a direct term, takes the form inputdelay = [d₁, d₂...] in MISO estimation 
-- `λ`: reg param
+- `λ`: `λ > 0` can be provided for L₂ regularization
 - `estimator`: e.g. `\\,tls,irls,rtls`
 - `δmin`: Minimal change in the power of v, that specifies convergence.
 - `maxiter`: maximum number of iterations.
 - `verbose`: if true, more informmation is printed
 
+# Extended Help
+
+# Example:
+```jldoctest
+julia> N = 500 
+500
+
+julia> sim(G, u) = lsim(G, u, 1:N)[1][:]
+sim (generic function with 1 method)
+
+julia> A = tf([1, -0.8], [1, 0], 1)
+TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+1.0z - 0.8
+----------
+   1.0z
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model
+
+julia> B = tf([0, 1], [1, 0], 1)
+TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Int64}}
+1
+-
+z
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model
+
+julia> G = minreal(B / A)
+TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+   1.0
+----------
+1.0z - 0.8
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model
+
+julia> D = tf([1, 0.7], [1, 0], 1)
+TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+1.0z + 0.7
+----------
+   1.0z
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model
+
+julia> H = 1 / D
+TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+   1.0z
+----------
+1.0z + 0.7
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model
+
+julia> u, e = randn(N), randn(N)
+[...]
+
+julia> y, v = sim(G, u), sim(H * (1/A), e) # simulate process
+[...]
+
+julia> d = iddata(y.+ v, u, 1)
+InputOutput data of length 500 with 1 outputs and 1 inputs
+
+julia> na, nb , nd = 1, 1, 1
+(1, 1, 1)
+
+julia> Gest, Hest, res = gls(d, na, nb, nd)
+(G = TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+   0.9987917259291642
+-------------------------
+1.0z - 0.7937837464682017
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model, H = TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+          1.0z
+-------------------------
+1.0z + 0.7019519225937721
+
+Sample Time: 1 (seconds)
+Discrete-time transfer function model, e = [...]
+```
 """
-function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; H::Union{TransferFunction, Nothing} = nothing, inputdelay = ones(Int, size(nb)), δmin::Real = 0.01, maxiter::Int = 10, returnResidual::Bool = false, estimator = \, verbose::Bool = false, λ::Real = 0)
+function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; H::Union{TransferFunction, Nothing} = nothing, inputdelay = ones(Int, size(nb)), δmin::Real = 0.01, maxiter::Int = 10, estimator = \, verbose::Bool = false, λ::Real = 0)
     # Input Checking
     na >= 0 || throw(ArgumentError("na($na) must be positive"))
     all(nb .>= 0 )|| throw(ArgumentError("nb($nb) must be positive"))
@@ -47,16 +130,15 @@ function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; 
 	timeVec = 1:length(d.y)
     while iter <= maxiter && δ >= δmin
         
-        # -> What is a good way to filter input and output by D here? This is the point where I came to think about the ar process shouldnt lsim(1/H, y/u, t) work? 
         # Filter input/output according to errormodel H, after initialization
         if iter > 0
-            yF = filt_D(H, output(d)')
+            yF = lsim(1/H, output(d)', timeVec)[1][:]
             if ninputs(d) == 1
-                uF = filt_D(H, input(d)')
+                uF = lsim(1/H, input(d)', timeVec)[1][:]
             else
                 uF = fill(1.0, size(d.u)) 
                 for i in 1:ninputs(d)
-                    uF[i,:] = filt_D(H, d.u[i,:])
+                    uF[i, :] = lsim(1/H, d.u[i,:], timeVec)[1][:]
                 end
             end
         else
@@ -72,7 +154,7 @@ function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; 
         # 3. Evaluate residuals
 		# yest = lsim(GF, input(d)', timeVec)[1][:]
         # v = output(d)' .- yest # This is different # -> this worked in my head but it does not
-        v = residue(GF, d)
+        v = residuals(GF, d)
 
         # 4. check if converged
         e = var(v)
@@ -89,55 +171,28 @@ function gls(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; 
         iter += 1
     end
 
-    # Return AR residual if needed
-    if returnResidual
-        residual = getResidual(H, v)
-        return GF, H, residual
-    else
-        return GF, H
-    end
+    # Return AR residuals
+    e = lsim(1/H, v, timeVec)[1][:]
+    return (G = GF, H = H, e = e)
 end
 
-# Contruct the residual from an AR-process 
-function getResidual(ar::TransferFunction, y)
-    pred = predict(ar, y)
-    n = length(y) - length(pred)
-    residual = y[1+n:end] .- pred
-    return residual
-  end
-
-# -> calculates the residual e = Ay - Bu, there must be a smarter way for this
-function residue(Gest, d)
+# -> calculates the arx residuals v = Ay - Bu, there must be a smarter way for this
+function residuals(Gest::TransferFunction, d::InputOutputData)
     denumerator = den(Gest[1, 1])[1]
-    A = impRes2tf(denumerator)
+    A = impRes2tf(denumerator) # A complicated way to split up the tf G = B/A into A and B, to use lsim for filtering
     res = lsim(A, output(d)', 1:length(d))[1][:]
     for i in 1:ninputs(d)
-        numinator = num(Gest[1, i])[1]
-        pad = zeros(max(0, (length(denumerator) - length(numinator))))
-        B = impRes2tf([pad; numinator])
+        numerator = num(Gest[1, i])[1]
+        pad = zeros(max(0, (length(denumerator) - length(numerator))))
+        B = impRes2tf([pad; numerator])
         res -= lsim(B, input(d)[i,:], 1:length(d))[1][:]
     end   
     return res 
 end
 
-# impulse response to tf
+# impulse response to tf, helper that pads zeros to the denominator to make the tf proper
 function impRes2tf(h::Vector{<:Real})
     den = zeros(length(h))
     den[1] = 1
     return tf(h, den, 1)
-end
-
-# function filt_D(H::TransferFunction, sig)
-#     a = den(H)[1]
-#     b = zeros(length(a))
-#     b[1] = 1
-#     # b = [1]
-#     res = filt(b, a, sig)
-#     return res
-# end
-
-function filt_D(H::TransferFunction, sig)
-    D = impRes2tf(den(H)[1])
-    result = lsim(D, sig, 1:length(sig))[1][:]
-    return result    
 end
