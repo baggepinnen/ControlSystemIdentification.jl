@@ -183,11 +183,11 @@ end
 function residuals(ARX::TransferFunction, d::InputOutputData)
     size(ARX, 2) == ninputs(d) || throw(DomainError(d, "number of inputs $(ninputs(d)) does not match ARX model (expects $(size(ARX, 2)) inputs)"))
 
-    w, a, b = params(ARX)
+    w, a, b, inputdelay = params(ARX)
     na = length(a)
     nb = map(length, vec(b))
     
-    y, A = getARXregressor(d, na, nb)
+    y, A = getARXregressor(d, na, nb, inputdelay = inputdelay)
     ypred = A * w
     v = y .- ypred
     return v
@@ -197,11 +197,11 @@ end
 function predict(ARX::TransferFunction, d::InputOutputData)
     size(ARX, 2) == ninputs(d) || throw(DomainError(d, "number of inputs $(ninputs(d)) does not match ARX model (expects $(size(ARX, 2)) inputs)"))
 
-    w, a, b = params(ARX)
+    w, a, b, inputdelay = params(ARX)
     na = length(a)
     nb = map(length, vec(b))
     
-    y, A = getARXregressor(d, na, nb)
+    y, A = getARXregressor(d, na, nb, inputdelay = inputdelay)
     ypred = A * w
     return ypred
 end

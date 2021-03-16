@@ -24,7 +24,7 @@
     Gest, Hest, res = gls(d, na, nb, nd, maxiter = 10, verbose = true, δmin = 1e-3)
     @test isapprox(Gest, G, atol = 10e-2)
     @test isapprox(Hest, 1/D, atol = 10e-2)
-    @test var(res .- e[2:end]) < 10e-3
+    @test var(res .- e[2:end]) < 10e-2
     
     #### S12 ####
     A = tf([1, -0.7], [1, 0], 1)

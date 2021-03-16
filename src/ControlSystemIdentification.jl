@@ -87,7 +87,7 @@ predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args..
 Predict AR model
 """
 function predict(G::ControlSystems.TransferFunction, y)
-    _, a, _ = params(G)
+    _, a, _, _ = params(G)
     yr, A = getARregressor(output(y), length(a))
     yh = A * a
     oftype(output(y), yh)

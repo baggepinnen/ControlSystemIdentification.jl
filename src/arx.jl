@@ -134,18 +134,18 @@ function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0
     y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay)
     w = ls(A, y_train, λ, estimator)
     a, b = params2poly2(w, na, nb, inputdelay = inputdelay)
-    model = minreal(tf(b, a, h))
+    model = tf(b, a, h)
     if stochastic
         local Σ
         try
             Σ = parameter_covariance(y_train, A, w, λ)
         catch
-            return model
+            return minreal(model)
         end
-        return TransferFunction(Particles, model, Σ)
+        return minreal(TransferFunction(Particles, model, Σ))
     end
 
-    return model
+    return minreal(model)
 end
 
 """
@@ -585,14 +585,24 @@ end
 #     wm, am, bm
 # end
 """
-w, a, b = params(G::TransferFunction)
+w, a, b, inputdelay = params(G::TransferFunction)
 w = [a; vcat(b...)]
+
+retrieve na and nb with:
+na = length(a)
+nb = map(length, vec(b))
 """
 function params(G::TransferFunction)
-    am = -denvec(G)[1][2:end]
+    ams = vec(denvec(G))
+    am = -ams[1][2:end]
+    filter!(!iszero, am) # assumption, that no coefficient actually iszero
+
     bm = vec(numvec(G)) 
+    inputdelay = length.(ams) .- length.(bm)
+    filter!.(!iszero, bm)
+
     wm = [am; vcat(bm...) ]
-    wm, am, bm
+    wm, am, bm, inputdelay
 end
 
 """
@@ -632,7 +642,7 @@ function ControlSystems.TransferFunction(
     Σ::AbstractMatrix,
     N = 500,
 )
-    wm, am, bm = params(G)
+    wm, am, bm, inputdelay = params(G)
     na = length(am)
     nb = map(length, vec(bm))
     if length(nb) == 1 ## SISO
@@ -647,7 +657,7 @@ function ControlSystems.TransferFunction(
         a, b = params2poly(p, na)
     else
         p = T(N, MvNormal(wm, Σ))
-        a, b = params2poly(p, na, nb)
+        a, b = params2poly2(p, na, nb, inputdelay = inputdelay)
     end
     arxtf = tf(b, a, G.Ts)
 end
