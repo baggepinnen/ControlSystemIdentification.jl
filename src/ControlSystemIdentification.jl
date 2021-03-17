@@ -21,6 +21,7 @@ import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates
+import StatsBase.residuals
 
 export iddata,
     noutputs,
@@ -41,6 +42,8 @@ export getARXregressor,
     find_na,
     arx,
     ar,
+    arxar,
+    residuals,
     arma,
     arma_ssa,
     armax,
