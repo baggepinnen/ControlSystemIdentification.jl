@@ -317,9 +317,9 @@ Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using gene
 - `H = nothing`: prior knowledge about the AR noise model
 - `inputdelay = ones(Int, size(nb))`: optinal delay of input, inputdelay = 0 results in a direct term, takes the form inputdelay = [d₁, d₂...] in MISO estimation 
 - `λ = 0`: `λ > 0` can be provided for L₂ regularization
-- `estimator = \\`: e.g. `\\,tls,irls,rtls`
+- `estimator = \\`: e.g. `\\,tls,irls,rtls`, the latter three require `using TotalLeastSquares`
 - `δmin = 10e-4`: Minimal change in the power of e, that specifies convergence.
-- `maxiter = 10`: maximum number of iterations.
+- `iterations = 10`: maximum number of iterations.
 - `verbose = false`: if true, more informmation is printed
 
 # Example:
@@ -403,12 +403,20 @@ Sample Time: 1 (seconds)
 Discrete-time transfer function model, e = [...]
 ```
 """
-function arxar(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int; H::Union{TransferFunction, Nothing} = nothing, inputdelay = ones(Int, size(nb)), δmin::Real = 0.001, maxiter::Int = 10, estimator = \, verbose::Bool = false, λ::Real = 0)
+function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}}, nd::Int;
+    H::Union{TransferFunction, Nothing} = nothing,
+    inputdelay      = ones(Int, size(nb)),
+    δmin::Real      = 0.001,
+    iterations::Int = 10,
+    estimator       = \,
+    verbose::Bool   = false,
+    λ::Real         = 0
+)
     # Input Checking
     na >= 0 || throw(ArgumentError("na($na) must be positive"))
     all(nb .>= 0 )|| throw(ArgumentError("nb($nb) must be positive"))
     nd >= 1 || throw(ArgumentError("nd($nd) must be positive"))
-    maxiter >= 1 || throw(DomainError("maxiter($maxiter) must be >0"))
+    iterations >= 1 || throw(DomainError("iterations($iterations) must be >0"))
 	δmin > 0 || throw(ArgumentError("δmin($δmin) must be positive"))
     ninputs(d) == length(nb) || throw(ArgumentError("Length of nb ($(length(nb))) must equal number of input signals ($(ninputs(d)))"))
 
@@ -420,22 +428,23 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int
         iter = 1 # initial noisemodel is known, H is present
     end
     GF = tf([0], [1], 1)
-    v = 0
+    v  = 0
 
     # Iterate
-    eOld = 0
-    δ = δmin + 1
-	timeVec = 1:length(d.y)
-    while iter <= maxiter && δ >= δmin
+    eOld    = 0
+    δ       = δmin + 1
+    timeVec = 1:length(d.y)
+    sim(G,u) = lsim(G, u, timeVec)[1][:]
+    while iter <= iterations && δ >= δmin
         # Filter input/output according to errormodel H, after initialization
         if iter > 0
-            yF = lsim(1/H, output(d)', timeVec)[1][:]
+            yF = sim(1/H, output(d)')
             if ninputs(d) == 1
-                uF = lsim(1/H, input(d)', timeVec)[1][:]
+                uF = sim(1/H, input(d)')
             else
                 uF = fill(1.0, size(d.u)) 
                 for i in 1:ninputs(d)
-                    uF[i, :] = lsim(1/H, d.u[i,:], timeVec)[1][:]
+                    uF[i, :] = sim(1/H, d.u[i,:])
                 end
             end
         else

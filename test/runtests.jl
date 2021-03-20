@@ -622,10 +622,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(yv, u, 1)
         ###########
         na, nb , nd = 1, 1, 1
-        Gest, Hest, res = arxar(d, na, nb, nd, maxiter = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 10e-2)
-        @test isapprox(Hest, 1/D, atol = 10e-2)
-        @test var(res .- e[2:end]) < 10e-2
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+        @test var(res .- e[2:end]) < 1e-1
         
         #### S12 ####
         A = tf([1, -0.7], [1, 0], 1)
@@ -642,9 +642,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(yv, u, 1)
         ############
         na, nb , nd = 1, 1, 1
-        Gest, Hest, res = arxar(d, na, nb, nd, maxiter = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 10e-2)
-        @test isapprox(Hest, 1/D, atol = 10e-2)
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
         
         #### S2 #### structure of Ay = Bu + Ce
         A = tf([1, -0.8], [1, 0], 1)
@@ -657,13 +657,13 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         e = rand(Normal(0, 0.1), N)
         y = sim(G, u)
         v = sim(H, e)
-        yv = y.+ v
+        yv = y .+ v
         d = iddata(yv, u, 1)
         ############
         na, nb , nd = 1, 1, 1
-        Gest, Hest, res = arxar(d, na, nb, nd, maxiter = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 10e-3)
-        @test isapprox(Hest, 1/tf([1, -0.49], [1, 0], 1), atol = 10e-2)
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-2)
+        @test isapprox(Hest, 1/tf([1, -0.49], [1, 0], 1), atol = 1e-1)
         
         #### S10 #### prior knowledge neccessary for identification
         N = 2000
@@ -682,9 +682,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         ############
         N = 500
         na, nb , nd = 1, 1, 1
-        Gest, Hest, res = arxar(d, na, nb, nd, H = 1/D, maxiter = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 20e-2)
-        @test isapprox(Hest, 1/D, atol = 10e-2)
+        Gest, Hest, res = arxar(d, na, nb, nd, H = 1/D, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 2e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
     
         # MISO
         A = tf([1, -0.8], [1, 0], 1)
@@ -706,9 +706,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(yv, u', 1)
         ###########
         na, nb , nd = 1, [1, 1], 1
-        Gest, Hest, res = arxar(d, na, nb, nd, maxiter = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 10e-2)
-        @test isapprox(Hest, 1/D, atol = 10e-2)
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
     
         # inputdelay 
         A = tf([1, -0.8], [1, 0], 1)
@@ -725,10 +725,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(yv, u, 1)
         ###########
         na, nb , nd, inputdelay = 1, 1, 1, 2
-        Gest, Hest, res = arxar(d, na, nb, nd, inputdelay = inputdelay, maxiter = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 10e-2)
-        @test isapprox(Hest, 1/D, atol = 10e-2)
-        @test var(res .- e[3:end]) < 10e-2
+        Gest, Hest, res = arxar(d, na, nb, nd, inputdelay = inputdelay, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+        @test var(res .- e[3:end]) < 1e-1
     end
     
     @testset "plr" begin
