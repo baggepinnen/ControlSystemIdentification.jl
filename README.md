@@ -58,7 +58,11 @@ This package also supports estimating models on the form
 ```math
 Ay = Bu + Cw
 ```
-through pseudo-linear regression.
+through pseudo-linear regression or
+```math
+Ay = Bu + 1/D w
+```
+through the generalized least squares method (`arxar`).
 Estimation of the more general model form
 ```math
 Ay = B/F u + C/D w
@@ -190,6 +194,7 @@ Basic support for ARX/ARMAX model estimation, i.e. a model on any of the forms
 ```math
 Ay = Bu + w
 Ay = Bu + Cw
+Ay = Bu + 1/D w
 ```
 is provided. The ARX estimation problem is convex and the solution is available on closed-form.
 Usage example:
@@ -263,6 +268,7 @@ See also function `arma` for estimation of signal models without inputs.
 - `ar`: Estimate an AR model.
 - `arma`: Estimate an ARMA model.
 - `plr`: Transfer-function estimation using pseudo-linear regression
+- `arxar`: Transfer-function estimation using generalized least squares method
 - `getARXregressor/getARregressor`: For low-level control over the estimation
 See docstrings for further help.
 

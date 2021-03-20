@@ -2,6 +2,7 @@ using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeast
 using Test, Random, LinearAlgebra, Statistics
 
 using ControlSystemIdentification: time1, time2
+using MonteCarloMeasurements
 
 function ⟂(x)
     u, s, v = svd(x)
@@ -400,7 +401,23 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test mean(abs2, y - yh) < 0.01
     end
 
+    """
+    Compare a tf to a tf based on particles .. maybe replaye by correct dispatched isapprox
+    """
+    function compareTFs(tf, tfStochastic, atol = 10e-5)
+        aok = bok = false
+        try
+            bok = isapprox(numvec(tf), mean.(numvec(tfStochastic)), atol = atol)
+            aok = isapprox(denvec(tf), mean.(denvec(tfStochastic)), atol = atol)
+        catch
+            return false
+        end  
+            return aok && bok
+    end
+
     @testset "arx" begin
+        unsafe_comparisons(true)
+
         N = 20
         t = 1:N
         u = randn(N)
@@ -408,7 +425,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         y = lsim(G, u, t)[1][:]
 
         pars = ControlSystemIdentification.params(G)
-        @test pars == ([0.9, 0.8], [0.9], [0.8])
+        @test pars == ([0.9, 0.8], [0.9], [[0.8]], [1])
         @test ControlSystemIdentification.params2poly(pars[1], 1, 1) == ([1, -0.9], [[0.8]])
 
         na, nb = 1, 1
@@ -438,7 +455,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y2, [u u2], 1)
         Gh2 = arx(d, na, nb)
         @test Gh2 ≈ G2
-
+        Gh2s = arx(d, na, nb, stochastic = true)
+        @test compareTFs(G2, Gh2s)
         # Test na < nb
         ## SISO
         na, nb = 1, 2
@@ -448,6 +466,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
         @test G1 ≈ Gest
+        
+        Gests = arx(d, na, nb, stochastic = true)
+        @test compareTFs(G1, Gests)
 
         ## MISO nb1 != nb2
         na, nb = 1, [2, 3]
@@ -461,6 +482,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         Gest = arx(d, na, nb)
         @test Gest ≈ G
 
+        Gests = arx(d, na, nb, stochastic = true)
+        @test compareTFs(G, Gests)
+        
+        
         # Test na = 0
         na, nb = 0, 1
         G1 =  tf([1], [1, 0], 1)
@@ -469,6 +494,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
         @test Gest ≈ G1
+
+        Gests = arx(d, na, nb, stochastic = true)
+        @test compareTFs(G1, Gests)
+        
 
         # Test inputdelay
         ## SISO
@@ -479,6 +508,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb, inputdelay = inputdelay)
         @test Gest ≈ G1
+        Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic = true)
+        @test compareTFs(G1, Gests)
+        
 
         ## MISO
         na, nb, inputdelay = 1, [1, 1], [2, 3]
@@ -493,6 +525,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         Gest = arx(d, na, nb, inputdelay = inputdelay)
         @test Gest ≈ G
 
+        Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic =  true)
+        @test compareTFs(G, Gests)
+
         # direct input
         G1 =  tf([0.3, 1], [1, -0.5], 1)
         u = randn(N)
@@ -502,6 +537,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         Gest = arx(d, na, nb, inputdelay = inputdelay)
         @test Gest ≈ G1
         
+        Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic = true)
+        @test compareTFs(G1, Gests)
+        
         ## with inputdelay
         G1 =  tf([0.3,0, 1], [1, -0.5, 0], 1)
         u = randn(N)
@@ -510,6 +548,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         na, nb, inputdelay = 1,3,0
         Gest = arx(d, na, nb, inputdelay = inputdelay)
         @test Gest ≈ G1
+
+        Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic = true)
+        @test compareTFs(G1, Gests)
+
     end
 
     @testset "ar" begin
@@ -558,7 +600,137 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test denvec(Gh2)[1][end] ≈ denvec(Gh)[1][end]
     end
 
-
+    @testset "arxar" begin
+        @info "Testing arxar"
+        # Test examples are taken from Söderstöms paper and compared against it (this is also where the (high) tolerances come from)
+        N = 500 # Number of samples used for simulation by Söderström
+        time = 1:N
+        sim(G, u) = lsim(G, u, time)[1][:]
+        
+        #### S1 ####
+        A = tf([1, -0.8], [1, 0], 1)
+        B = tf([0, 1], [1, 0], 1)
+        G = minreal(B / A)
+        D = tf([1, 0.7], [1, 0], 1)
+        H = minreal(1 / (D * A))
+        
+        u = rand(Normal(0, 1), N)
+        e = rand(Normal(0, 1), N)
+        y = sim(G, u)
+        v = sim(H, e)
+        yv = y.+ v
+        d = iddata(yv, u, 1)
+        ###########
+        na, nb , nd = 1, 1, 1
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+        @test var(res .- e[2:end]) < 1e-1
+        
+        #### S12 ####
+        A = tf([1, -0.7], [1, 0], 1)
+        B = tf([0, 1], [1, 0], 1)
+        G = minreal(B / A)
+        D = tf([1, 0.9], [1, 0], 1)
+        H = minreal(1 / (D * A))
+        
+        u = rand(Normal(0, 1), N)
+        e = rand(Normal(0, sqrt(1.2)), N)
+        y = sim(G, u)
+        v = sim(H, e)
+        yv = y.+ v
+        d = iddata(yv, u, 1)
+        ############
+        na, nb , nd = 1, 1, 1
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+        
+        #### S2 #### structure of Ay = Bu + Ce
+        A = tf([1, -0.8], [1, 0], 1)
+        B = tf([0, 1], [1, 0], 1)
+        G = minreal(B / A)
+        D = tf([1, 0.7], [1, 0], 1)
+        H = minreal((D / A))
+        
+        u = rand(Normal(0, 1), N)
+        e = rand(Normal(0, 0.1), N)
+        y = sim(G, u)
+        v = sim(H, e)
+        yv = y .+ v
+        d = iddata(yv, u, 1)
+        ############
+        na, nb , nd = 1, 1, 1
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-2)
+        @test isapprox(Hest, 1/tf([1, -0.49], [1, 0], 1), atol = 1e-1)
+        
+        #### S10 #### prior knowledge neccessary for identification
+        N = 2000
+        A = tf([1, -0.5], [1, 0], 1)
+        B = tf([0, 1], [1, 0], 1)
+        G = minreal(B / A)
+        D = tf([1, 0.5], [1,0], 1)
+        H = minreal(1 / (D * A))
+        
+        u = rand(Normal(0, 1), N)
+        e = rand(Normal(0, 5), N)
+        y = lsim(G, u, 1:N)[1][:]
+        v = lsim(H, e, 1:N)[1][:]
+        yv = y.+ v
+        d = iddata(yv, u, 1)
+        ############
+        N = 500
+        na, nb , nd = 1, 1, 1
+        Gest, Hest, res = arxar(d, na, nb, nd, H = 1/D, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 2e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+    
+        # MISO
+        A = tf([1, -0.8], [1, 0], 1)
+        B1 = tf([0, 1], [1, 0], 1)
+        B2 = tf([0, -1], [1, 0], 1)
+        G1 = minreal(B1 / A)
+        G2 = minreal(B2 / A)
+        G = [G1 G2]
+        D = tf([1, 0.7], [1, 0], 1)
+        H = minreal(1 / (D * A))
+        
+        u1 = rand(Normal(0, 1), N)
+        u2 = rand(Normal(0, 1), N)
+        u = [u1 u2]
+        e = rand(Normal(0, 1), N)
+        y = sim(G, u)
+        v = sim(H, e)
+        yv = y.+ v
+        d = iddata(yv, u', 1)
+        ###########
+        na, nb , nd = 1, [1, 1], 1
+        Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+    
+        # inputdelay 
+        A = tf([1, -0.8], [1, 0], 1)
+        B = tf([0, 1], [1, 0, 0], 1)
+        G = minreal(B / A)
+        D = tf([1, 0.7], [1, 0], 1)
+        H = minreal(1 / (D * A))
+        
+        u = rand(Normal(0, 1), N)
+        e = rand(Normal(0, 1), N)
+        y = sim(G, u)
+        v = sim(H, e)
+        yv = y.+ v
+        d = iddata(yv, u, 1)
+        ###########
+        na, nb , nd, inputdelay = 1, 1, 1, 2
+        Gest, Hest, res = arxar(d, na, nb, nd, inputdelay = inputdelay, iterations = 10, verbose = true, δmin = 1e-3)
+        @test isapprox(Gest, G, atol = 1e-1)
+        @test isapprox(Hest, 1/D, atol = 1e-1)
+        @test var(res .- e[3:end]) < 1e-1
+    end
+    
     @testset "plr" begin
 
         N = 2000
