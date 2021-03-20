@@ -21,6 +21,7 @@ import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates
+import StatsBase.residuals
 
 export iddata,
     noutputs,
@@ -41,6 +42,8 @@ export getARXregressor,
     find_na,
     arx,
     ar,
+    arxar,
+    residuals,
     arma,
     arma_ssa,
     armax,
@@ -87,7 +90,7 @@ predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args..
 Predict AR model
 """
 function predict(G::ControlSystems.TransferFunction, y)
-    _, a, _ = params(G)
+    _, a, _, _ = params(G)
     yr, A = getARregressor(output(y), length(a))
     yh = A * a
     oftype(output(y), yh)
