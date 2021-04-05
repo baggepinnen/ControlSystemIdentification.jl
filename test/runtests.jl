@@ -662,7 +662,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         ############
         na, nb , nd = 1, 1, 1
         Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
-        @test isapprox(Gest, G, atol = 1e-2)
+        @test isapprox(Gest, G, atol = 1e-1)
         @test isapprox(Hest, 1/tf([1, -0.49], [1, 0], 1), atol = 1e-1)
         
         #### S10 #### prior knowledge neccessary for identification
