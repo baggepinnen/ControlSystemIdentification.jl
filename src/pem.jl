@@ -66,15 +66,15 @@ function pem(
     A                   = 0.0001randn(nx, nx),
     B                   = 0.001randn(nx, obslength(input(d))),
     # C                   = 0.001randn(obslength(output(d)), nx),
-    K                   = 0.001randn(nx, obslength(output(d))),
-    x0                  = 0.001randn(nx),
+    K  = 0.001randn(nx, obslength(output(d))),
+    x0 = 0.001randn(nx),
     kwargs...,
 )
 
     y, u = output(d), input(d)
     nu, ny = obslength(u), obslength(y)
-    if size(A,1) != size(A,2) # Old API
-        A = [A zeros(nx, nx-ny)] 
+    if size(A, 1) != size(A, 2) # Old API
+        A = [A zeros(nx, nx - ny)]
     end
     p = ComponentVector((; A, B, K, x0))
     options = Options(; iterations = iterations, kwargs...)

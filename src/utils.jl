@@ -23,13 +23,21 @@ end
     [[y[i]] for i in eachindex(y)]
 @inline function Base.oftype(x::Vector{<:Number}, y::Matrix)
     size(y, 1) == 1 || size(y, 2) == 1 && return vec(y)
-    throw(ArgumentError("Cannot convert a matrix with both dimensions greater than 1 to a vector."))
+    throw(
+        ArgumentError(
+            "Cannot convert a matrix with both dimensions greater than 1 to a vector.",
+        ),
+    )
 end
 
 @inline function Base.oftype(x::Vector{<:Number}, y::Vector{<:Vector})
     size(y, 1) == 1 ||
         size(y, 2) == 1 ||
-        throw(ArgumentError("Cannot convert a matrix with both dimensions greater than 1 to a vector."))
+        throw(
+            ArgumentError(
+                "Cannot convert a matrix with both dimensions greater than 1 to a vector.",
+            ),
+        )
     reduce(vcat, y)
 end
 

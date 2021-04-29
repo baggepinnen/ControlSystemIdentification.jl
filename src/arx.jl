@@ -609,7 +609,7 @@ Fit a parametric transfer function to frequency-domain data.
 """
 function tfest(
     data::FRD,
-    p0::Union{NamedTuple, ComponentArray},
+    p0::Union{NamedTuple,ComponentArray},
     link = log ∘ abs;
     freq_weight = sqrt(data.w[2] * data.w[end]),
     opt = BFGS(),
