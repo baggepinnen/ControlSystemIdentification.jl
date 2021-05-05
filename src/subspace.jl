@@ -267,6 +267,13 @@ function LowLevelParticleFilters.KalmanFilter(res::N4SIDStateSpace, x0 = res.x[:
 end
 
 
+function LowLevelParticleFilters.forward_trajectory(kf::KalmanFilter, d::AbstractIdData)
+    y = time2(output(d))
+    u = input(d)
+    U = m2vv(u)
+    Y = m2vv(y)
+    forward_trajectory(kf, U, Y)
+end
 
 ##
 """
