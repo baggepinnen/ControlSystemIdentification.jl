@@ -184,9 +184,9 @@ Keyword arguments to `coherence` are supplied as a named tuple as a second posit
 """
 coherenceplot
 
-@recipe function cp(p::Coherenceplot; hz = false)
+@recipe function coherenceplot(p::Coherenceplot; hz = false)
     ae =
-        ArgumentError("Call like this: coherenceplot(iddata), where h is sample time and y/u are vectors of equal length.")
+        ArgumentError("Call like this: coherenceplot(iddata; hz=false)")
     d = p.args[1]
     d isa AbstractIdData || throw(ae)
     if length(p.args) >= 2
