@@ -56,6 +56,7 @@ The frequency weighting is borrowing ideas from
 - `Wf`: A frequency-domain model of measurement disturbances. To focus the attention of the model on a narrow frequency band, try something like `Wf = Bandstop(lower, upper, fs=1/Ts)` to indicate that there are disturbances *outside* this band.
 - `i`: Algorithm parameter, generally no need to tune this
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
+- `zeroD`: defaults to false
 """
 function n4sid(
     data::InputOutputData,
