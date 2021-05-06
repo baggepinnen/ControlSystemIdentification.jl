@@ -420,20 +420,22 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
 	δmin > 0 || throw(ArgumentError("δmin($δmin) must be positive"))
     ninputs(d) == length(nb) || throw(ArgumentError("Length of nb ($(length(nb))) must equal number of input signals ($(ninputs(d)))"))
 
+    Ts = sampletime(d)
+
     # 1. initialize H, GF and v to bring them to scope
     if H === nothing
-        H = tf([0], [1], 1)
+        H = tf([0], [1], Ts)
         iter = 0 # initialization
     else
         iter = 1 # initial noisemodel is known, H is present
     end
-    GF = tf([0], [1], 1)
+    GF = tf([0], [1], Ts)
     v  = 0
 
     # Iterate
     eOld    = 0
     δ       = δmin + 1
-    timeVec = 1:length(d.y)
+    timeVec = timevec(d)
     sim(G,u) = lsim(G, u, timeVec)[1][:]
     while iter <= iterations && δ >= δmin
         # Filter input/output according to errormodel H, after initialization
@@ -476,7 +478,7 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
     end
 
     # total residuals e
-    e = lsim(1/H, v, 1:length(v))[1][:]
+    e = lsim(1/H, v, timevec(v, Ts))[1][:]
     return (G = GF, H = H, e = e)
 end
 
