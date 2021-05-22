@@ -1,19 +1,29 @@
+abstract type AbstractPredictionStateSpace{T} <: AbstractStateSpace{T} end
+
+Base.@kwdef struct PredictionStateSpace{T} <: AbstractPredictionStateSpace{T}
+# has at least K, but perhaps also covariance matrices? Would be nice in order to be able to resample he system. Can be nothing in case they are not known
+    sys::AbstractStateSpace{T}
+    K
+    Q = nothing
+    R = nothing
+end
+
 
 """
-    N4SIDStateSpace is the result of statespace model estimation using the `n4sid` method.
+    N4SIDStateSpace <: AbstractPredictionStateSpace is the result of statespace model estimation using the `n4sid` method.
 
 # Fields:
-- `sys`: the estimated model in the form of a [`StateSpace`](@ref) object
-- `Q`: the estimated covariance matrix of the states
-- `R`: the estimated covariance matrix of the measurements
-- `S`: the estimated cross covariance matrix between states and measurements
-- `K`: the kalman observer gain
-- `P`: the solution to the Riccatti equation
-- `x`: the estimated state trajectory
-- `s`: The singular values
+- `sys`: estimated model in the form of a [`StateSpace`](@ref) object
+- `Q`: estimated covariance matrix of the states
+- `R`: estimated covariance matrix of the measurements
+- `S`: estimated cross covariance matrix between states and measurements
+- `K`: kalman observer gain
+- `P`: solution to the Riccatti equation
+- `x`: estimated state trajectory
+- `s`: singular values
 - `fve`: Fraction of variance explained by singular values
 """
-struct N4SIDStateSpace <: AbstractStateSpace{Discrete{Float64}}
+struct N4SIDStateSpace <: AbstractPredictionStateSpace{Discrete{Float64}}
     sys::Any
     Q::Any
     R::Any
@@ -25,11 +35,19 @@ struct N4SIDStateSpace <: AbstractStateSpace{Discrete{Float64}}
     fve::Any
 end
 
-@inline function Base.getproperty(res::N4SIDStateSpace, p::Symbol)
+@inline function Base.getproperty(res::AbstractPredictionStateSpace, p::Symbol)
     if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
         return getproperty(res.sys, p)
     end
     return getfield(res, p)
+end
+
+function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
+    if size(inds, 1) != 2
+        error("Must specify 2 indices to index statespace model")
+    end
+    rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
+    return ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol)
 end
 
 @static if VERSION < v"1.3"
@@ -94,7 +112,7 @@ function n4sid(
     UY1 = [U0i; hankel(u, i + 1, 2i - 1); Y0i]
     # proj(A, B) = A * (B' / (B * B'))
     # proj(A, B) = (A * B') / (B * B')
-    proj(A, B) = (svd(B * B') \ (A * B')')'
+    proj(A, B) = (svd(B * B') \ (A * B')')' # todo: these can be improved by not forming BB', use QR
     Li = proj(hankel(y, i, 2i - 1), UY0)
     Lip1 = proj(hankel(y, i + 1, 2i - 1), UY1)
 
@@ -168,7 +186,6 @@ function n4sid(
     local P, K
     try
         P, _, Kt, _ = MatrixEquations.ared(copy(A'), copy(C'), R, Q, S)
-        # K0 = ((C*P*C' + R)\(A*P*C' + S)')'
         K = Kt' |> copy
     catch
         P = fill(NaN, n, n)
@@ -207,7 +224,7 @@ function stabilize(L, XU, i, j, m, n, γ)
 end
 
 
-function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, y, u)
+function sysfilter!(state::AbstractVector, res::AbstractPredictionStateSpace{<:Discrete}, y, u)
     @unpack A, B, C, D, ny, sys, K = res
     yh = vec(C * state + D * u)
     e = y - yh
@@ -215,14 +232,14 @@ function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, y, u)
     yh
 end
 
-function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, u)
+function sysfilter!(state::AbstractVector, res::AbstractPredictionStateSpace{<:Discrete}, u)
     @unpack A, B, C, D, ny, K, sys = res
     yh = vec(C * state + D * u)
     state .= vec(A * state + B * u)
     yh
 end
 
-SysFilter(res::N4SIDStateSpace, x0 = res.x[:, 1]) = SysFilter(res, x0, res.C * x0)
+SysFilter(res::AbstractPredictionStateSpace{<:Discrete}, x0 = res.x[:, 1]) = SysFilter(res, x0, res.C * x0)
 
 function simulate(
     res::N4SIDStateSpace,
@@ -244,23 +261,24 @@ function simulate(
 end
 
 m2vv(x) = [x[:, i] for i = 1:size(x, 2)]
-function predict(res::N4SIDStateSpace, d::AbstractIdData, x0 = res.x[:, 1])
-    y = time2(output(d))
-    u = input(d)
-    @unpack C, D, sys = res
-    kf = KalmanFilter(res, x0)
-    U = m2vv(u)
-    X = forward_trajectory(kf, U, m2vv(y))[2] # Use the corrected state estimate [2]
-    yh = Ref(C) .* X .+ Ref(D) .* U
-    oftype(y, yh)
-end
+# function predict(res::N4SIDStateSpace, y, u, x0 = res.x[:, 1])
+#     y = time2(y)
+#     # u = input(d)
+#     @unpack C, D, sys = res
+#     kf = KalmanFilter(res, x0)
+#     U = m2vv(u)
+#     X = forward_trajectory(kf, U, m2vv(y))[1] # Use the predicted state estimate [1]
+    
+#     yh = Ref(C) .* X .+ Ref(D) .* U
+#     oftype(y, yh)
+# end
 
-function ControlSystems.lsim(res::N4SIDStateSpace, u; x0 = res.x[:, 1])
+function ControlSystems.lsim(res::AbstractPredictionStateSpace, u; x0 = res.x[:, 1])
     simulate(res.sys, input(u), x0)
 end
 
 
-function LowLevelParticleFilters.KalmanFilter(res::N4SIDStateSpace, x0 = res.x[:, 1])
+function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace, x0 = res.x[:, 1])
     sys = res.sys
     @unpack A, B, C, D, ny, K, Q, R, P = res
     kf = KalmanFilter(A, B, C, D, Q, R, MvNormal(x0, P))
