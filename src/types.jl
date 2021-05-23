@@ -150,7 +150,7 @@ function Base.getindex(d::AbstractIdData, i)
 end
 
 function Base.getindex(d::AbstractIdData, i::AbstractRange)
-    apply_fun(d, d.Ts*step(i)) do y
+    apply_fun(d, d.Ts === nothing ? d.Ts : d.Ts*step(i)) do y
         y[:, i]
     end
 end
