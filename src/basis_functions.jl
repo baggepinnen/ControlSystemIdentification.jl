@@ -160,7 +160,8 @@ function basis_responses(basis::AbstractStateSpace, ω; inverse=false)
     end
 end
 
-function filter_bank(basis::AbstractStateSpace{<:Discrete}, signal::AbstractVector)
+function filter_bank(basis::AbstractStateSpace{<:Discrete}, signal::AbstractMatrix)
+    size(signal, 1) == 1 || throw(ArgumentError("Only supporting 1D signals"))
     no = ninputs(basis)
     t = range(0, step=basis.Ts, length=length(signal))
     if no > 1

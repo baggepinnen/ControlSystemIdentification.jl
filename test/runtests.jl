@@ -1,5 +1,6 @@
 using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
 using Test, Random, LinearAlgebra, Statistics
+import ControlSystemIdentification as CSI
 
 using ControlSystemIdentification: time1, time2
 using MonteCarloMeasurements
@@ -204,7 +205,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             A = Matrix{Float64}(I(r))
             A[1, 1] = 1.01
             G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
-            u = randn(N, m)
+            u = randn(m, N)
             x0 = randn(r)
             y, t, x = lsim(G, u, 1:N, x0 = x0)
             @test sum(!isfinite, y) == 0
@@ -220,7 +221,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
             yp = predict(res, d, res.x[:, 1])
             # @show mean(abs2,y-yp') / mean(abs2,y)
-            @test mean(abs2, y - yp') / mean(abs2, y) < 0.01
+            @test mean(abs2, y - yp) / mean(abs2, y) < 0.01
 
 
             res = n4sid(d, r, i = r + 1)
@@ -231,7 +232,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
 
             G = ss(0.2randn(r, r), randn(r, m), randn(l, r), 0 * randn(l, m), 1)
-            u = randn(N, m)
+            u = randn(m, N)
 
             y, t, x = lsim(G, u, 1:N, x0 = randn(r))
             @assert sum(!isfinite, y) == 0
@@ -248,7 +249,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             if m == l # == 1
                 iy, it, ix = impulse(G, 20)
                 H = okid(d, r, 20)
-                @test norm(iy - permutedims(H, (3, 1, 2))) < 0.05
+                @test norm(iy - permutedims(H, (1, 3, 2))) < 0.05
                 # plot([iy vec(H)])
 
                 sys = era(d, r)
@@ -269,13 +270,95 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         m = l = r = 1
         for a in LinRange(-0.99, 0.99, 10), b in LinRange(-5, 5, 10)
             G = tf(b, [1, -a], 1)
-            u = randn(N, m)
+            u = randn(m, N)
             y, t, x = lsim(G, u, 1:N, x0 = randn(r))
             yn = y + 0.01randn(size(y))
             d = iddata(yn, u)
             res = n4sid(d, r)
             @test res.sys.A[1] ≈ a atol = 0.01
             @test numvec(tf(res.sys))[1][2] ≈ b atol = 0.01
+            @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
+            @test freqresptest(G, res.sys) < 0.01
+        end
+
+
+    end
+
+    @testset "subspaceid" begin
+        @info "Testing subspaceid"
+
+
+        N = 200
+        r = 2
+        m = 2
+        l = 2
+        for r = 1:5, m = 1:2, l = 1:2
+            Random.seed!(0)
+            @show r, m, l
+            A = Matrix{Float64}(I(r))
+            A[1, 1] = 1.01
+            G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+            u = randn(m, N)
+            x0 = randn(r)
+            y, t, x = lsim(G, u, 1:N, x0 = x0)
+            @test sum(!isfinite, y) == 0
+            yn = y + 0.1randn(size(y))
+            d = iddata(yn, u, 1)
+            res = subspaceid(d, r)
+
+            ys = simulate(res, d, res.x[:, 1])
+            # @show mean(abs2,y-ys) / mean(abs2,y)
+            ys = simulate(res, d, res.x[:, 1], stochastic = true)
+            # @show mean(abs2,y-ys) / mean(abs2,y)
+
+            yp = predict(res, d, res.x[:, 1])
+            # @show mean(abs2,y-yp') / mean(abs2,y)
+            # @test mean(abs2, y - yp) / mean(abs2, y) < 0.01 # no enforcement of stability in this method
+
+
+            res = subspaceid(d, r)
+            freqresptest(G, res.sys) < 0.2 * m * l
+            w = exp10.(LinRange(-5, log10(pi), 600))
+            bodeplot(G, w)
+            bodeplot!(res.sys, w)
+
+
+            G = ss(0.2randn(r, r), randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+            u = randn(m, N)
+
+            y, t, x = lsim(G, u, 1:N, x0 = randn(r))
+            @assert sum(!isfinite, y) == 0
+            ϵ = 0.01
+            yn = y + ϵ * randn(size(y))
+            d = iddata(yn, u, 1)
+
+            res = subspaceid(d, r)
+            @test res.sys.nx == r
+            @test norm(res.S) < ϵ
+            @test freqresptest(G, res.sys) < 0.2 * m * l
+
+
+            res = ControlSystemIdentification.subspaceid(d)
+            @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
+            kf = KalmanFilter(res)
+            @test kf isa KalmanFilter
+            @test kf.A == res.A
+            @test kf.B == res.B
+            @test kf.C == res.C
+
+        end
+
+        m = 1; l = 1; r = 1
+        a = -0.9; b = 1
+        for a in LinRange(-0.99, 0.99, 10), b in LinRange(-5, 5, 10)
+            G = tf(b, [1, -a], 1)
+            u = randn(m, N)
+            y, t, x = lsim(G, u, 1:N, x0 = randn(r))
+            yn = y + 0.01randn(size(y))
+            d = iddata(yn, u, 1)
+            res = subspaceid(d, r, r=20, W=:MOESP, zeroD=true)
+            @test res.sys.A[1] ≈ a atol = 0.01
+            @test numvec(tf(res.sys))[1][2] ≈ b atol = 0.01 # might be bias due to no initial state when estimating B/D
             @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
             @test freqresptest(G, res.sys) < 0.01
         end
@@ -420,7 +503,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         N = 20
         t = 1:N
-        u = randn(N)
+        u = randn(1,N)
         G = tf(0.8, [1, -0.9], 1)
         y = lsim(G, u, t)[1][:]
 
@@ -429,7 +512,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test ControlSystemIdentification.params2poly(pars[1], 1, 1) == ([1, -0.9], [[0.8]])
 
         na, nb = 1, 1
-        yr, A = getARXregressor(y, u, na, nb)
+        yr, A = getARXregressor(y, u', na, nb)
         @test length(yr) == N - na
         @test size(A) == (N - na, na + nb)
 
@@ -447,12 +530,12 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         # bodeconfidence!(Gh, Σ, ω=ω, color=:blue, lab="Est")
 
         # Test MISO estimation
-        u2 = randn(N)
+        u2 = randn(1,N)
         G2 = [G tf(0.5, [1, -0.9], 1)]
-        y2 = lsim(G2, [u u2], t)[1][:]
+        y2 = lsim(G2, [u; u2], t)[1][:]
 
         nb = [1, 1]
-        d = iddata(y2, [u u2], 1)
+        d = iddata(y2, [u; u2], 1)
         Gh2 = arx(d, na, nb)
         @test Gh2 ≈ G2
         Gh2s = arx(d, na, nb, stochastic = true)
@@ -461,7 +544,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         ## SISO
         na, nb = 1, 2
         G1 =  tf([1, -2], [1, -0.5, 0], 1)
-        u = randn(N)
+        u = randn(1,N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
@@ -474,9 +557,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         na, nb = 1, [2, 3]
         G2 =  tf([1, -2, 3], [1, -0.5, 0, 0], 1)
         G = [G1 G2]
-        u1 = randn(N)
-        u2 = randn(N)
-        u = [u1 u2]
+        u1 = randn(1,N)
+        u2 = randn(1,N)
+        u = [u1; u2]
         y = lsim(G, u, t)[1][:]
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
@@ -489,7 +572,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         # Test na = 0
         na, nb = 0, 1
         G1 =  tf([1], [1, 0], 1)
-        u = randn(N)
+        u = randn(1,N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
@@ -503,7 +586,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         ## SISO
         na, nb, inputdelay = 1, 1, 2
         G1 =  tf([0,1], [1, -0.5,0], 1)
-        u = randn(N)
+        u = randn(1,N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb, inputdelay = inputdelay)
@@ -517,8 +600,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         G1 =  tf([0,1], [1, -0.5,0], 1)
         G2 =  tf([0,0,1], [1, -0.5,0,0], 1)
         G = [G1 G2]
-        u1 = randn(N)
-        u2 = randn(N)
+        u1 = randn(1,N)
+        u2 = randn(1,N)
         u = [u1 u2]
         y = lsim(G, u, 1:N)[1][:]
         d = iddata(y, u, 1)
@@ -530,7 +613,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         # direct input
         G1 =  tf([0.3, 1], [1, -0.5], 1)
-        u = randn(N)
+        u = randn(1,N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         na, nb, inputdelay = 1,2,0
@@ -542,7 +625,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         
         ## with inputdelay
         G1 =  tf([0.3,0, 1], [1, -0.5, 0], 1)
-        u = randn(N)
+        u = randn(1,N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         na, nb, inputdelay = 1,3,0
@@ -615,8 +698,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         D = tf([1, 0.7], [1, 0], 1)
         H = minreal(1 / (D * A))
         
-        u = rand(Normal(0, 1), N)
-        e = rand(Normal(0, 1), N)
+        u = randn(1,N)
+        e = randn(1,N)
         y = sim(G, u)
         v = sim(H, e)
         yv = y.+ v
@@ -635,8 +718,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         D = tf([1, 0.9], [1, 0], 1)
         H = minreal(1 / (D * A))
         
-        u = rand(Normal(0, 1), N)
-        e = rand(Normal(0, sqrt(1.2)), N)
+        u = randn(1,N)
+        e = sqrt(1.2)*randn(1, N)
         y = sim(G, u)
         v = sim(H, e)
         yv = y.+ v
@@ -654,8 +737,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         D = tf([1, 0.7], [1, 0], 1)
         H = minreal((D / A))
         
-        u = rand(Normal(0, 1), N)
-        e = rand(Normal(0, 0.1), N)
+        u = randn(1, N)
+        e = 0.1randn(1, N)
         y = sim(G, u)
         v = sim(H, e)
         yv = y .+ v
@@ -674,8 +757,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         D = tf([1, 0.5], [1,0], 1)
         H = minreal(1 / (D * A))
         
-        u = rand(Normal(0, 1), N)
-        e = rand(Normal(0, 5), N)
+        u = randn(1, N)
+        e = 5randn(1, N)
         y = lsim(G, u, 1:N)[1][:]
         v = lsim(H, e, 1:N)[1][:]
         yv = y.+ v
@@ -698,14 +781,14 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         D = tf([1, 0.7], [1, 0], 1)
         H = minreal(1 / (D * A))
         
-        u1 = rand(Normal(0, 1), N)
-        u2 = rand(Normal(0, 1), N)
-        u = [u1 u2]
-        e = rand(Normal(0, 1), N)
+        u1 = randn(1, N)
+        u2 = randn(1, N)
+        u = [u1; u2]
+        e = randn(1, N)
         y = sim(G, u)
         v = sim(H, e)
         yv = y.+ v
-        d = iddata(yv, u', 1)
+        d = iddata(yv, u, 1)
         ###########
         na, nb , nd = 1, [1, 1], 1
         Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
@@ -719,8 +802,8 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         D = tf([1, 0.7], [1, 0], 1)
         H = minreal(1 / (D * A))
         
-        u = rand(Normal(0, 1), N)
-        e = rand(Normal(0, 1), N)
+        u = randn(1,N)
+        e = randn(1,N)
         y = sim(G, u)
         v = sim(H, e)
         yv = y.+ v
@@ -737,10 +820,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         N = 2000
         t = 1:N
-        u = randn(N)
+        u = randn(1,N)
         G = tf(0.8, [1, -0.9], 1)
         y = lsim(G, u, t)[1][:]
-        e = randn(N)
+        e = randn(1,N)
         yn = y + e
 
         na, nb, nc = 1, 1, 1
@@ -778,14 +861,14 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         N  = 2000     # Number of time steps
         t  = 1:N
         Δt = 1        # Sample time
-        u  = randn(N) # A random control input
+        u  = randn(1,N) # A random control input
         a  = 0.9
 
         G = tf([1, 0.1], [1, -a, 0], 1)
         y, t, x = lsim(G, u, 1:N) .|> vec
 
         na, nc = 2, 2   # Number of polynomial coefficients
-        e = 0.0001randn(N) #+ 20randn(N) .* (rand(N) .< 0.01)
+        e = 0.0001randn(1,N) #+ 20randn(1,N) .* (rand(N) .< 0.01)
         yn = y + e    # Measurement signal with noise
 
         d = iddata(yn, Δt)
@@ -807,7 +890,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         T = 1000
         G = tf(1, [1, 2 * 0.1 * 1, 1])
         G = c2d(G, 1)
-        u = randn(T)
+        u = randn(1,T)
         y = lsim(G, u, 1:T)[1][:]
         d = iddata(y)
         model = ControlSystemIdentification.arma_ssa(d, 2, 2, L = 200)
@@ -834,7 +917,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         ωn          = sqrt(0.3)
         sysn        = tf(σy * ωn, [1, 2 * 0.1 * ωn, ωn^2])
 
-        u  = randn(T)
+        u  = randn(1,T)
         y  = sim(sys, u)
         yn = y + sim(sysn, randn(size(u)))
         d  = iddata(y, u, h)
@@ -954,7 +1037,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             linewidth = 2 * [4 3 2 1],
         )
         bodeplot!(
-            ControlSystems.innovation_form.(getindex.(res, 1)),
+            noise_model.(getindex.(res, 1)),
             ω,
             plotphase = false,
             subplot = 4,
@@ -992,11 +1075,11 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         T = 200
         h = 0.1
         t = h:h:T
-        sim(sys, u) = lsim(sys, u, t)[1][:]
+        sim(sys, u) = lsim(sys, u, t)[1]
         sys = c2d(tf(1, [1, 2 * 0.1, 0.1]), h)
 
-        u = randn(length(t))
-        y = sim(sys, u) + 0.1randn(length(t))
+        u = randn(1,length(t))
+        y = sim(sys, u) + 0.1randn(1,length(t))
 
         d = iddata(y, u, h)
         impulseestplot(d, Int(50 / h), λ = 0)
@@ -1029,6 +1112,29 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test minimum(
             findmax(S1.power, dims = 1)[2][:] - findmax(S2.power, dims = 1)[2][:],
         ) >= CartesianIndex(-1, 0)
+    end
+
+    @testset "sampling of covariance matrices" begin
+        @info "Testing sampling of covariance matrices"
+
+        N = 200
+        r = 2
+        m = 2
+        l = 2
+        A = Matrix{Float64}(I(r))
+        A[1, 1] = 1.01
+        G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+        u = randn(m, N)
+        x0 = randn(r)
+        y, t, x = lsim(G, u, 1:N, x0 = x0)
+        @test sum(!isfinite, y) == 0
+        yn = y + 0.1randn(size(y))
+        d = iddata(yn, u, 1)
+        res = n4sid(d, r, γ = 0.99)
+        Qc = d2c(res.sys, res.Q)
+        Qd = c2d(res.sys, Qc)
+        @test Qd ≈ res.Q
+
     end
 end
 

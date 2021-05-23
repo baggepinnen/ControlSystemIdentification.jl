@@ -131,9 +131,9 @@ function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 0 || throw(ArgumentError("na must be positive"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
-    y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay)
+    y_train, A = getARXregressor(vec(y), u, na, nb; inputdelay)
     w = ls(A, y_train, λ, estimator)
-    a, b = params2poly2(w, na, nb, inputdelay = inputdelay)
+    a, b = params2poly2(w, na, nb; inputdelay)
     model = tf(b, a, h)
     if stochastic
         local Σ
@@ -375,13 +375,13 @@ TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
 Sample Time: 1 (seconds)
 Discrete-time transfer function model
 
-julia> u, e = randn(N), randn(N)
+julia> u, e = randn(1, N), randn(1, N)
 [...]
 
 julia> y, v = sim(G, u), sim(H * (1/A), e) # simulate process
 [...]
 
-julia> d = iddata(y.+ v, u, 1)
+julia> d = iddata(y .+ v, u, 1)
 InputOutput data of length 500 with 1 outputs and 1 inputs
 
 julia> na, nb , nd = 1, 1, 1
@@ -436,17 +436,17 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
     eOld    = 0
     δ       = δmin + 1
     timeVec = timevec(d)
-    sim(G,u) = lsim(G, u, timeVec)[1][:]
+    sim(G,u) = lsim(G, u, timeVec)[1]
     while iter <= iterations && δ >= δmin
         # Filter input/output according to errormodel H, after initialization
         if iter > 0
-            yF = sim(1/H, output(d)')
+            yF = sim(1/H, output(d))
             if ninputs(d) == 1
-                uF = sim(1/H, input(d)')
+                uF = sim(1/H, input(d))
             else
                 uF = fill(1.0, size(d.u)) 
                 for i in 1:ninputs(d)
-                    uF[i, :] = sim(1/H, d.u[i,:])
+                    uF[i, :] = sim(1/H, d.u[i:i,:])
                 end
             end
         else
@@ -457,7 +457,7 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
 		dF = iddata(yF, uF, d.Ts)
 
 		# 2. fit arx model
-        GF = arx(dF, na, nb, estimator = estimator, λ = λ, inputdelay = inputdelay)
+        GF = arx(dF, na, nb; estimator, λ, inputdelay)
 
         # 3. Evaluate residuals
         v = residuals(GF, d)
@@ -472,14 +472,15 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
 
         # 5. estimate new noise model from residuals
         dH = iddata(v, d.Ts)
-        H = ar(dH, nd, estimator = estimator)
+        H = ar(dH, nd; estimator)
         
         iter += 1
     end
 
     # total residuals e
-    e = lsim(1/H, v, timevec(v, Ts))[1][:]
-    return (G = GF, H = H, e = e)
+    e = lsim(1/H, v', timevec(v, Ts))[1][:]
+    return (G = GF, H, e)
+end
 end
 
 function reversal_ls(A, y)
