@@ -180,6 +180,10 @@ function Base.hcat(d1::InputOutputData, d2::InputOutputData)
     iddata([d1.y d2.y], [d1.u d2.u], d1.Ts)
 end
 
+function DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
+    writedlm(io, [d.y' d.u'], args...; kwargs...)
+end
+
 struct StateSpaceNoise{T,MT<:AbstractMatrix{T}} <:
        ControlSystems.AbstractStateSpace{Discrete{Float64}}
     A::MT
