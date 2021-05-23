@@ -169,7 +169,138 @@ function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = zeros(sys.nx))
     simulate(sys, input(u), x0)
 end
 
-ControlSystems.innovation_form(sys::Union{StateSpaceNoise,N4SIDStateSpace}) =
-    ss(sys.A, sys.K, sys.C, Matrix(Eye(sys.ny)), sys.Ts) # innovation model
+"""
+    noise_model(sys::Union{StateSpaceNoise, N4SIDStateSpace})
+
+Return a model of the noise driving the system, `v`, in
+x' = Ax + Bu + Kv
+y = Cx + Du + v
+
+The model neglects u and is given by
+x' = Ax + Kv
+y = Cx + v
+"""
+function noise_model(sys::Union{StateSpaceNoise,N4SIDStateSpace})
+    A,B,C,D = ssdata(sys)
+    K = sys.K
+    G = ss(A, K, C, zeros(size(D,1), size(K, 2)), sys.Ts)
+end
+
+
+
+"""
+    predictor(sys::N4SIDStateSpace)
+    predictor(sys::StateSpaceNoise)
+
+Return the predictor system
+x' = (A - KC)x + (B-KD)u + Ke
+y  = Cx + Du + e
+with the input equation [B K] * [u; y]
+
+See also `noise_model` and `prediction_error`.
+"""
+function ControlSystems.predictor(sys::Union{StateSpaceNoise,N4SIDStateSpace})
+    K = sys.K
+    predictor(sys, K)
+end
+
+"""
+    predictiondata(d::AbstractIdData)
+
+Add the output `y` to the input `u_new = [u; y]`
+"""
+function predictiondata(d::AbstractIdData)
+    y,u = output(d), input(d)
+    iddata(y, [u; y], d.Ts)
+end
+
+"""
+    prediction_error(sys::Union{StateSpaceNoise, N4SIDStateSpace})
+
+Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
+"""
+function prediction_error(sys::Union{StateSpaceNoise,N4SIDStateSpace})
+    G = predictor(sys)
+    ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
+end
+
+"""
+    ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Q::AbstractMatrix)
+
+Sample a continuous-time covariance matrix to fit the provided discrete-time system.
+
+The method used comes from theorem 5 in the reference below.
+
+Ref: Discrete-time Solutions to the Continuous-time
+Differential Lyapunov Equation With
+Applications to Kalman Filtering
+Patrik Axelsson and Fredrik Gustafsson
+"""
+function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qc::AbstractMatrix, R=nothing)
+    Ad  = sys.A
+    Ac  = real(log(Ad)./sys.Ts)
+    h   = sys.Ts
+    C   = Symmetric(Qc - Ad*Qc*Ad')
+    Qd  = ControlSystems.MatrixEquations.lyapc(Ac, C)
+    # The method below also works, but no need to use quadgk when MatrixEquations is available.
+    # function integrand(t)
+    #     Ad = exp(t*Ac)
+    #     Ad*Qc*Ad'
+    # end
+    # Qd = quadgk(integrand, 0, h)[1]
+    if R === nothing
+        return Qd
+    else
+        Qd, R ./ h
+    end
+end
+
+"""
+    d2c(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qd::AbstractMatrix)
+
+Resample discrete-time covariance matrix belonging to `sys` to the equivalent continuous-time matrix.
+
+The method used comes from theorem 5 in the reference below.
+
+Ref: Discrete-time Solutions to the Continuous-time
+Differential Lyapunov Equation With
+Applications to Kalman Filtering
+Patrik Axelsson and Fredrik Gustafsson
+"""
+function ControlSystems.d2c(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qd::AbstractMatrix)
+    Ad = sys.A
+    Ac = real(log(Ad)./sys.Ts)
+    C = Symmetric(Ac*Qd + Qd*Ac')
+    Qc = ControlSystems.MatrixEquations.lyapd(Ad, -C)
+    isposdef(Qc) || @error("Calculated covariance matrix not positive definite")
+    Qc
+end
+
+"""
+    resample(sys::AbstractStateSpace{<:Discrete}, newh::Real)
+
+Change sample-time of sys to `newh`.
+"""
+function DSP.resample(sys::AbstractStateSpace{<:Discrete}, newh::Real)
+    sys.Ts == newh && throw(ArgumentError("new sample time identical to old systems sample time."))
+    c2d(d2c(sys), newh)
+end
+
+"""
+    DSP.resample(sys::AbstractStateSpace{<:Discrete}, Qd::AbstractMatrix, newh::Real)
+
+Change sample time of covariance matrix `Qd` beloning to `sys` to `newh`.
+
+# Arguments:
+- `sys`: A discrete-time system that has dynamics noise covariance matric `Qd`.
+- `Qd`: Covariance matrix of dynamics noise.
+- `newh`: The new sample time.
+"""
+function DSP.resample(sys::AbstractStateSpace{<:Discrete}, Qd::AbstractMatrix, newh::Real)
+    sys.Ts == newh && throw(ArgumentError("new sample time identical to old systems sample time."))
+    sys2 = resample(sys, newh)
+    Qc = d2c(sys, Qd)
+    c2d(sys2, Qc)
+end
 
 end # module
