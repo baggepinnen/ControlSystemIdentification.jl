@@ -1,22 +1,23 @@
 module ControlSystemIdentification
 
-using DSP,
+using BandedMatrices,
+    ComponentArrays,
+    ControlSystems,
+    DelimitedFiles,
+    DSP,
+    FFTW,
+    FillArrays,
     LinearAlgebra,
+    LowLevelParticleFilters,
+    MonteCarloMeasurements,
+    Optim,
+    Parameters,
+    Random,
+    RecipesBase,
+    Roots,
     Statistics,
     StatsBase,
-    Random,
-    ComponentArrays,
-    Optim,
-    ControlSystems,
-    FillArrays,
-    Parameters,
-    TotalLeastSquares,
-    RecipesBase,
-    FFTW,
-    Roots,
-    MonteCarloMeasurements,
-    LowLevelParticleFilters,
-    BandedMatrices
+    TotalLeastSquares
 import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
@@ -33,10 +34,11 @@ export iddata,
     hasinput,
     apply_fun,
     resample,
-    timevec
+    timevec,
+    kalman_decomp
 export StateSpaceNoise,
     pem, simulation_errors, prediction_errors, predict, simulate, noise_model
-export n4sid, era, okid
+export n4sid, subspaceid, era, okid
 export getARXregressor,
     getARregressor,
     find_na,
@@ -69,6 +71,7 @@ include("pem.jl")
 include("frd.jl")
 include("arx.jl")
 include("subspace.jl")
+include("subspace2.jl")
 include("spectrogram.jl")
 include("frequency_weights.jl")
 include("basis_functions.jl")
@@ -130,11 +133,12 @@ simplot
         t, y'
     end
     @series begin
-        label --> "sim fit :$(round.(err, digits=2))%"
+        label --> ["sim fit :$(round(err, digits=2))%" for err in err']
         t, yh'
     end
     nothing
 end
+
 
 @userplot Predplot
 """
@@ -159,7 +163,7 @@ predplot
         t, y'
     end
     @series begin
-        label --> "pred fit :$(round.(err, digits=2))%"
+        label --> ["pred fit :$(round(err, digits=2))%" for err in err']
         t, yh'
     end
     nothing
@@ -168,6 +172,11 @@ end
 function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = zeros(sys.nx))
     simulate(sys, input(u), x0)
 end
+
+function ControlSystems.lsim(sys::AbstractStateSpace, d::AbstractIdData; x0 = zeros(sys.nx))
+    lsim(sys, input(d); x0)
+end
+
 
 """
     noise_model(sys::Union{StateSpaceNoise, N4SIDStateSpace})
