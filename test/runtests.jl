@@ -358,12 +358,10 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
             d = iddata(yn, u, 1)
             res = subspaceid(d, r, r=20, W=:MOESP, zeroD=true)
             @test res.sys.A[1] ≈ a atol = 0.01
-            @test numvec(tf(res.sys))[1][2] ≈ b atol = 0.01 # might be bias due to no initial state when estimating B/D
-            @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
+            @test numvec(tf(res.sys))[1][end] ≈ b atol = 0.01 # might be bias due to no initial state when estimating B/D
+            # @test abs(numvec(tf(res.sys))[1][1]) < 1e-2
             @test freqresptest(G, res.sys) < 0.01
         end
-
-
     end
 
 

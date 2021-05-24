@@ -6,7 +6,8 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\)
     p = size(C, 1)
     N = size(U, 2)
     A = A-K*C
-    φB = zeros(p, m*nx, N)
+    ε = lsim(ss(A,K,C,0,1), Y)[1] # innovation sequence
+    φB = zeros(p, N, m*nx)
     for (j,k) in Iterators.product(1:nx, 1:m)
         E = zeros(nx)
         E[j] = 1
@@ -14,9 +15,9 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\)
         u = U[k:k,:]
         uf = lsim(fsys, u)[1]
         r = (k-1)*nx+j
-        φB[:,r,:] = uf 
+        φB[:,:,r] = uf 
     end
-    φx0 = zeros(p, nx, N)
+    φx0 = zeros(p, N, nx)
     x0u = zeros(1, N)
     for (j,k) in Iterators.product(1:nx, 1:1)
         E = zeros(nx)
@@ -24,10 +25,10 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\)
         fsys = ss(A, E, C, 0, 1)
         uf = lsim(fsys, x0u; x0)[1]
         r = (k-1)*nx+j
-        φx0[:,r,:] = uf 
+        φx0[:,:,r] = uf 
     end
     if !zeroD
-        φD = zeros(p, m*p, N)
+        φD = zeros(p, N, m*p)
         for (j,k) in Iterators.product(1:p, 1:m)
             E = zeros(p)
             E[j] = 1
@@ -35,15 +36,14 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\)
             u = U[k:k,:]
             uf = lsim(fsys, u)[1]
             r = (k-1)*p+j
-            φD[:,r,:] = uf 
+            φD[:,:,r] = uf 
         end
     end
 
-    φ3 = zeroD ? cat(φB, φx0, dims=2) : cat(φB, φx0, φD, dims=2)
-    φ4 = permutedims(φ3, (1,3,2))
-    φ = reshape(φ4, p*N, :)
-    skip = 3*p # to slightly reduce the effects of no initial state in simulation
-    BD = estimator(φ[skip+1:end, :], vec(Y)[skip+1:end])
+    φ3 = zeroD ? cat(φB, φx0, dims=3) : cat(φB, φx0, φD, dims=3)
+    # φ4 = permutedims(φ3, (1,3,2))
+    φ = reshape(φ3, p*N, :)
+    BD = estimator(φ, vec(Y .- ε))
     B = reshape(BD[1:m*nx], nx, m)
     x0 = BD[m*nx .+ (1:nx)]
     if zeroD
@@ -207,7 +207,7 @@ function subspaceid(
     P, K, Qc, Rc, Sc = find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
 
     # 4. Estimate B, D, x0 by linear regression
-    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, U[1:m, :], Y[1:p, :], m, zeroD, estimator)
+    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, estimator)
 
     if scaleU
         B = B ./ CU
