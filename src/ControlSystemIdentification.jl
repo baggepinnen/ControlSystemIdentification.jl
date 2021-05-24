@@ -87,6 +87,37 @@ function predict(sys, y, u, x0 = zeros(sys.nx))
 end
 predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args...)
 
+get_x0(::Nothing, sys, d::AbstractIdData) = estimate_x0(sys, d)
+get_x0(::Nothing, sys, u::AbstractArray) = zeros(sys.nx)
+get_x0(::AbstractArray, sys, u::AbstractArray) = zeros(sys.nx)
+get_x0(x0::AbstractArray, args...) = x0
+function get_x0(s::Symbol, sys, d::AbstractIdData)
+    if s ∈ (:zero, :zeros)
+        return zeros(sys.nx)
+    elseif s === :estimate
+        return estimate_x0(sys, d)
+    else
+        throw(ArgumentError("Unknown option $s. Provide x0 = {:zero, :estimate}"))
+    end
+end
+
+
+function estimate_x0(sys, d)
+    y = output(d)
+    u = input(d)
+    nx,p,N = sys.nx, sys.ny, length(d)
+    size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
+    φx0 = zeros(p, N, nx)
+    for j in 1:nx
+        x0 = zeros(nx); x0[j] = 1
+        uf = lsim(sys, u; x0)[1]
+        φx0[:, :, j] = uf 
+    end
+    φ = reshape(φx0, p*N, :)
+
+    φ\vec(y)
+end
+
 """
 	yh = predict(ar::TransferFunction, y)
 
