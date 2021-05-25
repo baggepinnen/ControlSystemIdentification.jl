@@ -1,28 +1,53 @@
+using ControlSystemIdentification, ControlSystems
 # Test examples are taken from Söderstöms paper and compared against it (this is also where the (high) tolerances come from)
 Random.seed!(0)
 N = 500 # Number of samples used for simulation by Söderström
 time = 1:N
-sim(G, u) = lsim(G, u, time)[1][:]
+sim(G, u) = lsim(G, u, time)[1]
 
 #### S1 ####
 A = tf([1, -0.8], [1, 0], 1)
 B = tf([0, 1], [1, 0], 1)
 G = minreal(B / A)
 D = tf([1, 0.7], [1, 0], 1)
-H = minreal(1 / (D * A))
+H = 1/D
+Hfull = minreal(1 / (D * A))
 
 u = randn(1,N)
 e = randn(1,N)
 y = sim(G, u)
-v = sim(H, e)
+v = sim(Hfull, e)
 yv = y.+ v
 d = iddata(yv, u, 1)
+
 ###########
 na, nb , nd = 1, 1, 1
 Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 1e-3)
 @test isapprox(Gest, G, atol = 1e-1)
 @test isapprox(Hest, 1/D, atol = 1e-1)
 @test var(res .- e[2:end]) < 1e-1
+
+
+
+Gp = ControlSystemIdentification.arxar_predictor(Gest, Hest) 
+pe = ControlSystemIdentification.prediction_error(Gp)
+pd = ControlSystemIdentification.predictiondata(d)
+ε = lsim(pe, pd)[1]
+Hn = noise_model(Gp)
+@test var(e-ε) < 0.1
+
+
+# plot([e' v' ε'], lab=["e: pre noise" "v: post noise" "Estimated innovations"])
+@test norm(ε - e) / norm(e) < 0.2
+yp = predict(Gp, d)
+ys = simulate(Gp, d)
+
+@test var(y-ys) < var(v)
+@test var(yv-yp) < var(yv-ys)
+
+# plot([y' yp' ys'], lab=["true" "pred" "sim"])
+# plot([yv' yp' ys'], lab=["yv" "pred" "sim"])
+
 
 #### S12 ####
 A = tf([1, -0.7], [1, 0], 1)

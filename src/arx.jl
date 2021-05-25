@@ -483,19 +483,47 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
     return (G = GF, H, e)
 end
 
+
+"""
+    arxar_predictor(G, H)
+
+Convert the models obtained from `arxar` into a `PredictionStateSpace`. Note that the predictor in this case will predict the sum of the system and noise output, while a simulation will predict the system output alone. 
+# Examples:
+```julia
+Gp = ControlSystemIdentification.arxar_predictor(Gest, Hest) 
+pe = ControlSystemIdentification.prediction_error(Gp)
+pd = ControlSystemIdentification.predictiondata(d)
+ε = lsim(pe, pd)[1] # estimate innovation sequence
+
+yp = predict(Gp, d)  # prediction includes prediction of noise
+ys = simulate(Gp, d) # simulation includes only system output
+```
+"""
 function arxar_predictor(G, H)
-    # DB = G*inv(H)
-    # sys = ss(H)*ss(G)
-    # A,B,C,D = ssdata(sys)
-    # ss(A, B, C, D, G.Ts)
     Ts = G.Ts
-    B = numvec(G)
-    A = denvec(G)[]
-    D = denvec(H)[]
-    ss(tf(1, A, Ts)) * ss([tf(B, [1],Ts)  tf(1,D,Ts)])
-    # P = tf(1, A, Ts)*[tf(B, [1],Ts)  tf(1,D,Ts)]
-    # P = tf(B, conv(A,D) ,Ts)
+    A = denvec(G[1,1])[]
+    H2 = ss(minreal(H*tf(1,[1,0],1))) # is good idea
+
+    Ge = ss(G)
+    Hs = ss(H2)
+    # Hs = ss(tf(1, A, Ts)*H2) # not good idea
+    A,B,C,D = ssdata(Ge)
+    Ad,Bd,Cd,Dd = ssdata(Hs)
+    Ae = ControlSystems.blockdiag(A, Ad)
+    Ae[1:Hs.ny, Ge.nx+1:end] .= Cd
+    Be = [B; 0Bd]
+    Ce = [C 0Cd]
+    De = D
+    syse = ss(Ae,Be,Ce,De,Ts)
+    Bw = [0B; Bd]
+    Rw = Bw*I(1)*Bw'
+    # Rw = I(syse.nx)
+    Re = 0.0001I(syse.ny)
+    K = kalman(syse, Rw, Re)
+    PredictionStateSpace(syse, K, Rw, Re)
 end
+
+
 
 function reversal_ls(A, y)
     n = size(A, 2)
