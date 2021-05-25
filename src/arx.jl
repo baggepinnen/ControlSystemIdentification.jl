@@ -64,6 +64,7 @@ Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
 find_na
 @recipe function find_na(p::Find_na)
     y, n = p.args[1:2]
+    y = time1(y)
     error = zeros(n, 2)
     for i = 1:n
         yt, A = getARXregressor(y, 0y, i, 0)
@@ -481,6 +482,19 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
     e = lsim(1/H, v', timevec(v, Ts))[1][:]
     return (G = GF, H, e)
 end
+
+function arxar_predictor(G, H)
+    # DB = G*inv(H)
+    # sys = ss(H)*ss(G)
+    # A,B,C,D = ssdata(sys)
+    # ss(A, B, C, D, G.Ts)
+    Ts = G.Ts
+    B = numvec(G)
+    A = denvec(G)[]
+    D = denvec(H)[]
+    ss(tf(1, A, Ts)) * ss([tf(B, [1],Ts)  tf(1,D,Ts)])
+    # P = tf(1, A, Ts)*[tf(B, [1],Ts)  tf(1,D,Ts)]
+    # P = tf(B, conv(A,D) ,Ts)
 end
 
 function reversal_ls(A, y)
@@ -619,7 +633,7 @@ function tfest(
     opts = Optim.Options(
         store_trace       = true,
         show_trace        = true,
-        show_every        = 1,
+        show_every        = 5,
         iterations        = 10000,
         allow_f_increases = false,
         time_limit        = 100,

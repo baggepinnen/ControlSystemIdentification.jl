@@ -4,7 +4,7 @@
     t = 1:N
     u = randn(1,N)
     G = tf(0.8, [1, -0.9], 1)
-    y = lsim(G, u, t)[1][:]
+    y = lsim(G, u, t)[1]
     e = randn(1,N)
     yn = y + e
 

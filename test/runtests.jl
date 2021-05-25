@@ -119,13 +119,12 @@ end
     
     @testset "arma_plr" begin
         @info "Testing arma_plr"
-        
         include("test_arma_plr.jl")
     end
 
     @testset "frd" begin
+        @info "Testing frd"
         include("test_frd.jl")
-
     end
 
 
@@ -240,11 +239,8 @@ end
 
     @testset "Spectrogram" begin
         @info "Testing Spectrogram"
-
         T = 1000
         s = sin.((1:T) .* 2pi / 10)
-
-
         S1 = spectrogram(s, window = hanning)
 
         estimator = model_spectrum(ar, 1, 2)
@@ -268,7 +264,6 @@ end
 
     @testset "sampling of covariance matrices" begin
         @info "Testing sampling of covariance matrices"
-
         N = 200
         r = 2
         m = 2
@@ -286,7 +281,6 @@ end
         Qc = d2c(res.sys, res.Q)
         Qd = c2d(res.sys, Qc)
         @test Qd ≈ res.Q
-
     end
 end
 
