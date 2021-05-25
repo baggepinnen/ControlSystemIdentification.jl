@@ -80,7 +80,9 @@ predict(sys, d::AbstractIdData, args...) =
     hasinput(sys) ? predict(sys, output(d), input(d), args...) :
     predict(sys, output(d), args...)
 
-function predict(sys, y, u, x0 = zeros(sys.nx))
+
+function predict(sys, y, u, x0 = nothing)
+    x0 = get_x0(x0, sys, iddata(y,u,sys.Ts))
     model = SysFilter(sys, copy(x0))
     yh = [model(yt, ut) for (yt, ut) in observations(y, u)]
     oftype(y, yh)
@@ -140,7 +142,8 @@ function predict(G::ControlSystems.TransferFunction, y)
     oftype(output(y), yh)
 end
 
-function simulate(sys, u, x0 = zeros(sys.nx))
+function simulate(sys, u, x0 = nothing)
+    x0 = get_x0(x0, sys, u)
     u = input(u)
     model = SysFilter(sys, copy(x0))
     yh = map(observations(u, u)) do (ut, _)
@@ -153,7 +156,7 @@ simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args
 
 @userplot Simplot
 """
-	simplot(sys, data, x0=zeros(sys.nx); ploty=true)
+	simplot(sys, data, x0=nothing; ploty=true)
 
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
@@ -162,9 +165,9 @@ simplot
 @recipe function simplot(p::Simplot; ploty = true)
     sys, d = p.args[1:2]
     y = oftype(randn(2, 2), output(d))
-    u = oftype(randn(2, 2), input(d))
-    x0 = length(p.args) > 3 ? p.args[4] : zeros(sys.nx)
-    yh = simulate(sys, u, x0)
+    x0 = length(p.args) > 3 ? p.args[4] : nothing
+    x0 = get_x0(x0, sys, d)
+    yh = simulate(sys, d, x0)
     xguide --> "Time [s]"
     yguide --> "Output"
     t = timevec(d)
@@ -183,7 +186,7 @@ end
 
 @userplot Predplot
 """
-	predplot(sys, data, x0=zeros(sys.nx); ploty=true)
+	predplot(sys, data, x0=nothing; ploty=true)
 
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
@@ -193,7 +196,8 @@ predplot
     sys, d = p.args[1:2]
     y = oftype(randn(2, 2), output(d))
     u = oftype(randn(2, 2), input(d))
-    x0 = length(p.args) > 3 ? p.args[4] : zeros(sys.nx)
+    x0 = length(p.args) > 3 ? p.args[4] : :estimate
+    x0 = get_x0(x0, sys, d)
     yh = predict(sys, y, u, x0)
     xguide --> "Time [s]"
     yguide --> "Output"
@@ -210,11 +214,19 @@ predplot
     nothing
 end
 
-function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = zeros(sys.nx))
+function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = nothing)
+    x0 = get_x0(x0, sys, u)
     simulate(sys, input(u), x0)
 end
 
-function ControlSystems.lsim(sys::AbstractStateSpace, d::AbstractIdData; x0 = zeros(sys.nx))
+function ControlSystems.lsim(sys::AbstractStateSpace, d::AbstractIdData; x0 = nothing)
+    d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
+    
+    if d.ny == sys.ny
+        x0 = get_x0(x0, sys, d)
+    else
+        x0 = get_x0(x0, sys, d.u)
+    end
     lsim(sys, input(d); x0)
 end
 
@@ -237,7 +249,6 @@ function noise_model(sys::Union{StateSpaceNoise,N4SIDStateSpace})
 end
 
 
-
 """
     predictor(sys::N4SIDStateSpace)
     predictor(sys::StateSpaceNoise)
@@ -251,7 +262,7 @@ See also `noise_model` and `prediction_error`.
 """
 function ControlSystems.predictor(sys::Union{StateSpaceNoise,N4SIDStateSpace})
     K = sys.K
-    predictor(sys, K)
+    ControlSystems.predictor(sys, K)
 end
 
 """
@@ -270,7 +281,7 @@ end
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
 """
 function prediction_error(sys::Union{StateSpaceNoise,N4SIDStateSpace})
-    G = predictor(sys)
+    G = ControlSystems.predictor(sys)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
 
