@@ -273,15 +273,11 @@ m2vv(x) = [x[:, i] for i = 1:size(x, 2)]
 #     oftype(y, yh)
 # end
 
-function ControlSystems.lsim(res::AbstractPredictionStateSpace, u; x0 = res.x[:, 1])
-    simulate(res.sys, input(u), x0)
-end
 
-
-function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace, x0 = res.x[:, 1])
+function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace, x0 = zeros(res.nx))
     sys = res.sys
     @unpack A, B, C, D, ny, K, Q, R, P = res
-    kf = KalmanFilter(A, B, C, D, Q, R, MvNormal(x0, P))
+    kf = KalmanFilter(A, B, C, D, Q, R, MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 
 
