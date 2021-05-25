@@ -74,12 +74,12 @@ end
 function subspaceid(
     data::InputOutputData,
     nx = :auto;
-    verbose = true,
+    verbose = false,
     r = nx === :auto ? min(length(data) ÷ 20, 20) : nx + 10, # the maximal prediction horizon used
     s1 = r, # number of past outputs
     s2 = r, # number of past inputs
     γ = nothing,
-    W = :N4SID,
+    W = :MOESP,
     zeroD = false,
     focus = :prediction,
     svd::F1 = svd,
