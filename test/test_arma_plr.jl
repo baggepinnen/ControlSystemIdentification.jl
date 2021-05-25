@@ -47,7 +47,7 @@ end
     a  = 0.9
 
     G = tf([1, 0.1], [1, -a, 0], 1)
-    y, t, x = lsim(G, u, 1:N) .|> vec
+    y, t, x = lsim(G, u, 1:N) 
 
     na, nc = 2, 2   # Number of polynomial coefficients
     e = 0.0001randn(1,N) #+ 20randn(1,N) .* (rand(N) .< 0.01)
@@ -73,7 +73,7 @@ end
     G = tf(1, [1, 2 * 0.1 * 1, 1])
     G = c2d(G, 1)
     u = randn(1,T)
-    y = lsim(G, u, 1:T)[1][:]
+    y = lsim(G, u, 1:T)[1]
     d = iddata(y)
     model = ControlSystemIdentification.arma_ssa(d, 2, 2, L = 200)
 

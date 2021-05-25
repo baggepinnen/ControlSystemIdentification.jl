@@ -101,7 +101,7 @@ G2 =  tf([0,0,1], [1, -0.5,0,0], 1)
 G = [G1 G2]
 u1 = randn(1,N)
 u2 = randn(1,N)
-u = [u1 u2]
+u = [u1; u2]
 y = lsim(G, u, 1:N)[1][:]
 d = iddata(y, u, 1)
 Gest = arx(d, na, nb, inputdelay = inputdelay)

@@ -754,8 +754,8 @@ end
 
 Estimate the residuals driving the dynamics of an ARMA model.
 """
-function estimate_residuals(model, y)
-    y = time1(output(y))
+function estimate_residuals(model, yi)
+    y = time1(output(yi))
     eest = zeros(length(y))
     na = length(denvec(model)[1, 1]) - 1
     nc = length(numvec(model)[1, 1])
@@ -768,7 +768,7 @@ function estimate_residuals(model, y)
         yh = w'ϕ
         eest[i] += y[i+1] - yh
     end
-    eest
+    oftype(output(yi), eest)
 end
 
 
