@@ -42,22 +42,22 @@ r_est = FRD(w, Gest)
 if isinteractive()
     Gr, Gram = baltrunc(Gest)
     Gmp = ControlSystemIdentification.minimum_phase(Gr)
-    Gr = baltrunc(Gmp)[1]
-    bodeplot(Gtest, w, show=false)
-    bodeplot!(Gest, w, show=false)
-    bodeplot!(Gr, w, show=false)
-    bodeplot!(Gmp, w, show=true)
+    Gr = minreal(Gmp, rtol=1e-6)
+    bodeplot(Gtest, w, show=false, lab="Gtest")
+    bodeplot!(Gest, w, show=false, lab="Gest")
+    bodeplot!(Gr, w, show=false, lab="Gr")
+    bodeplot!(Gmp, w, show=true, lab="Gmp")
 end
 
 
 ##
 if isinteractive()
     t = 0:0.01:100
-    u = randn(length(t))
+    u = randn(1,length(t))
     y,_ = lsim(Gtest, u, t)
     yest,_ = lsim(Gest, u, t)
     ymp,_ = lsim(Gmp, u, t)
-    plot([y yest ymp])
+    plot([y' yest' ymp'])
 end
 
 
@@ -163,3 +163,12 @@ end
 # bodeplot(Gfir, w, ticks=:default)
 # display(current())
 
+
+# Generate test case for minreal
+basis = laguerre_oo(1, 30)
+Gest,p = tfest(data, basis)
+r_est = FRD(w, Gest)
+@test mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+Gr, Gram = baltrunc(Gest)
+Gr = minreal(Gest)
+hinfnorm(Gr-Gest)
