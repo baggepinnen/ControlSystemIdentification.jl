@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "1.6.0"
+version = "1.6.1"
 
 [deps]
 BandedMatrices = "aae01518-5342-5314-be14-df237901396f"
