@@ -102,20 +102,30 @@ function get_x0(s::Symbol, sys, d::AbstractIdData)
 end
 
 
-function estimate_x0(sys, d)
+function estimate_x0(sys, d, n = min(length(d), 10*sys.nx))
     y = output(d)
     u = input(d)
     nx,p,N = sys.nx, sys.ny, length(d)
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
+
+    if sys isa AbstractPredictionStateSpace
+        A,B,C,D = ssdata(sys)
+        K = sys.K
+        sys = ss(A-K*C, B - K*D, C, D, 1) # TODO: not sure about K*D
+        ε = lsim(ss(A-K*C, K, C, 0, 1), y)[1]
+        y = y - ε
+    end
+
+    uresp = lsim(sys, u)[1]
+    y = y - uresp # remove influence of u
     φx0 = zeros(p, N, nx)
     for j in 1:nx
         x0 = zeros(nx); x0[j] = 1
-        uf = lsim(sys, u; x0)[1]
-        φx0[:, :, j] = uf 
+        y0 = lsim(sys, 0*u; x0)[1]
+        φx0[:, :, j] = y0 
     end
     φ = reshape(φx0, p*N, :)
-
-    φ\vec(y)
+    (φ[1:n*p,:]) \ vec(y)[1:n*p]
 end
 
 """
