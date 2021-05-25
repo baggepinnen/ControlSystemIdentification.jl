@@ -103,6 +103,12 @@ Base.lastindex(d::AbstractIdData) = length(d)
 function Base.getproperty(d::AbstractIdData, s::Symbol)
     if s === :fs || s === :Fs
         return 1 / d.Ts
+    elseif s === :ny
+        return noutputs(d)
+    elseif s === :nu
+        return ninputs(d)
+    elseif s === :nx
+        return nstates(d)
     end
     return getfield(d, s)
 end
@@ -155,6 +161,16 @@ function Base.getindex(d::AbstractIdData, i::AbstractRange)
     end
 end
 
+function Base.:(*)(d::AbstractIdData, x)
+    y,u = d.y, d.u
+    iddata(y, x*u, d.Ts)
+end
+
+function Base.:(*)(x, d::AbstractIdData)
+    y,u = d.y, d.u
+    iddata(x*y, u, d.Ts)
+end
+
 """
 dr = resample(d::InputOutputData, f)
 
@@ -182,6 +198,20 @@ end
 
 function DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
     writedlm(io, [d.y' d.u'], args...; kwargs...)
+end
+
+function ramp_in(d::InputOutputData, h::Int)
+    if h <= 1
+        return d
+    end
+    u,y = input(d), output(d)
+    ramp = [
+        range(0, stop=1, length=h);
+        ones(length(d)-h)
+    ]
+    u = u .* ramp'
+    y = y .* ramp'
+    iddata(y,u,d.Ts)
 end
 
 struct StateSpaceNoise{T,MT<:AbstractMatrix{T}} <:
