@@ -343,7 +343,7 @@ end
 Change sample-time of sys to `newh`.
 """
 function DSP.resample(sys::AbstractStateSpace{<:Discrete}, newh::Real)
-    sys.Ts == newh && throw(ArgumentError("new sample time identical to old systems sample time."))
+    sys.Ts == newh && return sys
     c2d(d2c(sys), newh)
 end
 
@@ -358,7 +358,7 @@ Change sample time of covariance matrix `Qd` beloning to `sys` to `newh`.
 - `newh`: The new sample time.
 """
 function DSP.resample(sys::AbstractStateSpace{<:Discrete}, Qd::AbstractMatrix, newh::Real)
-    sys.Ts == newh && throw(ArgumentError("new sample time identical to old systems sample time."))
+    sys.Ts == newh && return Qd
     sys2 = resample(sys, newh)
     Qc = d2c(sys, Qd)
     c2d(sys2, Qc)
