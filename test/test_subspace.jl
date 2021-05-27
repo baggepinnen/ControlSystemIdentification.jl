@@ -100,22 +100,22 @@ end
 @testset "subspaceid" begin
     @info "Testing subspaceid"
     N = 200
-    r = 2
+    nx = 2
     m = 2
     l = 2
-    for r = 1:5, m = 1:2, l = 1:2
+    for nx = 1:5, m = 1:2, l = 1:2
         Random.seed!(0)
-        @show r, m, l
-        A = Matrix{Float64}(I(r))
+        @show nx, m, l
+        A = Matrix{Float64}(I(nx))
         A[1, 1] = 1.01
-        G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+        G = ss(A, randn(nx, m), randn(l, nx), 0 * randn(l, m), 1)
         u = randn(m, N)
-        x0 = randn(r)
+        x0 = randn(nx)
         y, t, x = lsim(G, u, 1:N, x0 = x0)
         @test sum(!isfinite, y) == 0
         yn = y + 0.1randn(size(y))
         d = iddata(yn, u, 1)
-        res = subspaceid(d, r)
+        res = subspaceid(d, nx, focus=:simulation)
 
         ys = simulate(res, d)
         # @show mean(abs2,y-ys) / mean(abs2,y)
@@ -126,31 +126,29 @@ end
         # @show mean(abs2,y-yp') / mean(abs2,y)
         @test mean(abs2, y - yp) / mean(abs2, y) < 0.1 # no enforcement of stability in this method
 
-
-        res = subspaceid(d, r)
         freqresptest(G, res.sys) < 0.2 * m * l
         w = exp10.(LinRange(-5, log10(pi), 600))
         bodeplot(G, w)
         bodeplot!(res.sys, w)
 
 
-        G = ss(0.2randn(r, r), randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+        G = ss(0.2randn(nx, nx), randn(nx, m), randn(l, nx), 0 * randn(l, m), 1)
         u = randn(m, N)
 
-        y, t, x = lsim(G, u, 1:N, x0 = randn(r))
+        y, t, x = lsim(G, u, 1:N, x0 = randn(nx))
         @assert sum(!isfinite, y) == 0
         ϵ = 0.01
         yn = y + ϵ * randn(size(y))
         d = iddata(yn, u, 1)
 
-        res = subspaceid(d, r)
-        @test res.sys.nx == r
+        res = subspaceid(d, nx)
+        @test res.sys.nx == nx
         @test norm(res.S) < 2ϵ
         @test freqresptest(G, res.sys) < 0.2 * m * l
 
 
         res = ControlSystemIdentification.subspaceid(d)
-        @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
+        @test res.sys.nx <= nx # test that auto rank selection don't choose too high rank when noise is low
         kf = KalmanFilter(res)
         @test kf isa KalmanFilter
         @test kf.A == res.A
