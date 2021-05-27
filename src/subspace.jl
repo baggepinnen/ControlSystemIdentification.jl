@@ -261,16 +261,31 @@ function simulate(
 end
 
 m2vv(x) = [x[:, i] for i = 1:size(x, 2)]
-# function predict(res::N4SIDStateSpace, y, u, x0 = res.x[:, 1])
-#     y = time2(y)
-#     # u = input(d)
-#     @unpack C, D, sys = res
-#     kf = KalmanFilter(res, x0)
-#     U = m2vv(u)
-#     X = forward_trajectory(kf, U, m2vv(y))[1] # Use the predicted state estimate [1]
+function predict(res::N4SIDStateSpace, d::AbstractIdData, x0 = nothing)
+    y = time2(output(d))
+    u = time2(input(d))
+    x0 = get_x0(x0, res, d)
+    # u = input(d)
+    @unpack C, D, sys = res
+    kf = KalmanFilter(res, x0)
+    U = m2vv(u)
+    X = forward_trajectory(kf, U, m2vv(y))[1] # Use the predicted state estimate [1]
     
-#     yh = Ref(C) .* X .+ Ref(D) .* U
-#     oftype(y, yh)
+    yh = Ref(C) .* X .+ Ref(D) .* U
+    oftype(y, yh)
+end
+
+function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing)
+    y = time2(output(d))
+    u = time2(input(d))
+    x0 = get_x0(x0, sys, d)
+    predict(sys, y, u, x0)
+end
+
+# causes ambiguities, should just work with regular lsim
+# function ControlSystems.lsim(res::AbstractPredictionStateSpace{<:Discrete}, u::Union{AbstractMatrix, AbstractIdData}; x0 = nothing)
+#     x0 = get_x0(x0, res, u)
+#     simulate(res.sys, input(u), x0)
 # end
 
 

@@ -4,7 +4,7 @@ nx = 3
 nu = 1
 ny = 1
 x0 = randn(nx)
-sim(sys, u, x0 = x0) = lsim(sys, u', 1:T, x0 = x0)[1]'
+sim(sys, u, x0 = x0) = lsim(sys, u, 1:T, x0 = x0)[1]
 sys = generate_system(nx, nu, ny)
 sysn = generate_system(nx, nu, ny)
 

@@ -138,7 +138,7 @@ end
         ny = 1
         x0 = randn(nx)
         σy = 0.5
-        sim(sys, u) = lsim(sys, u', 1:T)[1]'
+        sim(sys, u) = lsim(sys, u, 1:T)[1]
         sys = tf(1, [1, 2 * 0.1, 0.1])
         sysn = tf(σy, [1, 2 * 0.1, 0.3])
 

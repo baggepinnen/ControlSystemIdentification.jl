@@ -23,6 +23,7 @@ import MatrixEquations
 import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates
 import StatsBase.residuals
+import MatrixEquations
 
 export iddata,
     noutputs,
@@ -82,7 +83,7 @@ predict(sys, d::AbstractIdData, args...) =
 
 
 function predict(sys, y, u, x0 = nothing)
-    x0 = get_x0(x0, sys, iddata(y,u,sys.Ts))
+    x0 = get_x0(x0, sys, iddata(y, u, sys.Ts))
     model = SysFilter(sys, copy(x0))
     yh = [model(yt, ut) for (yt, ut) in observations(y, u)]
     oftype(y, yh)
@@ -302,7 +303,7 @@ function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, 
     Ac  = real(log(Ad)./sys.Ts)
     h   = sys.Ts
     C   = Symmetric(Qc - Ad*Qc*Ad')
-    Qd  = ControlSystems.MatrixEquations.lyapc(Ac, C)
+    Qd  = MatrixEquations.lyapc(Ac, C)
     # The method below also works, but no need to use quadgk when MatrixEquations is available.
     # function integrand(t)
     #     Ad = exp(t*Ac)
@@ -332,7 +333,7 @@ function ControlSystems.d2c(sys::AbstractStateSpace{<:ControlSystems.Discrete}, 
     Ad = sys.A
     Ac = real(log(Ad)./sys.Ts)
     C = Symmetric(Ac*Qd + Qd*Ac')
-    Qc = ControlSystems.MatrixEquations.lyapd(Ad, -C)
+    Qc = MatrixEquations.lyapd(Ad, -C)
     isposdef(Qc) || @error("Calculated covariance matrix not positive definite")
     Qc
 end

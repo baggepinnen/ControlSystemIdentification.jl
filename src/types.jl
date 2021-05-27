@@ -219,7 +219,7 @@ struct StateSpaceNoise{T,MT<:AbstractMatrix{T}} <:
     A::MT
     B::MT
     K::MT
-    Ts::Discrete{Float64}
+    timeevol::Discrete{Float64}
     nx::Int
     nu::Int
     ny::Int
@@ -263,8 +263,8 @@ function Base.getproperty(sys::StateSpaceNoise, p::Symbol)
         return [I zeros(sys.ny, sys.nx - sys.ny)]
     elseif p === :D
         return zeros(sys.ny, sys.nu)
-    elseif p === :timeevol
-        return sys.Ts
+    elseif p === :Ts
+        return sys.timeevol.Ts
     end
     return getfield(sys, p)
 end
