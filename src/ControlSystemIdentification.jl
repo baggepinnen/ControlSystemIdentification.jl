@@ -137,7 +137,7 @@ Predict AR model
 """
 function predict(G::ControlSystems.TransferFunction, y)
     _, a, _, _ = params(G)
-    yr, A = getARregressor(output(y), length(a))
+    yr, A = getARregressor(time1(output(y)), length(a))
     yh = A * a
     oftype(output(y), yh)
 end
@@ -276,11 +276,11 @@ function predictiondata(d::AbstractIdData)
 end
 
 """
-    prediction_error(sys::Union{StateSpaceNoise, N4SIDStateSpace})
+    prediction_error(sys::AbstractPredictionStateSpace)
 
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
 """
-function prediction_error(sys::Union{StateSpaceNoise,N4SIDStateSpace})
+function prediction_error(sys::AbstractPredictionStateSpace)
     G = ControlSystems.predictor(sys)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
