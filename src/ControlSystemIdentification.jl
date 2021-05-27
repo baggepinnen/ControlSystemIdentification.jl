@@ -232,7 +232,7 @@ end
 
 
 """
-    noise_model(sys::Union{StateSpaceNoise, N4SIDStateSpace})
+    noise_model(sys::AbstractPredictionStateSpace)
 
 Return a model of the noise driving the system, `v`, in
 x' = Ax + Bu + Kv
@@ -242,7 +242,7 @@ The model neglects u and is given by
 x' = Ax + Kv
 y = Cx + v
 """
-function noise_model(sys::Union{StateSpaceNoise,N4SIDStateSpace})
+function noise_model(sys::AbstractPredictionStateSpace)
     A,B,C,D = ssdata(sys)
     K = sys.K
     G = ss(A, K, C, zeros(size(D,1), size(K, 2)), sys.Ts)
@@ -260,7 +260,7 @@ with the input equation [B K] * [u; y]
 
 See also `noise_model` and `prediction_error`.
 """
-function ControlSystems.predictor(sys::Union{StateSpaceNoise,N4SIDStateSpace})
+function ControlSystems.predictor(sys::AbstractPredictionStateSpace)
     K = sys.K
     ControlSystems.predictor(sys, K)
 end
