@@ -106,6 +106,7 @@ end
 
 
 function estimate_x0(sys, d, n = min(length(d), 10*sys.nx))
+    T = ControlSystems.numeric_type(sys)
     y = output(d)
     u = input(d)
     nx,p,N = sys.nx, sys.ny, length(d)
@@ -121,7 +122,7 @@ function estimate_x0(sys, d, n = min(length(d), 10*sys.nx))
 
     uresp = lsim(sys, u)[1]
     y = y - uresp # remove influence of u
-    φx0 = zeros(p, N, nx)
+    φx0 = zeros(T, p, N, nx)
     for j in 1:nx
         x0 = zeros(nx); x0[j] = 1
         y0 = lsim(sys, 0*u; x0)[1]
