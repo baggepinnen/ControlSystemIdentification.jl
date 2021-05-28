@@ -1,55 +1,3 @@
-abstract type AbstractPredictionStateSpace{T} <: AbstractStateSpace{T} end
-
-Base.@kwdef struct PredictionStateSpace{T} <: AbstractPredictionStateSpace{T}
-# has at least K, but perhaps also covariance matrices? Would be nice in order to be able to resample he system. Can be nothing in case they are not known
-    sys::AbstractStateSpace{T}
-    K
-    Q = nothing
-    R = nothing
-end
-
-
-"""
-    N4SIDStateSpace <: AbstractPredictionStateSpace is the result of statespace model estimation using the `n4sid` method.
-
-# Fields:
-- `sys`: estimated model in the form of a [`StateSpace`](@ref) object
-- `Q`: estimated covariance matrix of the states
-- `R`: estimated covariance matrix of the measurements
-- `S`: estimated cross covariance matrix between states and measurements
-- `K`: kalman observer gain
-- `P`: solution to the Riccatti equation
-- `x`: estimated state trajectory
-- `s`: singular values
-- `fve`: Fraction of variance explained by singular values
-"""
-struct N4SIDStateSpace <: AbstractPredictionStateSpace{Discrete{Float64}}
-    sys::Any
-    Q::Any
-    R::Any
-    S::Any
-    K::Any
-    P::Any
-    x::Any
-    s::Any
-    fve::Any
-end
-
-@inline function Base.getproperty(res::AbstractPredictionStateSpace, p::Symbol)
-    if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
-        return getproperty(res.sys, p)
-    end
-    return getfield(res, p)
-end
-
-function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
-    if size(inds, 1) != 2
-        error("Must specify 2 indices to index statespace model")
-    end
-    rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
-    return ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol)
-end
-
 @static if VERSION < v"1.3"
     (LinearAlgebra.I)(n) = Matrix{Float64}(I, n, n)
 end
@@ -288,11 +236,17 @@ end
 #     simulate(res.sys, input(u), x0)
 # end
 
+Base.promote_rule(::Type{StateSpace{TE}}, ::Type{<:AbstractPredictionStateSpace{TE}}) where TE<:Discrete = StateSpace{TE}
+Base.promote_rule(::Type{<:StateSpace{TE}}, ::Type{N4SIDStateSpace}) where TE<:Discrete = StateSpace{TE}
+
+function Base.convert(::Type{StateSpace{TE}}, s::AbstractPredictionStateSpace{TE}) where TE<:Discrete
+    deepcopy(s.sys)
+end
 
 function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace, x0 = zeros(res.nx))
     sys = res.sys
     @unpack A, B, C, D, ny, K, Q, R, P = res
-    kf = KalmanFilter(A, B, C, D, Q, R, MvNormal(x0, P)) # NOTE: cross covariance S ignored
+    kf = KalmanFilter(A, B, C, D, Matrix(Q), Matrix(R), MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 
 

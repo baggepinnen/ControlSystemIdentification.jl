@@ -216,8 +216,65 @@ function ramp_in(d::InputOutputData, h::Int)
     iddata(y,u,d.Ts)
 end
 
+## State space types ===========================================================
+
+abstract type AbstractPredictionStateSpace{T} <: AbstractStateSpace{T} end
+
+Base.@kwdef struct PredictionStateSpace{T} <: AbstractPredictionStateSpace{T}
+# has at least K, but perhaps also covariance matrices? Would be nice in order to be able to resample he system. Can be nothing in case they are not known
+    sys::AbstractStateSpace{T}
+    K
+    Q = nothing
+    R = nothing
+end
+
+
+"""
+    N4SIDStateSpace <: AbstractPredictionStateSpace is the result of statespace model estimation using the `n4sid` method.
+
+# Fields:
+- `sys`: estimated model in the form of a [`StateSpace`](@ref) object
+- `Q`: estimated covariance matrix of the states
+- `R`: estimated covariance matrix of the measurements
+- `S`: estimated cross covariance matrix between states and measurements
+- `K`: kalman observer gain
+- `P`: solution to the Riccatti equation
+- `x`: estimated state trajectory
+- `s`: singular values
+- `fve`: Fraction of variance explained by singular values
+"""
+struct N4SIDStateSpace <: AbstractPredictionStateSpace{Discrete{Float64}}
+    sys::Any
+    Q::Any
+    R::Any
+    S::Any
+    K::Any
+    P::Any
+    x::Any
+    s::Any
+    fve::Any
+end
+
+@inline function Base.getproperty(res::AbstractPredictionStateSpace, p::Symbol)
+    if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
+        return getproperty(res.sys, p)
+    end
+    return getfield(res, p)
+end
+
+function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
+    if size(inds, 1) != 2
+        error("Must specify 2 indices to index statespace model")
+    end
+    rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
+    return ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol)
+end
+
+ControlSystems.numeric_type(s::AbstractPredictionStateSpace) = ControlSystems.numeric_type(s.sys) 
+
+
 struct StateSpaceNoise{T,MT<:AbstractMatrix{T}} <:
-       ControlSystems.AbstractStateSpace{Discrete{Float64}}
+       AbstractPredictionStateSpace{Discrete{Float64}}
     A::MT
     B::MT
     K::MT
