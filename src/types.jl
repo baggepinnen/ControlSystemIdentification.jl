@@ -103,6 +103,8 @@ Base.lastindex(d::AbstractIdData) = length(d)
 function Base.getproperty(d::AbstractIdData, s::Symbol)
     if s === :fs || s === :Fs
         return 1 / d.Ts
+    elseif s === :timeevol
+        return Discrete(d.Ts)
     elseif s === :ny
         return noutputs(d)
     elseif s === :nu
