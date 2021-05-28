@@ -245,8 +245,8 @@ function find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
     vl = [Or[1:(r-1)*p, 1:n]\X1; L2[1:p, 1:m*(s2+r)+p*s1+p]]
     hl = [Or[:,1:n]\X2 ; [L1 zeros(m*r,(m*s2+p*s1)+p)]]
     
-    K = vl*pinv(hl)
-    W = (vl - K*hl)*(vl-K*hl)'
+    K0 = vl*pinv(hl)
+    W = (vl - K0*hl)*(vl-K0*hl)'
     
     Q = W[1:n,1:n] |> Hermitian
     S = W[1:n,n+1:n+p]
@@ -254,7 +254,8 @@ function find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
     
     local P, K
     try
-        P, _, Kt, _ = ControlSystemIdentification.MatrixEquations.ared(copy(A'), copy(C'), R, Q, S)
+        a = 1/sqrt(mean(abs, Q)*mean(abs, R)) # scaling for better numerics in ared
+        P, _, Kt, _ = ControlSystemIdentification.MatrixEquations.ared(copy(A'), copy(C'), a*R, a*Q, a*S)
         K = Kt' |> copy
     catch e
         @error "Failed to estimate kalman gain, got error" e
