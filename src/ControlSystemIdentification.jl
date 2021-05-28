@@ -283,8 +283,18 @@ end
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
 """
 function prediction_error(sys::AbstractPredictionStateSpace)
-    G = ControlSystems.predictor(sys)
+    G = observer_predictor(sys)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
+end
+
+"""
+    observer_controller(sys::AbstractPredictionStateSpace, L)
+
+Returns the measurement-feedback controller that takes in `y` and forms the control signal `u = -Lx̂`. See also `ff_controller`. 
+"""
+function ControlSystems.observer_controller(sys::AbstractPredictionStateSpace, L)
+    K = sys.K
+    observer_controller(sys.sys, L, K)
 end
 
 """
