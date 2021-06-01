@@ -298,6 +298,21 @@ function ControlSystems.observer_controller(sys::AbstractPredictionStateSpace, L
 end
 
 """
+    ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_compensation(sys, L))
+
+Returns the reference controller that takes in `xᵣ` and forms the control signal `u = Lxᵣ`. See also `observer_controller`
+"""
+function ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_compensation(sys, L))
+    Ae,Be,Ce,De = ssdata(sys)
+    K = sys.K
+    Ac = Ae - Be*L - K*Ce + K*De*L # 8.26b
+    Bc = Be * Lr
+    Cc = L
+    Dc = 0
+    return 1 - ss(Ac, Bc, Cc, Dc, sys.timeevol)
+end
+
+"""
     ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Q::AbstractMatrix)
 
 Sample a continuous-time covariance matrix to fit the provided discrete-time system.
