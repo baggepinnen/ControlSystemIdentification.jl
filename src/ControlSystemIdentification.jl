@@ -252,8 +252,8 @@ end
 
 
 """
-    predictor(sys::N4SIDStateSpace)
-    predictor(sys::StateSpaceNoise)
+    observer_predictor(sys::N4SIDStateSpace)
+    observer_predictor(sys::StateSpaceNoise)
 
 Return the predictor system
 x' = (A - KC)x + (B-KD)u + Ke
@@ -262,9 +262,9 @@ with the input equation [B K] * [u; y]
 
 See also `noise_model` and `prediction_error`.
 """
-function ControlSystems.predictor(sys::AbstractPredictionStateSpace)
+function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace)
     K = sys.K
-    ControlSystems.predictor(sys, K)
+    ControlSystems.observer_predictor(sys, K)
 end
 
 """
