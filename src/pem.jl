@@ -151,3 +151,54 @@ function stabfun(h, ny)
         isstable(model.sys)
     end
 end
+
+
+using Optim, Optim.LineSearches
+function newpem(d, nx; zeroD = true, sys0 = subspaceid(d, nx; zeroD))
+    nu = d.nu
+    ny = d.ny
+    A,B,C,D = ssdata(sys0)
+    K = sys0.K
+    p0 = zeroD ? ComponentArray(; A, B, C, K) : ComponentArray(; A, B, C, D, K)
+    pd = ControlSystemIdentification.predictiondata(d)
+    function loss(p)
+        # p0 .= p # write into already existing initial guess
+        syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), p.K, 0, 0)
+        Pe = ControlSystemIdentification.prediction_error(syso)
+        e = lsim(Pe, pd)[1]
+        mean(abs2, e)
+    end
+    res = Optim.optimize(
+        loss,
+        p0,
+        BFGS(alphaguess = LineSearches.InitialStatic(alpha=1), linesearch = LineSearches.HagerZhang()),
+        Optim.Options(
+            store_trace       = true,
+            show_trace        = true,
+            show_every        = 5,
+            iterations        = 100,
+            allow_f_increases = false,
+            time_limit        = 100,
+            x_tol             = 0,
+            f_abstol          = 0,
+            g_tol             = 1e-8,
+            f_calls_limit     = 0,
+            g_calls_limit     = 0,
+        ),
+        autodiff = :forward,
+    )
+    p = res.minimizer
+    syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), p.K, zeros(nx,nx), zeros(ny,ny))
+    all(e->abs(e) < 1, eigvals(syso.A-syso.K*syso.C)) || @warn("Predictor A-KC unstable")
+    Pe = ControlSystemIdentification.prediction_error(syso)
+    e = lsim(Pe, pd)[1]
+    R = cov(e, dims=2)
+    Q = Hermitian(K*R*K' + eps()*I)
+    # K = ((R+CXC')^(-1)(CXA'+S'))'
+    # solve for X
+    # solve for Q from  A'XA - X - (A'XB+S)(R+B'XB)^(-1)(B'XA+S') + Q = 0
+    @warn "probaby some error in Q matrix"
+    syso.R .= R
+    syso.Q .= Q
+    syso, res
+end
