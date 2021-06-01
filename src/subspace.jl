@@ -210,6 +210,7 @@ end
 
 m2vv(x) = [x[:, i] for i = 1:size(x, 2)]
 function predict(res::N4SIDStateSpace, d::AbstractIdData, x0 = nothing)
+    res.Ts == d.Ts || throw(ArgumentError("Sample tmie mismatch between data $(d.Ts) and system $(res.Ts)"))
     y = time2(output(d))
     u = time2(input(d))
     x0 = get_x0(x0, res, d)
@@ -224,6 +225,7 @@ function predict(res::N4SIDStateSpace, d::AbstractIdData, x0 = nothing)
 end
 
 function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing)
+    sys.Ts == d.Ts || throw(ArgumentError("Sample tmie mismatch between data $(d.Ts) and system $(sys.Ts)"))
     y = time2(output(d))
     u = time2(input(d))
     x0 = get_x0(x0, sys, d)
