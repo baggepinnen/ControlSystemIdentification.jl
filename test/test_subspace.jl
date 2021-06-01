@@ -172,3 +172,45 @@ end
         @test freqresptest(G, res.sys) < 0.01
     end
 end
+
+
+
+@testset "Balreal" begin
+    @info "Testing Balreal"
+    m = 1
+    G = ss(tf(k/m, [1, c/m, k/m]))
+    Q,R = [1 0.1; 0.1 2], I(1)
+    K = kalman(G, Q, R) |> real
+    sys = ControlSystemIdentification.PredictionStateSpace(G, K, Q, R)
+
+    function cl_eig(G, K)
+        A,B,C,D = ssdata(G)
+        eigvals(A - K*C)
+    end
+    e0 = cl_eig(G, K)
+
+    # test that the transformation of K leaves the closed-loop poles intact
+    Gb, gra, T = balreal(sys)
+    @test cl_eig(Gb, Gb.K) ≈ e0
+    @test iscontinuous(Gb)
+
+    # test that the transformation of Q is correct
+    Kb = kalman(Gb.sys, Gb.Q, Gb.R)
+    cl_eig(Gb, Kb) ≈ e0
+
+    Gr = baltrunc(sys, n=1)[1]
+    @test Gr.nx == 1
+    @test size(Gr.K) == (1,1)
+
+
+    # Discrete
+    m = 1
+    G = c2d(ss(tf(k/m, [1, c/m, k/m])), 0.1)
+    Q,R = [1 0.1; 0.1 2], I(1)
+    K = kalman(G, Q, R) |> real
+    sys = ControlSystemIdentification.PredictionStateSpace(G, K, Q, R)
+    Gb, gra, T = balreal(sys)
+    @test isdiscrete(Gb)
+    @test Gb.Ts == 0.1
+
+end

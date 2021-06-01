@@ -260,6 +260,22 @@ function LowLevelParticleFilters.forward_trajectory(kf::KalmanFilter, d::Abstrac
     forward_trajectory(kf, U, Y)
 end
 
+function ControlSystems.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
+    sysr, G, T = balreal(sys.sys, args...; kwargs...)
+    nx = sysr.nx
+    K = T*sys.K
+    Q = Hermitian(T*something(sys.Q, zeros(nx, nx))*T') # should be transpose here, not inverse
+    PredictionStateSpace(sysr, K, Q, sys.R), G, T
+end
+
+function ControlSystems.baltrunc(sys::AbstractPredictionStateSpace, args...; kwargs...)
+    sysr, G, T = baltrunc(sys.sys, args...; kwargs...)
+    nx = sysr.nx
+    K = (T*sys.K)[1:nx, :]
+    Q = (T*something(sys.Q, zeros(nx, nx))*T')[1:nx, 1:nx]
+    PredictionStateSpace(sysr, K, Q, sys.R), G, T
+end
+
 ##
 """
     era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int, n::Int)
