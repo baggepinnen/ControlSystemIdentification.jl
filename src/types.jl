@@ -439,34 +439,3 @@ function Base.iterate(i::SimulationErrorIterator, state = 1)
     (y - i.yh, state1)
 end
 Base.length(i::SimulationErrorIterator) = length(i.oi)
-
-@recipe function plot(d::AbstractIdData)
-    y = time1(output(d))
-    n = noutputs(d)
-    if hasinput(d)
-        u = time1(input(d))
-        n += ninputs(d)
-    end
-    layout --> (n, 1)
-    legend --> false
-    xguide --> "Time"
-    link --> :x
-    xvec = range(0, step = sampletime(d), length = length(d))
-
-    for i = 1:size(y, 2)
-        @series begin
-            title --> "Output $i"
-            label --> "Output $i"
-            xvec, y[:, i]
-        end
-    end
-    if hasinput(d)
-        for i = 1:size(u, 2)
-            @series begin
-                title --> "Input $i"
-                label --> "Input $i"
-                xvec, u[:, i]
-            end
-        end
-    end
-end

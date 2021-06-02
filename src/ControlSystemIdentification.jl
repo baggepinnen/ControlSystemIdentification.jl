@@ -76,6 +76,7 @@ include("subspace2.jl")
 include("spectrogram.jl")
 include("frequency_weights.jl")
 include("basis_functions.jl")
+include("plotting.jl")
 
 predict(sys, d::AbstractIdData, args...) =
     hasinput(sys) ? predict(sys, output(d), input(d), args...) :
@@ -156,65 +157,6 @@ end
 simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args...)
 
 
-@userplot Simplot
-"""
-	simplot(sys, data, x0=nothing; ploty=true)
-
-Plot system simulation and measured output to compare them.
-`ploty` determines whether or not to plot the measured signal
-"""
-simplot
-@recipe function simplot(p::Simplot; ploty = true)
-    sys, d = p.args[1:2]
-    y = oftype(randn(2, 2), output(d))
-    x0 = length(p.args) > 3 ? p.args[4] : nothing
-    x0 = get_x0(x0, sys, d)
-    yh = simulate(sys, d, x0)
-    xguide --> "Time [s]"
-    yguide --> "Output"
-    t = timevec(d)
-    err = nrmse(y, yh)
-    ploty && @series begin
-        label --> "y"
-        t, y'
-    end
-    @series begin
-        label --> ["sim fit :$(round(err, digits=2))%" for err in err']
-        t, yh'
-    end
-    nothing
-end
-
-
-@userplot Predplot
-"""
-	predplot(sys, data, x0=nothing; ploty=true)
-
-Plot system simulation and measured output to compare them.
-`ploty` determines whether or not to plot the measured signal
-"""
-predplot
-@recipe function predplot(p::Predplot; ploty = true)
-    sys, d = p.args[1:2]
-    y = oftype(randn(2, 2), output(d))
-    u = oftype(randn(2, 2), input(d))
-    x0 = length(p.args) > 3 ? p.args[4] : :estimate
-    x0 = get_x0(x0, sys, d)
-    yh = predict(sys, y, u, x0)
-    xguide --> "Time [s]"
-    yguide --> "Output"
-    t = timevec(d)
-    err = nrmse(y, yh)
-    ploty && @series begin
-        label --> "y"
-        t, y'
-    end
-    @series begin
-        label --> ["pred fit :$(round(err, digits=2))%" for err in err']
-        t, yh'
-    end
-    nothing
-end
 
 function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = nothing)
     x0 = get_x0(x0, sys, u)
