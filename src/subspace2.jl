@@ -81,11 +81,13 @@ function subspaceid(
     γ = nothing,
     W = :MOESP,
     zeroD = false,
+    stable = true, 
     focus = :prediction,
     svd::F1 = svd,
     scaleU = true,
-    estimator::F2 = \,
-) where {F1,F2}
+    Aestimator::F2 = \,
+    Bestimator::F3 = \,
+) where {F1,F2,F3}
 
     nx !== :auto && r < nx && throw(ArgumentError("r must be at least nx"))
     y, u = time1(output(data)), time1(input(data))
@@ -201,13 +203,16 @@ function subspaceid(
     verbose && @info "Fraction of variance explained: $(fve)"
 
     C = Or[1:p, 1:n]
-    A = \(Or[1:p*(r-1), 1:n] , Or[p+1:p*r, 1:n])
-    all(e->abs(e)<=1, eigvals(A)) || @warn "A matrix unstable"
+    A = Aestimator(Or[1:p*(r-1), 1:n] , Or[p+1:p*r, 1:n])
+    if !all(e->abs(e)<=1, eigvals(A))
+        verbose && @info "A matrix unstable, stabilizing by reflection"
+        A = reflectd(A)
+    end
 
     P, K, Qc, Rc, Sc = find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
 
     # 4. Estimate B, D, x0 by linear regression
-    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, estimator)
+    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, Bestimator)
 
     if scaleU
         B = B ./ CU
@@ -265,6 +270,21 @@ function find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
     P, K, Q, R, S
 end
 
+function reflectd(x)
+    a = abs(x)
+    a < 1 && return oftype(cis(angle(x)),x)
+    1/a * cis(angle(x))
+end
+
+function reflectd(A::AbstractMatrix)
+    D,V = eigen(A)
+    D = reflectd.(D)
+    A2 = V*Diagonal(D)/V
+    if eltype(A) <: Real
+        return real(A2)
+    end
+    A2
+end
 
 # plotly(show=false)
 # ## ==========================================================
