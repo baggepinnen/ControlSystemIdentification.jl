@@ -56,63 +56,6 @@ function getARregressor(y::AbstractVector, na)
     return y, A
 end
 
-@userplot Find_na
-"""
-    find_na(y::AbstractVector,n::Int)
-Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
-"""
-find_na
-@recipe function find_na(p::Find_na)
-    y, n = p.args[1:2]
-    y = time1(y)
-    error = zeros(n, 2)
-    for i = 1:n
-        yt, A = getARXregressor(y, 0y, i, 0)
-        e = yt - A * (A \ yt)
-        error[i, 1] = rms(e)
-        error[i, 2] = aic(e, i)
-    end
-    layout --> 2
-    title --> ["RMS error" "AIC"]
-    seriestype --> :scatter
-    @series begin
-        error
-    end
-end
-
-@userplot Find_nanb
-"""
-    find_nanb(d::InputOutputData,na,nb)
-Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
-"""
-find_nanb
-@recipe function find_nanb(p::Find_nanb; logrms = false)
-    d, na, nb = p.args[1:3]
-    y, u = time1(output(d)), time1(input(d))
-    error = zeros(na, nb, 2)
-    for i = 1:na, j = 1:nb
-        yt, A = getARXregressor(y, u, i, j)
-        e = yt - A * (A \ yt)
-        error[i, j, 1] = logrms ? log10.(rms(e)) : rms(e)
-        error[i, j, 2] = aic(e, i + j)
-    end
-    layout --> 2
-    seriestype --> :heatmap
-    xticks := (1:nb, 1:nb)
-    yticks := (1:na, 1:na)
-    yguide := "na"
-    xguide := "nb"
-    @series begin
-        title := "RMS error"
-        subplot := 1
-        error[:, :, 1]
-    end
-    @series begin
-        title := "AIC"
-        subplot := 2
-        error[:, :, 2]
-    end
-end
 
 
 
