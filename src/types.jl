@@ -193,6 +193,12 @@ function DSP.resample(M::AbstractMatrix, f)
     end
 end
 
+function prefilter(f, d::InputOutputData)
+    u = filt(f, d.u')'
+    y = filt(f, d.y')'
+    iddata(y, u, d.Ts)
+end
+
 function Base.hcat(d1::InputOutputData, d2::InputOutputData)
     @assert d1.Ts == d2.Ts
     iddata([d1.y d2.y], [d1.u d2.u], d1.Ts)
