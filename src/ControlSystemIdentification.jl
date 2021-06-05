@@ -189,7 +189,7 @@ y = Cx + v
 function noise_model(sys::AbstractPredictionStateSpace)
     A,B,C,D = ssdata(sys)
     K = sys.K
-    G = ss(A, K, C, zeros(size(D,1), size(K, 2)), sys.Ts)
+    G = ss(A, K, C, zeros(size(D,1), size(K, 2)), sys.timeevol)
 end
 
 
