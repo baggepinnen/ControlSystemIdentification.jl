@@ -1,7 +1,7 @@
 using ControlSystems, ControlSystemIdentification
 import ControlSystemIdentification: InputOutputData, time1
 
-function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\)
+function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\, weights=nothing)
     nx = size(A, 1)
     p = size(C, 1)
     N = size(U, 2)
@@ -43,7 +43,11 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\)
     φ3 = zeroD ? cat(φB, φx0, dims=3) : cat(φB, φx0, φD, dims=3)
     # φ4 = permutedims(φ3, (1,3,2))
     φ = reshape(φ3, p*N, :)
-    BD = estimator(φ, vec(Y .- ε))
+    if weights === nothing
+        BD = estimator(φ, vec(Y .- ε))
+    else
+        BD = estimator(φ, vec(Y .- ε), weights)
+    end
     B = reshape(BD[1:m*nx], nx, m)
     x0 = BD[m*nx .+ (1:nx)]
     if zeroD
@@ -87,6 +91,7 @@ function subspaceid(
     scaleU = true,
     Aestimator::F2 = \,
     Bestimator::F3 = \,
+    weights = nothing,
 ) where {F1,F2,F3}
 
     nx !== :auto && r < nx && throw(ArgumentError("r must be at least nx"))
@@ -212,7 +217,7 @@ function subspaceid(
     P, K, Qc, Rc, Sc = find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
 
     # 4. Estimate B, D, x0 by linear regression
-    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, Bestimator)
+    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, Bestimator, weights)
 
     if scaleU
         B = B ./ CU
