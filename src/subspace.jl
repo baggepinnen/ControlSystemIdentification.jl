@@ -263,7 +263,7 @@ end
 function ControlSystems.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
     sysr, G, T = balreal(sys.sys, args...; kwargs...)
     nx = sysr.nx
-    K = T*sys.K
+    K = T*sys.K # similarity transform is reversed here compared to below
     Q = Hermitian(T*something(sys.Q, zeros(nx, nx))*T') # should be transpose here, not inverse
     PredictionStateSpace(sysr, K, Q, sys.R), G, T
 end
@@ -271,9 +271,18 @@ end
 function ControlSystems.baltrunc(sys::AbstractPredictionStateSpace, args...; kwargs...)
     sysr, G, T = baltrunc(sys.sys, args...; kwargs...)
     nx = sysr.nx
-    K = (T*sys.K)[1:nx, :]
+    K = (T*sys.K)[1:nx, :] # similarity transform is reversed here compared to below
     Q = (T*something(sys.Q, zeros(nx, nx))*T')[1:nx, 1:nx]
     PredictionStateSpace(sysr, K, Q, sys.R), G, T
+end
+
+function ControlSystems.similarity_transform(sys::AbstractPredictionStateSpace, T)
+    syss = similarity_transform(sys.sys, T)
+    nx = syss.nx
+    K = T\sys.K
+    T = pinv(T)
+    Q = Hermitian(T*something(sys.Q, zeros(nx, nx))*T') # should be transpose here, not inverse
+    PredictionStateSpace(syss, K, Q, sys.R)
 end
 
 ##

@@ -178,6 +178,8 @@ end
 @testset "Balreal" begin
     @info "Testing Balreal"
     m = 1
+    k = 100
+    c = 1
     G = ss(tf(k/m, [1, c/m, k/m]))
     Q,R = [1 0.1; 0.1 2], I(1)
     K = kalman(G, Q, R) |> real
@@ -196,11 +198,22 @@ end
 
     # test that the transformation of Q is correct
     Kb = kalman(Gb.sys, Gb.Q, Gb.R)
-    cl_eig(Gb, Kb) ≈ e0
+    @test cl_eig(Gb, Kb) ≈ e0
 
     Gr = baltrunc(sys, n=1)[1]
     @test Gr.nx == 1
     @test size(Gr.K) == (1,1)
+
+
+    T = randn(2,2)
+    syst = similarity_transform(sys, T)
+    @test iscontinuous(syst)
+    @test iscontinuous(syst.sys)
+    @test tf(noise_model(sys)) ≈ tf(noise_model(syst))
+
+    Kt = kalman(syst.sys, syst.Q, syst.R)
+    @test Kt ≈ syst.K
+    @test cl_eig(syst, Kt) ≈ e0 rtol=0.01
 
 
     # Discrete
@@ -208,9 +221,28 @@ end
     G = c2d(ss(tf(k/m, [1, c/m, k/m])), 0.1)
     Q,R = [1 0.1; 0.1 2], I(1)
     K = kalman(G, Q, R) |> real
+    e0 = cl_eig(G, K)
     sys = ControlSystemIdentification.PredictionStateSpace(G, K, Q, R)
+    @test isdiscrete(sys)
     Gb, gra, T = balreal(sys)
     @test isdiscrete(Gb)
     @test Gb.Ts == 0.1
+
+    # Test that the kalman gain is correctly transformed
+    @test tf(noise_model(sys)) ≈ tf(noise_model(Gb))
+
+        # test that the transformation of Q is correct
+    Kb = kalman(Gb.sys, Gb.Q, Gb.R)
+    @test cl_eig(Gb, Kb) ≈ e0
+
+    T = [1 0.1; 0.1 1]#randn(2,2)
+    syst = similarity_transform(sys, T)
+    @test isdiscrete(syst)
+    @test isdiscrete(syst.sys)
+    @test tf(noise_model(sys)) ≈ tf(noise_model(syst))
+
+    Kt = kalman(syst.sys, syst.Q, syst.R)
+    @test Kt ≈ syst.K
+    @test cl_eig(syst, Kt) ≈ e0 rtol=0.01
 
 end
