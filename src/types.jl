@@ -98,6 +98,8 @@ function Base.length(d::AbstractIdData)
     return length(y)
 end
 
+Base.axes(d::AbstractIdData, i::Integer) = Base.OneTo(i == 1 ? d.ny : d.nu)
+
 Base.lastindex(d::AbstractIdData) = length(d)
 
 function Base.getproperty(d::AbstractIdData, s::Symbol)
