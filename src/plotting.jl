@@ -89,11 +89,11 @@ simplot
     t = timevec(d)
     err = nrmse(y, yh)
     ploty && @series begin
-        label --> "y"
+        label --> ["y$i" for i in (1:d.ny)']
         t, y'
     end
     @series begin
-        label --> ["sim fit :$(round(err, digits=2))%" for err in err']
+        label --> ["sim fit $i :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
         t, yh'
     end
     plote && @series begin
@@ -125,11 +125,11 @@ predplot
     t = timevec(d)
     err = nrmse(y, yh)
     ploty && @series begin
-        label --> "y"
+        label --> ["y$i" for i in (1:d.ny)']
         t, y'
     end
     @series begin
-        label --> ["pred fit :$(round(err, digits=2))%" for err in err']
+        label --> ["pred fit $i :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
         t, yh'
     end
     plote && @series begin
