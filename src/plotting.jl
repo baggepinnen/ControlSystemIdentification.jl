@@ -183,6 +183,7 @@ coherenceplot
         ArgumentError("Call like this: coherenceplot(iddata; hz=false)")
     d = p.args[1]
     d isa AbstractIdData || throw(ae)
+    ninputs(d) == 1 || throw(ArgumentError("coherenceplot only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     if length(p.args) >= 2
         kwargs = p.args[2]
     else
@@ -195,11 +196,14 @@ coherenceplot
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     title --> "Coherence"
     legend --> false
-    frd = coherence(d; kwargs...)
-    @series begin
-        inds = findall(x -> x == 0, frd.w)
-        useinds = setdiff(1:length(frd.w), inds)
-        (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
+    for i = 1:d.ny
+        frd = coherence(d[i,1]; kwargs...)
+        @series begin
+            inds = findall(x -> x == 0, frd.w)
+            useinds = setdiff(1:length(frd.w), inds)
+            label --> (d.ny == 1 ? "" : "To y_$i")
+            (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
+        end
     end
     nothing
 end
