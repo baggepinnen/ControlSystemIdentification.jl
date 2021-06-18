@@ -153,46 +153,62 @@ function stabfun(h, ny)
 end
 
 
+using JuliaFormatter; JuliaFormatter.format_file(@__FILE__)
+
 using Optim, Optim.LineSearches
-function newpem(d, nx; zeroD = true, sys0 = subspaceid(d, nx; zeroD))
+function newpem(d, nx; zeroD = true, sys0 = subspaceid(d, nx; zeroD), focus = :prediction, optimizer = BFGS(alphaguess = LineSearches.InitialStatic(alpha=1), linesearch = LineSearches.HagerZhang()))
     nu = d.nu
     ny = d.ny
     A,B,C,D = ssdata(sys0)
     K = sys0.K
-    p0 = zeroD ? ComponentArray(; A, B, C, K) : ComponentArray(; A, B, C, D, K)
+    pred = focus === :prediction
     pd = ControlSystemIdentification.predictiondata(d)
-    function loss(p)
+    if pred
+        p0 = zeroD ? ComponentArray(; A, B, C, K) : ComponentArray(; A, B, C, D, K)
+    else
+        p0 = zeroD ? ComponentArray(; A, B, C) : ComponentArray(; A, B, C, D)
+    end
+    function predloss(p)
         # p0 .= p # write into already existing initial guess
         syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), p.K, 0, 0)
         Pe = ControlSystemIdentification.prediction_error(syso)
-        e = lsim(Pe, pd)[1]
+        x0 = estimate_x0(Pe, pd, min(length(pd), 10nx))
+        e,_ = lsim(Pe, pd; x0)
+        mean(abs2, e)
+    end
+    function simloss(p)
+        # p0 .= p # write into already existing initial guess
+        syso = ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol)
+        x0 = estimate_x0(syso, d, min(length(d), 10nx))
+        e,_ = lsim(syso, d; x0)
         mean(abs2, e)
     end
     res = Optim.optimize(
-        loss,
+        pred ? predloss : simloss,
         p0,
-        BFGS(alphaguess = LineSearches.InitialStatic(alpha=1), linesearch = LineSearches.HagerZhang()),
+        optimizer,
         Optim.Options(
             store_trace       = true,
             show_trace        = true,
-            show_every        = 5,
-            iterations        = 100,
+            show_every        = 50,
+            iterations        = 10000,
             allow_f_increases = false,
             time_limit        = 100,
             x_tol             = 0,
             f_abstol          = 0,
-            g_tol             = 1e-8,
+            g_tol             = 1e-12,
             f_calls_limit     = 0,
             g_calls_limit     = 0,
         ),
         autodiff = :forward,
     )
     p = res.minimizer
-    syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), p.K, zeros(nx,nx), zeros(ny,ny))
+    syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), pred ? p.K : zeros(nx, d.ny), zeros(nx,nx), zeros(ny,ny))
     all(e->abs(e) < 1, eigvals(syso.A-syso.K*syso.C)) || @warn("Predictor A-KC unstable")
     Pe = ControlSystemIdentification.prediction_error(syso)
     e = lsim(Pe, pd)[1]
     R = cov(e, dims=2)
+    @warn "K not updated after opt"
     Q = Hermitian(K*R*K' + eps()*I)
     # K = ((R+CXC')^(-1)(CXA'+S'))'
     # solve for X
