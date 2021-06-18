@@ -3,9 +3,9 @@ function mats(p)
 end
 function model_from_params(p, h, ny)
     A, B, K = mats(p)
-    x0      = copy(p.x0)
-    sys     = StateSpaceNoise(A, B, K, h)
-    sysf    = SysFilter(sys, x0, similar(x0, ny))
+    x0 = copy(p.x0)
+    sys = StateSpaceNoise(A, B, K, h)
+    sysf = SysFilter(sys, x0, similar(x0, ny))
 end
 
 function pem_costfun(p, y, u, h, metric::F) where {F} # To ensure specialization on metric
@@ -56,25 +56,25 @@ p = [A[:]; B[:]; K[:]; x0]
 function pem(
     d;
     nx,
-    solver              = BFGS(),
-    focus               = :prediction,
-    metric              = sse,
-    regularizer         = p -> 0,
-    iterations          = 1000,
+    solver = BFGS(),
+    focus = :prediction,
+    metric = sse,
+    regularizer = p -> 0,
+    iterations = 1000,
     stabilize_predictor = true,
-    difficult           = false,
-    A                   = 0.0001randn(nx, nx),
-    B                   = 0.001randn(nx, obslength(input(d))),
+    difficult = false,
+    A = 0.0001randn(nx, nx),
+    B = 0.001randn(nx, obslength(input(d))),
     # C                   = 0.001randn(obslength(output(d)), nx),
-    K                   = 0.001randn(nx, obslength(output(d))),
-    x0                  = 0.001randn(nx),
+    K = 0.001randn(nx, obslength(output(d))),
+    x0 = 0.001randn(nx),
     kwargs...,
 )
 
     y, u = output(d), input(d)
     nu, ny = obslength(u), obslength(y)
-    if size(A,1) != size(A,2) # Old API
-        A = [A zeros(nx, nx-ny)] 
+    if size(A, 1) != size(A, 2) # Old API
+        A = [A zeros(nx, nx - ny)]
     end
     p = ComponentVector((; A, B, K, x0))
     options = Options(; iterations = iterations, kwargs...)
@@ -120,16 +120,16 @@ function pem(
 end
 
 function stabilize(model)
-    s            = model.sys
+    s = model.sys
     @unpack A, K = s
-    C            = s.C
-    poles        = eigvals(A - K * C)
-    newpoles     = map(poles) do p
+    C = s.C
+    poles = eigvals(A - K * C)
+    newpoles = map(poles) do p
         ap = abs(p)
         ap <= 1 && (return p)
         p / (ap + sqrt(eps()))
     end
-    K2           = ControlSystems.acker(A', C', newpoles)' .|> real
+    K2 = ControlSystems.acker(A', C', newpoles)' .|> real
     all(abs(p) <= 1 for p in eigvals(A - K * C)) || @warn("Failed to stabilize predictor")
     s.K .= K2
     model
@@ -153,13 +153,21 @@ function stabfun(h, ny)
 end
 
 
-using JuliaFormatter; JuliaFormatter.format_file(@__FILE__)
-
 using Optim, Optim.LineSearches
-function newpem(d, nx; zeroD = true, sys0 = subspaceid(d, nx; zeroD), focus = :prediction, optimizer = BFGS(alphaguess = LineSearches.InitialStatic(alpha=1), linesearch = LineSearches.HagerZhang()))
+function newpem(
+    d,
+    nx;
+    zeroD = true,
+    sys0 = subspaceid(d, nx; zeroD),
+    focus = :prediction,
+    optimizer = BFGS(
+        alphaguess = LineSearches.InitialStatic(alpha = 1),
+        linesearch = LineSearches.HagerZhang(),
+    ),
+)
     nu = d.nu
     ny = d.ny
-    A,B,C,D = ssdata(sys0)
+    A, B, C, D = ssdata(sys0)
     K = sys0.K
     pred = focus === :prediction
     pd = ControlSystemIdentification.predictiondata(d)
@@ -170,17 +178,22 @@ function newpem(d, nx; zeroD = true, sys0 = subspaceid(d, nx; zeroD), focus = :p
     end
     function predloss(p)
         # p0 .= p # write into already existing initial guess
-        syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), p.K, 0, 0)
+        syso = ControlSystemIdentification.PredictionStateSpace(
+            ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol),
+            p.K,
+            0,
+            0,
+        )
         Pe = ControlSystemIdentification.prediction_error(syso)
         x0 = estimate_x0(Pe, pd, min(length(pd), 10nx))
-        e,_ = lsim(Pe, pd; x0)
+        e, _ = lsim(Pe, pd; x0)
         mean(abs2, e)
     end
     function simloss(p)
         # p0 .= p # write into already existing initial guess
         syso = ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol)
         x0 = estimate_x0(syso, d, min(length(d), 10nx))
-        e,_ = lsim(syso, d; x0)
+        e, _ = lsim(syso, d; x0)
         mean(abs2, e)
     end
     res = Optim.optimize(
@@ -188,28 +201,34 @@ function newpem(d, nx; zeroD = true, sys0 = subspaceid(d, nx; zeroD), focus = :p
         p0,
         optimizer,
         Optim.Options(
-            store_trace       = true,
-            show_trace        = true,
-            show_every        = 50,
-            iterations        = 10000,
+            store_trace = true,
+            show_trace = true,
+            show_every = 50,
+            iterations = 10000,
             allow_f_increases = false,
-            time_limit        = 100,
-            x_tol             = 0,
-            f_abstol          = 0,
-            g_tol             = 1e-12,
-            f_calls_limit     = 0,
-            g_calls_limit     = 0,
+            time_limit = 100,
+            x_tol = 0,
+            f_abstol = 0,
+            g_tol = 1e-12,
+            f_calls_limit = 0,
+            g_calls_limit = 0,
         ),
         autodiff = :forward,
     )
     p = res.minimizer
-    syso = ControlSystemIdentification.PredictionStateSpace(ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol), pred ? p.K : zeros(nx, d.ny), zeros(nx,nx), zeros(ny,ny))
-    all(e->abs(e) < 1, eigvals(syso.A-syso.K*syso.C)) || @warn("Predictor A-KC unstable")
+    syso = ControlSystemIdentification.PredictionStateSpace(
+        ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol),
+        pred ? p.K : zeros(nx, d.ny),
+        zeros(nx, nx),
+        zeros(ny, ny),
+    )
+    all(e -> abs(e) < 1, eigvals(syso.A - syso.K * syso.C)) ||
+        @warn("Predictor A-KC unstable")
     Pe = ControlSystemIdentification.prediction_error(syso)
     e = lsim(Pe, pd)[1]
-    R = cov(e, dims=2)
+    R = cov(e, dims = 2)
     @warn "K not updated after opt"
-    Q = Hermitian(K*R*K' + eps()*I)
+    Q = Hermitian(K * R * K' + eps() * I)
     # K = ((R+CXC')^(-1)(CXA'+S'))'
     # solve for X
     # solve for Q from  A'XA - X - (A'XB+S)(R+B'XB)^(-1)(B'XA+S') + Q = 0
