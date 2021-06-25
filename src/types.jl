@@ -285,7 +285,7 @@ function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
         error("Must specify 2 indices to index statespace model")
     end
     rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
-    return ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol)
+    return PredictionStateSpace(ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol), sys.K[:, rows], sys.Q, sys.R[rows, rows])
 end
 
 ControlSystems.numeric_type(s::AbstractPredictionStateSpace) = ControlSystems.numeric_type(s.sys) 
