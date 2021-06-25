@@ -292,6 +292,19 @@ function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, 
     end
 end
 
+function ControlSystems.d2c(sys::AbstractPredictionStateSpace{<:ControlSystems.Discrete})
+    nx, nu, ny = sys.nx, sys.nu, sys.ny
+    Qc = d2c(sys, sys.Q)
+    M = log([sys.A  sys.K;
+            zeros(ny, nx) I])./sys.Ts
+    # Ac = M[1:nx, 1:nx]
+    Kc = M[1:nx, nx+1:nx+ny]
+    if eltype(sys.A) <: Real
+        Kc = real.(Kc)
+    end
+    PredictionStateSpace(d2c(sys.sys), Kc, Qc, sys.R*sys.Ts) # modifying R is required to get kalman(sys,Q,R) ≈ K
+end
+
 """
     d2c(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qd::AbstractMatrix)
 
