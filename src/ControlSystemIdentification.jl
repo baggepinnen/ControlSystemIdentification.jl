@@ -35,9 +35,9 @@ export iddata,
     hasinput,
     apply_fun,
     resample,
-    timevec,
-    kalman_decomp
-export StateSpaceNoise,
+    ramp_in,
+    timevec
+export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace, StateSpaceNoise,
     pem, simulation_errors, prediction_errors, predict, simulate, noise_model, estimate_x0
 export n4sid, subspaceid, era, okid
 export getARXregressor,
