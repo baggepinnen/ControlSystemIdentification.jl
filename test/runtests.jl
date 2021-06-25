@@ -156,31 +156,29 @@ end
         ##
 
         res = [
-            pem(dnv, nx = nx, iterations = 1000, difficult = true, focus = :prediction)
+            ControlSystemIdentification.newpem(dnv, nx)
             for nx in [1, 3, 4]
         ]
 
         ω = exp10.(range(-2, stop = log10(pi), length = 150))
         fig = plot(layout = 4, size = (1000, 600))
         for i in eachindex(res)
-            (sysh, x0h, opt) = res[i]
+            (sysh, opt) = res[i]
             ControlSystemIdentification.simplot!(
                 sysh,
-                dnv,
-                x0h;
+                dnv;
                 subplot = 1,
                 ploty = i == 1,
             )
             ControlSystemIdentification.predplot!(
                 sysh,
-                dnv,
-                x0h;
+                dnv;
                 subplot = 2,
                 ploty = i == 1,
             )
         end
         bodeplot!(
-            ss.(getindex.(res, 1)),
+            getindex.(res, 1),
             ω,
             plotphase = false,
             subplot = 3,
