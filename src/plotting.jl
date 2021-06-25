@@ -81,7 +81,7 @@ simplot
 @recipe function simplot(p::Simplot; ploty = true, plote = false)
     sys, d = p.args[1:2]
     y = oftype(randn(2, 2), output(d))
-    x0 = length(p.args) > 3 ? p.args[4] : nothing
+    x0 = length(p.args) > 2 ? p.args[3] : nothing
     x0 = get_x0(x0, sys, d)
     yh = simulate(sys, d, x0)
     xguide --> "Time [s]"
@@ -117,7 +117,7 @@ predplot
     sys, d = p.args[1:2]
     y = oftype(randn(2, 2), output(d))
     u = oftype(randn(2, 2), input(d))
-    x0 = length(p.args) > 3 ? p.args[4] : :estimate
+    x0 = length(p.args) > 2 ? p.args[3] : :estimate
     x0 = get_x0(x0, sys, d)
     yh = predict(sys, y, u, x0)
     xguide --> "Time [s]"
