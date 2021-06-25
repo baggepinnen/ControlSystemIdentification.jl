@@ -858,15 +858,36 @@ end
 function parameter_covariance(y_train, A, w, λ = 0)
     σ² = var(y_train .- A * w)
     iATA = if λ == 0
-        inv(A'A)
+        R = UpperTriangular(qr(A).R)
+        R\(R'\I)
     else
-        ATA = A'A
-        ATAλ = ATA + λ * I
-        ATAλ \ ATA / ATAλ
+        Al = [A; sqrt(λ)*I]
+        R = UpperTriangular(qr(Al).R)
+        (R \ (R' \ (A'A)) / R) / R' # The parenthesis are important 
     end
     iATA = (iATA + iATA') / 2
-    Σ = σ² * iATA + sqrt(eps()) * Matrix(LinearAlgebra.I, size(iATA))
+    Σ = Hermitian(σ² * iATA + sqrt(eps()) * I)
 end
+#=
+The above formulas using qr factorization can be verified with
+A = randn(10,3)
+iA = inv(A'A)
+
+QR = qr(A)
+iA2 = QR.R\(QR.R'\I)
+@test norm(iA2 - iA) / norm(iA) < 1e-13
+
+λ = 0.4
+Al = [A; sqrt(λ)*I]
+QR = qr(Al)
+ATA = A'A
+ATAλ = ATA + λ * I
+@assert Al'Al ≈ ATAλ
+iA = ATAλ \ ATA / ATAλ
+iA2 = (QR.R\(QR.R'\(A'A)) / QR.R) / QR.R'
+
+@test norm(iA2 - iA) / norm(iA) < 1e-13
+=#
 
 """
 TransferFunction(T::Type{<:AbstractParticles}, G::TransferFunction, Σ, N=500)
