@@ -106,7 +106,7 @@ function subspaceid(
     s = s1*p + s2*m
     N = t - r + 1 - t0
 
-    function hankel(u::AbstractArray, t0, r)
+    @views @inbounds function hankel(u::AbstractArray, t0, r)
         d = size(u, 2)
         H = zeros(eltype(u), r * d, N)
         for ri = 1:r, Ni = 1:N
@@ -119,8 +119,8 @@ function subspaceid(
 
     Y = hankel(y, t0, r) # these go forward in time
     U = hankel(u, t0, r) # these go forward in time
-    @assert all(!iszero, Y) # to be turned off later
-    @assert all(!iszero, U) # to be turned off later
+    # @assert all(!iszero, Y) # to be turned off later
+    # @assert all(!iszero, U) # to be turned off later
     @assert size(Y) == (r*p, N)
     @assert size(U) == (r*m, N)
     φs(t) = [ # 10.114
