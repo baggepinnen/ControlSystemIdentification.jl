@@ -105,8 +105,15 @@ function get_x0(s::Symbol, sys, d::AbstractIdData)
     end
 end
 
+function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
+    Wn, zeta, ps = damp(sys)
+    t_const = maximum(1 ./ (Wn.*zeta))
+    round(Int, t_const / sys.Ts)
+end
 
-function estimate_x0(sys, d, n = min(length(d), 10*sys.nx))
+function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
+    d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
+    d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     T = ControlSystems.numeric_type(sys)
     y = output(d)
     u = input(d)
