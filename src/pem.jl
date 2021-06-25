@@ -164,6 +164,19 @@ function newpem(
         alphaguess = LineSearches.InitialStatic(alpha = 1),
         linesearch = LineSearches.HagerZhang(),
     ),
+    zerox0 = false,
+    initx0 = false,
+    store_trace = true,
+    show_trace = true,
+    show_every = 50,
+    iterations = 10000,
+    allow_f_increases = false,
+    time_limit = 100,
+    x_tol = 0,
+    f_abstol = 0,
+    g_tol = 1e-12,
+    f_calls_limit = 0,
+    g_calls_limit = 0,
 )
     nu = d.nu
     ny = d.ny
@@ -176,6 +189,9 @@ function newpem(
     else
         p0 = zeroD ? ComponentArray(; A, B, C) : ComponentArray(; A, B, C, D)
     end
+    if initx0
+        x0i = estimate_x0(sys0, d, min(length(pd), 10nx))
+    end
     function predloss(p)
         # p0 .= p # write into already existing initial guess
         syso = ControlSystemIdentification.PredictionStateSpace(
@@ -185,34 +201,25 @@ function newpem(
             0,
         )
         Pe = ControlSystemIdentification.prediction_error(syso)
-        x0 = estimate_x0(Pe, pd, min(length(pd), 10nx))
+        x0 = initx0 ? x0i : zerox0 ? zeros(eltype(d.y), Pe.nx) : estimate_x0(Pe, pd, min(length(pd), 10nx))
         e, _ = lsim(Pe, pd; x0)
         mean(abs2, e)
     end
     function simloss(p)
         # p0 .= p # write into already existing initial guess
         syso = ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol)
-        x0 = estimate_x0(syso, d, min(length(d), 10nx))
-        e, _ = lsim(syso, d; x0)
-        mean(abs2, e)
+        x0 = initx0 ? x0i : zerox0 ? zeros(eltype(d.y), syso.nx) : estimate_x0(syso, d, min(length(d), 10nx))
+        y, _ = lsim(syso, d; x0)
+        y .= abs2.(y .- d.y)
+        mean(abs2, y)
     end
     res = Optim.optimize(
         pred ? predloss : simloss,
         p0,
         optimizer,
-        Optim.Options(
-            store_trace = true,
-            show_trace = true,
-            show_every = 50,
-            iterations = 10000,
-            allow_f_increases = false,
-            time_limit = 100,
-            x_tol = 0,
-            f_abstol = 0,
-            g_tol = 1e-12,
-            f_calls_limit = 0,
-            g_calls_limit = 0,
-        ),
+        Optim.Options(;
+            store_trace, show_trace, show_every, iterations, allow_f_increases,
+            time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
         autodiff = :forward,
     )
     p = res.minimizer
