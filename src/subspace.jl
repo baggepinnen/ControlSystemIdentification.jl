@@ -247,7 +247,12 @@ end
 
 function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace, x0 = zeros(res.nx))
     sys = res.sys
-    @unpack A, B, C, D, ny, K, Q, R, P = res
+    @unpack A, B, C, D, ny, K, Q, R = res
+    if hasproperty(res, :P)
+        P = res.P
+    else
+        P = Matrix(Q)
+    end
     kf = KalmanFilter(A, B, C, D, Matrix(Q), Matrix(R), MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 
