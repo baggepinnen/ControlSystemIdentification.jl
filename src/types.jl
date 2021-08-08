@@ -246,6 +246,13 @@ Base.@kwdef struct PredictionStateSpace{T} <: AbstractPredictionStateSpace{T}
     R = nothing
 end
 
+Base.promote_rule(::Type{AbstractStateSpace{T}}, ::Type{<:AbstractPredictionStateSpace{T}}) where T<:ControlSystems.TimeEvolution  = StateSpace{T<:ControlSystems.TimeEvolution}
+
+Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{<:AbstractPredictionStateSpace{T}}) where {T<:ControlSystems.TimeEvolution, F} = StateSpace{T, F}
+
+Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{PredictionStateSpace{T}}) where {T<:ControlSystems.TimeEvolution, F} = StateSpace{T, F}
+
+Base.convert(::Type{<:StateSpace{T}}, s::AbstractPredictionStateSpace{T}) where T<:ControlSystems.TimeEvolution = deepcopy(s.sys)
 
 """
     N4SIDStateSpace <: AbstractPredictionStateSpace is the result of statespace model estimation using the `n4sid` method.
