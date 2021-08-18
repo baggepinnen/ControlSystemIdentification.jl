@@ -486,7 +486,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         ## Test na > nb
         na, nb = 2, 1
-        G1  = tf([0.8, 0], [1,0,0.25], 1)
+        G1  = tf([0.8, 0], [1,0.5,0.25], 1)
         u = randn(N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
@@ -495,6 +495,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         # MISO nb1 != nb2
         na, nb = 1, [2, 3]
+        G1 =  tf([1, -2], [1, -0.5, 0], 1)
         G2 =  tf([1, -2, 3], [1, -0.5, 0, 0], 1)
         G = [G1 G2]
         u1 = randn(N)
@@ -537,7 +538,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         ## Test na > nb
         na, nb, inputdelay = 2, 1, 2
-        G1   = tf(0.8, [1,0,0.25], 1)
+        G1   = tf(0.8, [1,0.5,0.25], 1)
         u = randn(N)
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
