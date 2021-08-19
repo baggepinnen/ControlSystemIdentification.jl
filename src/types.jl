@@ -107,6 +107,8 @@ function Base.getproperty(d::AbstractIdData, s::Symbol)
         return 1 / d.Ts
     elseif s === :timeevol
         return Discrete(d.Ts)
+    elseif s === :t
+        return timevec(d)
     elseif s === :ny
         return noutputs(d)
     elseif s === :nu
