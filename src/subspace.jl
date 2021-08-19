@@ -257,12 +257,20 @@ function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace,
 end
 
 
-function LowLevelParticleFilters.forward_trajectory(kf::KalmanFilter, d::AbstractIdData)
+function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.AbstractKalmanFilter, d::AbstractIdData)
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
     Y = m2vv(y)
     forward_trajectory(kf, U, Y)
+end
+
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractKalmanFilter, d::AbstractIdData)
+    y = time2(output(d))
+    u = input(d)
+    U = m2vv(u)
+    Y = m2vv(y)
+    LowLevelParticleFilters.smooth(kf, U, Y)
 end
 
 function ControlSystems.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
