@@ -491,7 +491,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb)
-        @test G1 ≈ minreal(Gest)
+        @test G1 ≈ Gest
 
         # MISO nb1 != nb2
         na, nb = 1, [2, 3]
@@ -543,7 +543,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         y = lsim(G1, u, t)[1][:]
         d = iddata(y, u, 1)
         Gest = arx(d, na, nb, inputdelay = inputdelay)
-        @test G1 ≈ minreal(Gest)
+        @test G1 ≈ Gest
 
 
         ## MISO
