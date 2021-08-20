@@ -416,6 +416,19 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
     end
 
     @testset "arx" begin
+        @info "Testing arx"
+
+        # Test params2poly2
+        y = randn(10)
+        u = randn(10)
+        for na in 1:3, nb in 1:3, inputdelay in 0:2 
+            Y, A = getARXregressor(y, u, na, nb, inputdelay = inputdelay)
+            w = \(A, Y)
+            a, b = ControlSystemIdentification.params2poly2(w, na, nb)
+            @test length(a) == length(b[1])
+            @test length(w) == na + nb
+        end
+        
         unsafe_comparisons(true)
 
         N = 20
@@ -457,8 +470,9 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test Gh2 ≈ G2
         Gh2s = arx(d, na, nb, stochastic = true)
         @test compareTFs(G2, Gh2s)
-        # Test na < nb
-        ## SISO
+        
+        # SISO
+        ## Test na < nb
         na, nb = 1, 2
         G1 =  tf([1, -2], [1, -0.5, 0], 1)
         u = randn(N)
@@ -470,8 +484,18 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         Gests = arx(d, na, nb, stochastic = true)
         @test compareTFs(G1, Gests)
 
-        ## MISO nb1 != nb2
+        ## Test na > nb
+        na, nb = 2, 1
+        G1  = tf([0.8, 0], [1,0.5,0.25], 1)
+        u = randn(N)
+        y = lsim(G1, u, t)[1][:]
+        d = iddata(y, u, 1)
+        Gest = arx(d, na, nb)
+        @test G1 ≈ Gest
+
+        # MISO nb1 != nb2
         na, nb = 1, [2, 3]
+        G1 =  tf([1, -2], [1, -0.5, 0], 1)
         G2 =  tf([1, -2, 3], [1, -0.5, 0, 0], 1)
         G = [G1 G2]
         u1 = randn(N)
@@ -511,6 +535,16 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic = true)
         @test compareTFs(G1, Gests)
         
+
+        ## Test na > nb
+        na, nb, inputdelay = 2, 1, 2
+        G1   = tf(0.8, [1,0.5,0.25], 1)
+        u = randn(N)
+        y = lsim(G1, u, t)[1][:]
+        d = iddata(y, u, 1)
+        Gest = arx(d, na, nb, inputdelay = inputdelay)
+        @test G1 ≈ Gest
+
 
         ## MISO
         na, nb, inputdelay = 1, [1, 1], [2, 3]
