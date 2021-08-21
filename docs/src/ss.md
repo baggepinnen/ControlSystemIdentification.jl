@@ -26,12 +26,7 @@ The frequency weighting is borrowing ideas from
 *"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 
 ### ERA and OKID
-See
-```julia
-sys = era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r)
-H   = okid(d::AbstractIdData, r, l = 5r)
-```
-[`era`](@ref), [`okid`](@ref).
+See [`era`](@ref) and [`okid`](@ref).
 
 ### Filtering and simulation
 Models can be simulated using `lsim` from ControlSystems.jl and using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
@@ -49,7 +44,7 @@ y  = Cx + e
 ```
 is provided. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
-The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
+The result of the identification with [`pem`](@ref) is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
 
 ### Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences.
@@ -130,40 +125,13 @@ bodeplot(noise_model(sysh), exp10.(range(-3, stop=0, length=200)), title="Estima
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 
-### Call signature
-`sys, x0, opt = pem(d; nx, kwargs...)`
-#### Arguments:
-- `d`: Identification data object, created using `iddata(y, u sampletime)`
-    - `y`: Measurements, either a matrix with time along dim 2, or a vector of vectors
-    - `u`: Control signals, same structure as `y`
-- `nx`: Number of poles in the estimated system. This number should be chosen as number of system poles plus number of poles in noise models for measurement noise and load disturbances.
-- `focus`: Either `:prediction` or `:simulation`. If `:simulation` is chosen, a two stage problem is solved with prediction focus first, followed by a refinement for simulation focus.
-- `metric`: A Function determining how the size of the residuals is measured, default `sse` (e'e), but any Function such as `norm`, `e->sum(abs,e)` or `e -> e'Q*e` could be used.
-- `regularizer(p) = 0`: function for regularization of the parameter vector `p`. The structure of `p` is detailed below. L₂ regularization, for instance, can be achieved by `regularizer = p->sum(abs2, p)`
-- `solver` Defaults to `Optim.BFGS()`
-- `kwargs`: additional keyword arguments are sent to [`Optim.Options`](http://julianlsolvers.github.io/Optim.jl/stable/#user/config/).
 
-#### Structure of parameter vector `p`
-The parameter vector is of type [`ComponentVector`](https://github.com/jonniedie/ComponentArrays.jl) and the fields `A,B,K,x0` can be accessed as `p.A` etc. The internal storage is according to
-```julia
-A  = size(nx,nx)
-B  = size(nx,nu)
-K  = size(nx,ny)
-x0 = size(nx)
-p  = [A[:];B[:];K[:];x0]
-```
-
-### Return values
-- `sys::StateSpaceNoise`: identified system. Can be converted to `StateSpace` by `convert(StateSpace, sys)` or `ss(sys)`, but this will discard the Kalman gain matrix, see `innovation_form` to obtain a predictor system.
-- `x0`: Estimated initial state
-- `opt`: Optimization problem structure. Contains info of the result of the optimization problem
 
 ### Functions
-- `pem`: Main estimation function, see above.
-- `predict(sys, d, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
-- `simulate(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
-- `innovation_form`: Extract the predictor model from the estimated system (`ss(A-KC,[B K],C,D)`).
-- `noise_model`: Extract the noise model from the estimated system (`I - innovation_form(sys)`).
+- [`pem`](@ref): Main estimation function, see above.
+- [`predict`](@ref)`(sys, d, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
+- [`simulate`](@ref)`(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
+- [`observer_predictor`](@ref): Extract the predictor model from the estimated system (`ss(A-KC,[B K],C,D)`).
 
 
 ### Internals
