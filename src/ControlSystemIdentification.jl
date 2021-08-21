@@ -228,11 +228,12 @@ end
 
 """
     prediction_error(sys::AbstractPredictionStateSpace)
+    prediction_error(sys::AbstractStateSpace, R1, R2)
 
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
 """
-function prediction_error(sys::AbstractPredictionStateSpace)
-    G = observer_predictor(sys)
+function prediction_error(sys::AbstractStateSpace, args...)
+    G = observer_predictor(sys, args...)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
 
