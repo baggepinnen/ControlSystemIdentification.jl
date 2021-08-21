@@ -1,8 +1,8 @@
 # LTI state-space models
 
-There exist two methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`pem`](@ref). `n4sid` uses subspace-based identification whereas `pem` solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
+There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`pem`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas `n4sid` is an older implementation. [`pem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
 
-## Subspace based identification using n4sid
+## Subspace-based identification using n4sid
 ```julia
 d = iddata(y,u,sampletime)
 sys = n4sid(d, :auto; verbose=false)
@@ -10,28 +10,11 @@ sys = n4sid(d, :auto; verbose=false)
 using TotalLeastSquares
 sys = n4sid(d, :auto; verbose=false, svd=x->rpca(x)[3])
 ```
-Estimate a statespace model using the n4sid method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `sys.sys`.
-
-#### Arguments:
-- `d`: Identification data object, created using `iddata(y,u,sampletime)`.
-- `y`: Measurements N×ny
-- `u`: Control signal N×nu
-- `r`: Rank of the model (model order)
-- `verbose`: Print stuff?
-- `Wf`: A frequency-domain model of measurement disturbances. To focus the attention of the model on a narrow frequency band, try something like `Wf = Bandstop(lower, upper, fs=1/Ts)` to indicate that there are disturbances *outside* this band.
-- `i`: Algorithm parameter, generally no need to tune this
-- `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
-
-The frequency weighting is borrowing ideas from
+Estimate a statespace model using the [`n4sid`](@ref) method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `sys.sys`. The frequency-weighting functionality is borrowing ideas from
 *"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 
-### ERA and OKID
+## ERA and OKID
 See [`era`](@ref) and [`okid`](@ref).
-
-### Filtering and simulation
-Models can be simulated using `lsim` from ControlSystems.jl and using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
-
-
 
 
 ## PEM
@@ -126,15 +109,20 @@ See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for these plots.
 
 
+### Internals
+Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to `pem`, and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
 
-### Functions
-- [`pem`](@ref): Main estimation function, see above.
+
+
+## Filtering and simulation
+Models can be simulated using `lsim` from ControlSystems.jl and using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
+
+Furthermore, we have the utility functions below
 - [`predict`](@ref)`(sys, d, x0=zeros)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter.
 - [`simulate`](@ref)`(sys, u, x0=zeros)`: Simulate the system using input `u`. The noise model and Kalman gain does not have any influence on the simulated output.
 - [`observer_predictor`](@ref): Extract the predictor model from the estimated system (`ss(A-KC,[B K],C,D)`).
-
-
-### Internals
-Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to `pem`, and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
+- [`observer_controller`](@ref)
+- [`prediction_error`](@ref)
+- [`predictiondata`](@ref)
 
 

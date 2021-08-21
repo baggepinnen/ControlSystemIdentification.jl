@@ -4,6 +4,7 @@ All estimation methods in this package expects an object of type [`AbstractIdDat
 
 ```@docs
 ControlSystemIdentification.iddata
+ControlSystemIdentification.predictiondata
 ```
 
 

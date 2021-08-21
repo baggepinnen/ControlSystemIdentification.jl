@@ -800,7 +800,8 @@ function ControlSystems.tf(
 end
 
 """
-wtls_estimator(y,na,nb, σu=0)
+    wtls_estimator(y,na,nb, σu=0)
+
 Create an estimator function for estimation of arx models in the presence of measurement noise. If the noise variance on the input `σu` (model errors) is known, this can be specified for increased accuracy.
 """
 function wtls_estimator(y, na, nb, σu = 0)
@@ -812,6 +813,7 @@ end
 
 """
     a,b = params2poly(params,na,nb; inputdelay = zeros(Int, size(nb)))
+    
 Used to get numerator and denominator polynomials after arx fitting
 """
 function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))
