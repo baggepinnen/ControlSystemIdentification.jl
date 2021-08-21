@@ -2,6 +2,9 @@ abstract type AbstractIdData end
 
 const AnyInput = Union{AbstractArray,AbstractIdData}
 
+"""
+See [`iddata`](@ref)
+"""
 struct InputOutputData{Y,U,T} <: AbstractIdData
     y::Y
     u::U
@@ -67,6 +70,18 @@ Output data of length 10 with 1 outputs
 julia> iddata(randn(10), randn(10), 1)
 InputOutput data of length 10 with 1 outputs and 1 inputs
 ```
+
+# Operations on iddata
+- [`prefilter`](@ref)
+- [`resample`](@ref)
+- append two along the time dimension `[d1 d2]`
+- index `d[output_index, input_index]`
+- access number of inputs, outputs and sample time: `d.nu, d.ny, d.Ts`
+- access the time time vector `d.t`
+- premultiply to scale outputs `C * d`
+- postmultiply to scale inputs `d * B`
+- [`writedlm`](@ref)
+- `[`ramp_in`](@ref), [`ramp_out`](@ref)`
 """
 iddata(
     y::AbstractArray,
