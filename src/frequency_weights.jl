@@ -35,12 +35,12 @@ end
 weighted_estimator(H::FilterType) = (A, y) -> wls(A, y, frequency_weight(H, size(y, 1)))
 
 """
-    frequency_focus(d::AbstractIdData, responsetype::FilterType)
+    prefilter(d::AbstractIdData, responsetype::FilterType)
 
 Filter both input and output of the identification data using zero-phase filtering (`filtfilt`).
 Since both input and output is filtered, linear identification will not be affected in any other way than to focus the fit on the selected frequency range, i.e. the range that has high gain in the provided filter. Note, if the system that generated `d` is nonlinear, identification might be severely impacted by this transformation. Verify linearity with, e.g., `coherenceplot`.
 """
-function frequency_focus(d::AbstractIdData, responsetype::FilterType)
+function prefilter(d::AbstractIdData, responsetype::FilterType)
     H = get_frequencyweight_tf(responsetype)
     y = time1(output(d))
     u = time1(input(d))
@@ -50,11 +50,11 @@ function frequency_focus(d::AbstractIdData, responsetype::FilterType)
 end
 
 """
-    frequency_focus(d::AbstractIdData, l::Number, u::Number)
+    prefilter(d::AbstractIdData, l::Number, u::Number)
 
 Filter input and output with a bandpass filter between `l` and `u` Hz. If `l = 0` a lowpass filter will be used, and if `u = Inf` a highpass filter will be used.
 """
-function frequency_focus(d::AbstractIdData, l::Number, u::Number)
+function prefilter(d::AbstractIdData, l::Number, u::Number)
     responsetype = if u == Inf
         Highpass(l, fs = d.fs)
     elseif l <= 0
@@ -62,5 +62,16 @@ function frequency_focus(d::AbstractIdData, l::Number, u::Number)
     else
         Bandpass(l, u, fs = d.fs)
     end
-    frequency_focus(d, responsetype)
+    prefilter(d, responsetype)
+end
+
+"""
+    prefilter(f, d::InputOutputData)
+
+Apply filter coefficients to identification data
+"""
+function prefilter(f, d::InputOutputData)
+    u = filt(f, d.u')'
+    y = filt(f, d.y')'
+    iddata(y, u, d.Ts)
 end
