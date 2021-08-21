@@ -487,7 +487,7 @@ function ls(A, y, λ = 0, estimator = \)
 end
 
 """
-G, Gn = plr(d::AbstractIdData,na,nb,nc; initial_order = 20)
+    G, Gn = plr(d::AbstractIdData,na,nb,nc; initial_order = 20)
 
 Perform pseudo-linear regression to estimate a model on the form
 `Ay = Bu + Cw`

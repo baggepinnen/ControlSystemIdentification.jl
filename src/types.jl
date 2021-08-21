@@ -81,7 +81,7 @@ InputOutput data of length 10 with 1 outputs and 1 inputs
 - premultiply to scale outputs `C * d`
 - postmultiply to scale inputs `d * B`
 - [`writedlm`](@ref)
-- `[`ramp_in`](@ref), [`ramp_out`](@ref)`
+- [`ramp_in`](@ref), [`ramp_out`](@ref)
 """
 iddata(
     y::AbstractArray,
@@ -272,7 +272,9 @@ Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{PredictionStateSpace{T}}) wher
 Base.convert(::Type{<:StateSpace{T}}, s::AbstractPredictionStateSpace{T}) where T<:ControlSystems.TimeEvolution = deepcopy(s.sys)
 
 """
-    N4SIDStateSpace <: AbstractPredictionStateSpace is the result of statespace model estimation using the `n4sid` method.
+    N4SIDStateSpace <: AbstractPredictionStateSpace
+    
+The result of statespace model estimation using the `n4sid` method.
 
 # Fields:
 - `sys`: estimated model in the form of a [`StateSpace`](@ref) object
