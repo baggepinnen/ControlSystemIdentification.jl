@@ -1,6 +1,6 @@
 # LTI state-space models
 
-There exist two methods for identification of statespace models, [`n4sid`](@ref) and [`pem`](@ref). `n4sid` uses subspace-based identification whereas `pem` solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try `n4sid` first.
+There exist two methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`pem`](@ref). `n4sid` uses subspace-based identification whereas `pem` solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
 
 ## Subspace based identification using n4sid
 ```julia
@@ -43,28 +43,13 @@ Models can be simulated using `lsim` from ControlSystems.jl and using [`simulate
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
 x' = Ax + Bu + Ke
+```
+```math
 y  = Cx + e
 ```
 is provided. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
 The result of the identification is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
-
-This package also supports estimating models on the form
-```math
-Ay = Bu + Cw
-```
-through pseudo-linear regression or
-```math
-Ay = Bu + 1/D w
-```
-through the generalized least squares method ([`arxar`](@ref)).
-Estimation of the more general model form
-```math
-Ay = B/F u + C/D w
-```
-or any of its other special cases is not supported. Since those models are also LTI systems, estimating a state-space model is in some sense equivalent.
-
-Transfer-function estimation through spectral methods is supported through the functions [`tfest`](@ref) and [`coherence`](@ref).
 
 ### Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences.
