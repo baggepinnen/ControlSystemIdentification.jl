@@ -1,3 +1,6 @@
+"""
+See [`iddata`](@ref)
+"""
 abstract type AbstractIdData end
 
 const AnyInput = Union{AbstractArray,AbstractIdData}
@@ -11,11 +14,17 @@ struct InputOutputData{Y,U,T} <: AbstractIdData
     Ts::T
 end
 
+"""
+See [`iddata`](@ref)
+"""
 struct OutputData{Y,T} <: AbstractIdData
     y::Y
     Ts::T
 end
 
+"""
+See [`iddata`](@ref)
+"""
 struct InputOutputStateData{Y,U,X,T} <: AbstractIdData
     y::Y
     u::U
@@ -218,10 +227,20 @@ function Base.hcat(d1::InputOutputData, d2::InputOutputData)
     iddata([d1.y d2.y], [d1.u d2.u], d1.Ts)
 end
 
+"""
+    DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
+
+Write identification data to disk.
+"""
 function DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
     writedlm(io, [d.y' d.u'], args...; kwargs...)
 end
 
+"""
+    ramp_in(d::InputOutputData, h::Int; rev = false)
+
+Multiply the initial `h` samples of input and output signals with a linearly increasing ramp.
+"""
 function ramp_in(d::InputOutputData, h::Int; rev=false)
     if h <= 1
         return d
@@ -243,6 +262,11 @@ function ramp_in(d::InputOutputData, h::Int; rev=false)
     iddata(y,u,d.Ts)
 end
 
+"""
+    ramp_out(d::InputOutputData, h::Int)
+
+Multiply the final `h` samples of input and output signals with a linearly decreasing  ramp.
+"""
 ramp_out(d::InputOutputData, h::Int) = ramp_in(d,h; rev=true)
 
 

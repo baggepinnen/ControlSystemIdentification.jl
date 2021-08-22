@@ -62,7 +62,7 @@ export model_spectrum
 
 export KalmanFilter
 
-export weighted_estimator, Bandpass, Bandstop, Lowpass, Highpass
+export weighted_estimator, Bandpass, Bandstop, Lowpass, Highpass, prefilter
 
 export kautz, laguerre, laguerre_oo, adhocbasis, sum_basis, basis_responses, filter_bank, basislength, ωζ2complex, add_poles, minimum_phase
 
@@ -78,6 +78,12 @@ include("frequency_weights.jl")
 include("basis_functions.jl")
 include("plotting.jl")
 
+"""
+    predict(sys, d::AbstractIdData, args...)
+    predict(sys, y, u, x0 = nothing)
+
+See also [`predplot`](@ref)
+"""
 predict(sys, d::AbstractIdData, args...) =
     hasinput(sys) ? predict(sys, output(d), input(d), args...) :
     predict(sys, output(d), args...)
@@ -111,6 +117,15 @@ function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
     round(Int, t_const / sys.Ts)
 end
 
+"""
+    estimate_x0(sys, d, n = min(length(d), 3 * slowest_time_constant(sys)))
+
+Estimate the initial state of the system 
+
+# Arguments:
+- `d`: [`iddata`](@ref)
+- `n`: Number of samples to used.
+"""
 function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
@@ -152,6 +167,12 @@ function predict(G::ControlSystems.TransferFunction, y)
     oftype(output(y), yh)
 end
 
+"""
+    simulate(sys, u, x0 = nothing)
+    simulate(sys, d, x0 = nothing)
+
+See also [`simplot`](@ref)
+"""
 function simulate(sys, u, x0 = nothing)
     x0 = get_x0(x0, sys, u)
     u = input(u)
