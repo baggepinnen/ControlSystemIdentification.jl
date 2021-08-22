@@ -1,3 +1,4 @@
+ENV["GKSwstype"] = 100 # gr segfault workaround
 using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
 using Test, Random, LinearAlgebra, Statistics
 import ControlSystemIdentification as CSI
