@@ -46,6 +46,11 @@ function getARregressor(dy::AbstractIdData, na)
     getARregressor(vec(y), na)
 end
 
+"""
+    yt,A = getARregressor(y::AbstractVector, na)
+
+Returns values such that `x = A\\yt`. See [`getARXregressor`](@ref) for more details.
+"""
 function getARregressor(y::AbstractVector, na)
     m = na + 1 # Start of yr
     n = length(y) - m + 1 # Final length of yr
@@ -185,6 +190,8 @@ Estimate an AR transfer function `G = 1/A`, the AR process is defined as `A(z⁻
 - `estimator`: e.g. `\\,tls,irls,rtls`
 - `scaleB`: Whether or not to scale the numerator using the variance of the prediction error.
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
+
+Estimation of AR models using least-squares is known to struggle with heavy measurement noise, using `estimator = tls` can improve the result in this case.
 
 # Example
 ```jldoctest
@@ -813,7 +820,7 @@ end
 
 """
     a,b = params2poly(params,na,nb; inputdelay = zeros(Int, size(nb)))
-    
+
 Used to get numerator and denominator polynomials after arx fitting
 """
 function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))

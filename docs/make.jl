@@ -1,7 +1,7 @@
-using Documenter, ControlSystemIdentification
+using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles
 
 using Plots
-plotly()
+gr()
 
 
 makedocs(
@@ -16,6 +16,9 @@ makedocs(
             "Impulse-response estimation" => "impulse.md",
             "Frequency-domain estimation" => "freq.md",
             "Validation" => "validation.md",
+            "Examples" => [
+                  "Temperature control" => "examples/temp.md",
+            ],
             "API" => "api.md",
       ],
       format = Documenter.HTML(prettyurls = haskey(ENV, "CI")),

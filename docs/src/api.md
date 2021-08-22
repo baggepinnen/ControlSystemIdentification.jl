@@ -7,3 +7,8 @@
 Modules = [ControlSystemIdentification]
 Private = false
 ```
+```@docs
+ControlSystemIdentification.ControlSystems.StateSpace
+ControlSystemIdentification.DelimitedFiles.writedlm
+ControlSystemIdentification.LowLevelParticleFilters.KalmanFilter
+```
