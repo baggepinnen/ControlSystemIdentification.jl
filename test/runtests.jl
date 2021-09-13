@@ -1,3 +1,7 @@
+if haskey(ENV, "CI")
+    ENV["PLOTS_TEST"] = "true"
+    ENV["GKSwstype"] = "100"
+end
 using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
 using Test, Random, LinearAlgebra, Statistics
 
