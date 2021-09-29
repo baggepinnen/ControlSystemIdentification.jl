@@ -290,6 +290,12 @@ Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{PredictionStateSpace{T}}) wher
 
 Base.convert(::Type{<:StateSpace{T}}, s::AbstractPredictionStateSpace{T}) where T<:ControlSystems.TimeEvolution = deepcopy(s.sys)
 
+function Base.:(-)(sys0::ST) where ST <: AbstractPredictionStateSpace
+    otherfields = ntuple(i->getfield(sys0, i+1), fieldcount(ST)-1)
+    sys = sys0.sys
+    ST(typeof(sys)(sys.A, sys.B, -sys.C, -sys.D, sys.timeevol), otherfields...)
+end
+
 """
     N4SIDStateSpace <: AbstractPredictionStateSpace
     
