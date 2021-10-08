@@ -1,4 +1,4 @@
-
+using ControlSystemIdentification: Sec
 @info "Testing iddata"
 @testset "vectors" begin
     T = 100
@@ -38,6 +38,14 @@
     @test size(A, 2) == 4
 
     @test_nowarn plot(d)
+
+
+    @testset "second indexing" begin
+        @info "Testing second indexing"
+        d = iddata(randn(1,10), randn(1,10), 0.5)
+        @test d[1Sec:3Sec].y == d.y[1:1, 3:7]
+    end
+
 end
 
 @testset "matrices" begin

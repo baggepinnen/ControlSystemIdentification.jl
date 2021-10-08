@@ -84,7 +84,9 @@ InputOutput data of length 10 with 1 outputs and 1 inputs
 - [`prefilter`](@ref)
 - [`resample`](@ref)
 - append two along the time dimension `[d1 d2]`
-- index `d[output_index, input_index]`
+- index time series `d[output_index, input_index]`
+- index the time axis with indices `d[time_indices]`
+- index the time axis with seconds `d[3Sec:12Sec]` (`using ControlSystemIdentification: Sec`)
 - access number of inputs, outputs and sample time: `d.nu, d.ny, d.Ts`
 - access the time time vector `d.t`
 - premultiply to scale outputs `C * d`
@@ -189,6 +191,19 @@ function Base.getindex(d::AbstractIdData, i::AbstractRange)
     apply_fun(d, d.Ts === nothing ? d.Ts : d.Ts*step(i)) do y
         y[:, i]
     end
+end
+
+struct Sec <: Number
+    i::Any
+end
+Base.:*(i, ::Type{Sec}) = Sec(i)
+(::Colon)(start::Sec, stop::Sec) = (start, stop)
+
+function Base.getindex(d::AbstractIdData, r::Tuple{Sec,Sec})
+    t = timevec(d)
+    s = findfirst(t .>= r[1].i)
+    e = findlast(t .<= r[2].i)
+    d[s:e]
 end
 
 function Base.:(*)(d::AbstractIdData, x)
