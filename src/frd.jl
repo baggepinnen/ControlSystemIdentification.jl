@@ -68,6 +68,7 @@ function getindex(f::FRD, r::Tuple{rad,rad})
     e = findlast(f.w .< r[2].i)
     f[s:e]
 end
+getindex(f::Tuple{<:FRD, <:FRD}, r::Tuple) = (f[1][r], f[2][r])
 Base.isapprox(f1::FRD, f2::FRD; kwargs...) =
     (f1.w == f2.w) && isapprox(f1.r, f2.r; kwargs...)
 Base.:(==)(f1::FRD, f2::FRD) = (f1.w == f2.w) && ==(f1.r, f2.r)
@@ -94,6 +95,9 @@ Estimate a transfer function model using the Correlogram approach.
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
 function tfest(d, σ::Real = 0.05)
+    if d.ny > 1
+        return [tfest(d[i,:], σ) for i in 1:d.ny]
+    end
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
     Syy, Suu, Syu = fft_corr(y, u, σ)
     w = freqvec(h, Syu)
