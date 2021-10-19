@@ -141,7 +141,6 @@ end
 
 
 @recipe function plot_frd(frd::FRD; hz = false, plotphase=false)
-    yscale --> :log10
     xscale --> :log10
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     yguide --> "Magnitude"
@@ -149,6 +148,7 @@ end
     legend --> false
     layout --> (plotphase ? 2 : 1)
     @series begin
+        yscale --> :log10
         inds = findall(x -> x == 0, frd.w)
         subplot --> 1
         useinds = setdiff(1:length(frd.w), inds)
@@ -159,10 +159,22 @@ end
             inds = findall(x -> x == 0, frd.w)
             subplot --> 2
             useinds = setdiff(1:length(frd.w), inds)
-            (hz ? 1 / (2π) : 1) .* frd.w[useinds], unwrap(angle.(frd.r[useinds]))
+            (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* unwrap(angle.(frd.r[useinds]))
         end
     end
     nothing
+end
+
+# tfest returns a tuple and it's convenient to call plot(tfest(d)) directly
+@recipe function plot_tfestres(frd::Tuple{<:FRD,<:FRD})
+    @series begin
+        label --> "System"
+        frd[1]
+    end
+    @series begin
+        label --> "Noise"
+        frd[2]
+    end
 end
 
 
