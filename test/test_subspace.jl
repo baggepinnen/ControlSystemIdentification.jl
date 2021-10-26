@@ -246,3 +246,13 @@ end
     @test cl_eig(syst, Kt) ≈ e0 rtol=0.01
 
 end
+
+
+T = randn(3,3)
+sys1 = ssrand(1,1,3)
+sys2 = ControlSystems.similarity_transform(sys1, T)
+T2 = ControlSystemIdentification.find_similarity_transform(sys1, sys2)
+@test T2 ≈ T atol=1e-8
+
+T3 = ControlSystemIdentification.find_similarity_transform(sys1, sys2, :ctrb)
+@test T3 ≈ T atol=1e-8

@@ -128,7 +128,7 @@ version = "0.5.7"
 
 [[ControlSystems]]
 deps = ["Colors", "DSP", "DelayDiffEq", "DiffEqCallbacks", "IterTools", "LaTeXStrings", "LinearAlgebra", "MacroTools", "OrdinaryDiffEq", "Plots", "Polynomials", "Printf", "Random", "SparseArrays"]
-git-tree-sha1 = "28d19f089b093db0891323e0866db9b4e8cec28d"
+git-tree-sha1 = "d5327723c2158a482a535d668b8199ce5b793f83"
 repo-rev = "dev"
 repo-url = "https://github.com/JuliaControl/ControlSystems.jl.git"
 uuid = "a6e380b2-a6ca-5380-bf3e-84a91bcd477e"
@@ -623,9 +623,9 @@ version = "1.0.5"
 
 [[MKL_jll]]
 deps = ["Artifacts", "IntelOpenMP_jll", "JLLWrappers", "LazyArtifacts", "Libdl", "Pkg"]
-git-tree-sha1 = "c253236b0ed414624b083e6b72bfe891fbd2c7af"
+git-tree-sha1 = "5455aef09b40e5020e1520f551fa3135040d4ed0"
 uuid = "856f044c-d86e-5d09-b602-aeab76dc8ba7"
-version = "2021.1.1+1"
+version = "2021.1.1+2"
 
 [[MacroTools]]
 deps = ["Markdown", "Random"]
@@ -675,11 +675,9 @@ version = "0.7.1"
 
 [[MonteCarloMeasurements]]
 deps = ["Distributed", "Distributions", "LinearAlgebra", "MacroTools", "Random", "RecipesBase", "Requires", "SLEEFPirates", "StaticArrays", "Statistics", "StatsBase", "Test"]
-git-tree-sha1 = "93b56975783e6448383934ff760efe96c4e7c11d"
-repo-rev = "master"
-repo-url = "https://github.com/baggepinnen/MonteCarloMeasurements.jl.git"
+git-tree-sha1 = "d9dc441d5a0393ee80aea49d0fb13281d7cc7c91"
 uuid = "0987c9cc-fe09-11e8-30f0-b96dd679fdca"
-version = "1.0.0"
+version = "1.0.3"
 
 [[MozillaCACerts_jll]]
 uuid = "14a3606d-f60d-562e-9121-12d972cd8159"

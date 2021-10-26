@@ -39,7 +39,7 @@ export iddata,
     timevec
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace, StateSpaceNoise,
     pem, simulation_errors, prediction_errors, predict, simulate, noise_model, estimate_x0
-export n4sid, subspaceid, era, okid
+export n4sid, subspaceid, era, okid, find_similarity_transform
 export getARXregressor,
     getARregressor,
     find_na,
@@ -255,7 +255,7 @@ end
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
 """
 function prediction_error(sys::AbstractStateSpace, args...)
-    G = observer_predictor(sys, args...)
+    G = ControlSystems.observer_predictor(sys, args...)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
 
@@ -266,7 +266,7 @@ Returns the measurement-feedback controller that takes in `y` and forms the cont
 """
 function ControlSystems.observer_controller(sys::AbstractPredictionStateSpace, L)
     K = sys.K
-    observer_controller(sys.sys, L, K)
+    ControlSystems.observer_controller(sys.sys, L, K)
 end
 
 """
