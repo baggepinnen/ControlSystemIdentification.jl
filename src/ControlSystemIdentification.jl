@@ -136,14 +136,15 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
     if sys isa AbstractPredictionStateSpace
-        A,B,C,D = ssdata(sys)
-        K = sys.K
-        sys = ss(A-K*C, B - K*D, C, D, 1) # TODO: not sure about K*D
-        ε = lsim(ss(A-K*C, K, C, 0, 1), y)[1]
+        # A,B,C,D = ssdata(sys)
+        # K = sys.K
+        # sys = ss(A-K*C, B - K*D, C, D, 1) 
+        # ε = lsim(ss(A-K*C, K, C, 0, 1), y)[1]
+        ε, _ = lsim(prediction_error(sys), predictiondata(d))
         y = y - ε
-    end
+    end 
 
-    uresp = lsim(sys, u)[1]
+    uresp, _ = lsim(sys, u)
     y = y - uresp # remove influence of u
     φx0 = zeros(T, p, N, nx)
     for j in 1:nx
