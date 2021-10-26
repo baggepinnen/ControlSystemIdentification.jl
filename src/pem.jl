@@ -181,6 +181,7 @@ function newpem(
 )
     nu = d.nu
     ny = d.ny
+    ny <= nx || throw(ArgumentError("ny > nx not supported by this method."))
     A, B, C, D = ssdata(sys0)
     K = sys0.K
     pred = focus === :prediction
