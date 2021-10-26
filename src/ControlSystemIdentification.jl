@@ -124,7 +124,7 @@ Estimate the initial state of the system
 
 # Arguments:
 - `d`: [`iddata`](@ref)
-- `n`: Number of samples to used.
+- `n`: Number of samples to use.
 """
 function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
@@ -141,11 +141,12 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
         # sys = ss(A-K*C, B - K*D, C, D, 1) 
         # ε = lsim(ss(A-K*C, K, C, 0, 1), y)[1]
         ε, _ = lsim(prediction_error(sys), predictiondata(d))
-        y = y - ε
+        y = y - ε # remove influence of innovations
     end 
 
     uresp, _ = lsim(sys, u)
     y = y - uresp # remove influence of u
+    # Construct a basis from the response of the system from each component of the initial state
     φx0 = zeros(T, p, N, nx)
     for j in 1:nx
         x0 = zeros(nx); x0[j] = 1
@@ -285,15 +286,16 @@ function ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_co
 end
 
 """
-    ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Q::AbstractMatrix)
+    Qd = ControlSystems.c2d(sys::StateSpace{Discrete}, Q::Matrix)
+    Qd, Rd = ControlSystems.c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix)
 
 Sample a continuous-time covariance matrix to fit the provided discrete-time system.
+The measurement covariance `R` may also be provided
 
 The method used comes from theorem 5 in the reference below.
 
-Ref: Discrete-time Solutions to the Continuous-time
-Differential Lyapunov Equation With
-Applications to Kalman Filtering
+Ref: "Discrete-time Solutions to the Continuous-time
+Differential Lyapunov Equation With Applications to Kalman Filtering", 
 Patrik Axelsson and Fredrik Gustafsson
 """
 function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qc::AbstractMatrix, R=nothing)

@@ -10,7 +10,7 @@ sys2 = ControlSystemIdentification.PredictionStateSpace(sys, K, R1, R2)
 
 for sys in [sys, sys2]
     local x0,x0h,u,y,t,x,d,yh,xh
-    x0 = randn(4)
+    x0 = randn(sys.nx)
     u = randn(sys.nu, 100)
     y,t,x = lsim(sys, u; x0)
 

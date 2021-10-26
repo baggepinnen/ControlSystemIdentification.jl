@@ -438,7 +438,7 @@ sysfilter!(s::SysFilter, u) = sysfilter!(s.state, s.sys, u)
 
 function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, y, u)
     @unpack A, B, K, ny = sys
-    yh = state[1:ny] #vec(sys.C*state)
+    yh = state[1:ny] #vec(sys.C*state) # TODO: bug here if number of outputs is larger than the number of states
     e = y .- yh
     state .= vec(A * state + B * u + K * e)
     yh
