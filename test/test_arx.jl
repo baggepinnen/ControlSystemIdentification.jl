@@ -1,4 +1,18 @@
+using ControlSystemIdentification, MonteCarloMeasurements
 unsafe_comparisons(true)
+"""
+Compare a tf to a tf based on particles .. maybe replaye by correct dispatched isapprox
+"""
+function compareTFs(tf, tfStochastic, atol = 10e-5)
+    aok = bok = false
+    try
+        bok = isapprox(numvec(tf), pmean.(numvec(tfStochastic)), atol = atol)
+        aok = isapprox(denvec(tf), pmean.(denvec(tfStochastic)), atol = atol)
+    catch
+        return false
+    end  
+    return aok && bok
+end
 
 N = 20
 t = 1:N

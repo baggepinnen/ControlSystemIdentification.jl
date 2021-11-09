@@ -1,3 +1,4 @@
+using ControlSystems: isdiscrete
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =
     maximum(abs, log10.(abs2.(freqresp(model, wtest))) - log10.(abs2.(freqresp(G, wtest))))
@@ -17,7 +18,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @show r, m, l
         A = Matrix{Float64}(I(r))
         A[1, 1] = 1.01
-        G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+        G = ss(A, ones(r, m), ones(l, r), 0 * ones(l, m), 1)
         u = randn(m, N)
         x0 = randn(r)
         y, t, x = lsim(G, u, 1:N, x0 = x0)
@@ -108,7 +109,7 @@ end
         @show nx, m, l
         A = Matrix{Float64}(I(nx))
         A[1, 1] = 1.01
-        G = ss(A, randn(nx, m), randn(l, nx), 0 * randn(l, m), 1)
+        G = ss(A, ones(nx, m), ones(l, nx), 0 * ones(l, m), 1)
         u = randn(m, N)
         x0 = randn(nx)
         y, t, x = lsim(G, u, 1:N, x0 = x0)
@@ -247,12 +248,15 @@ end
 
 end
 
+@testset "similarity transform" begin
+    @info "Testing similarity transform"
+    T = randn(3,3)
+    sys1 = ssrand(1,1,3)
+    sys2 = ControlSystems.similarity_transform(sys1, T)
+    T2 = ControlSystemIdentification.find_similarity_transform(sys1, sys2)
+    @test T2 ≈ T atol=1e-8
 
-T = randn(3,3)
-sys1 = ssrand(1,1,3)
-sys2 = ControlSystems.similarity_transform(sys1, T)
-T2 = ControlSystemIdentification.find_similarity_transform(sys1, sys2)
-@test T2 ≈ T atol=1e-8
+    T3 = ControlSystemIdentification.find_similarity_transform(sys1, sys2, :ctrb)
+    @test T3 ≈ T atol=1e-8
 
-T3 = ControlSystemIdentification.find_similarity_transform(sys1, sys2, :ctrb)
-@test T3 ≈ T atol=1e-8
+end

@@ -959,10 +959,10 @@ function ControlSystems.TransferFunction(
     end
 
     if isAR && size(Σ, 1) < length(wm)
-        p = T(N, MvNormal(wm[1:end-nb[1]], Σ))
+        p = T(N, MvNormal(wm[1:end-nb[1]], Matrix(Σ)))
         a, b = params2poly(p, na)
     else
-        p = T(N, MvNormal(wm, Σ))
+        p = T(N, MvNormal(wm, Matrix(Σ)))
         a, b = params2poly2(p, na, nb, inputdelay = inputdelay)
     end
     arxtf = tf(b, a, G.Ts)

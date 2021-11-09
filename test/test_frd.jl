@@ -1,9 +1,10 @@
+using ControlSystemIdentification
 Random.seed!(1)
 ##
 T           = 100000
 h           = 1
 t           = range(0, step = h, length = T)
-sim(sys, u) = lsim(sys, u, t)[1][:]
+sim(sys, u) = lsim(c2d(sys, h), u, t)[1]
 σy          = 0.5
 sys         = tf(1, [1, 2 * 0.1, 0.1])
 ωn          = sqrt(0.3)
@@ -19,10 +20,11 @@ dn = iddata(yn, u, 1)
 # @btime begin
 # Random.seed!(0)
 k = coherence(d)
-@test all(k.r .> 0.99)
+@test mean(k.r) > 0.98
+
 k = coherence(dn)
 @test all(k.r[1:10] .> 0.9)
-@test k.r[end] .> 0.8
+@test k.r[end] .> 0.7
 @test k.r[findfirst(k.w .> ωn)] < 0.6
 G, N = tfest(dn, 0.02)
 noisemodel = innovation_form(ss(sys), syse = ss(sysn))

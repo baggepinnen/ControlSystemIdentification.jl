@@ -9,12 +9,12 @@ data = FRD(w, Gtest)
 p0 = (a = [1.0, 1.0, 1.0], b = [1.1]) # Initial guess
 
 Gest = tfest(data, p0, freq_weight = 0)
-@test norm(pole(Gtest) - pole(Gest)) < 0.01
+@test norm(poles(Gtest) - poles(Gest)) < 0.01
 @test dcgain(Gtest) ≈ dcgain(Gest)
 
 Gest = tfest(data, tf(p0.b, p0.a), freq_weight = 0)
-@test norm(pole(Gtest) - pole(Gest)) < 0.01
-@test norm(pole(Gtest) - pole(minimum_phase(Gest))) < 0.01
+@test norm(poles(Gtest) - poles(Gest)) < 0.01
+@test norm(poles(Gtest) - poles(minimum_phase(Gest))) < 0.01
 @test dcgain(Gtest) ≈ dcgain(Gest)
 
 if isinteractive()
@@ -26,10 +26,10 @@ end
 
 ## Test fitting with basis functions
 a = exp10.(LinRange(-1, 1, 7))
-poles = ωζ2complex.(a, 0.1)
-poles = [poles; conj.(poles)]
-# poles = a
-# basis = kautz(poles, 1/(200))
+pols = ωζ2complex.(a, 0.1)
+pols = [pols; conj.(pols)]
+# pols = a
+# basis = kautz(pols, 1/(200))
 basis = laguerre_oo(1, 50)
 
 Gest,p = tfest(data, basis)

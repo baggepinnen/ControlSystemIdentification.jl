@@ -14,7 +14,7 @@ y  = sim(sys, u)
 d  = iddata(y,u,h)
 
 impulseestplot(d,50, lab="Estimate")
-impulseplot!(sys,50, lab="True system")
+plot!(impulse(sys,50), lab="True system")
 ```
 ![window](../../figs/impulse.svg)
 

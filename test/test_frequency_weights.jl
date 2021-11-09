@@ -45,8 +45,8 @@ Gf1 = arx(d, 2, 2, estimator = weighted_estimator(H1))
 Gf2 = arx(d, 2, 2, estimator = weighted_estimator(H2))
 
 
-@test norm(pole(G1) - pole(Gf1)) / norm(pole(G1)) < 0.05
-@test norm(pole(G2) - pole(Gf2)) / norm(pole(G1)) < 0.05
+@test norm(poles(G1) - poles(Gf1)) / norm(poles(G1)) < 0.05
+@test norm(poles(G2) - poles(Gf2)) / norm(poles(G1)) < 0.05
 
 @test freqresptest(G1, Gf1) < 0.22
 @test freqresptest(G2, Gf2) < 0.22
@@ -79,8 +79,8 @@ Gf1 = Gf1.sys
 Gf2 = Gf2.sys
 
 
-@test norm(pole(G1) - pole(Gf1)) / norm(pole(G1)) < 0.05
-@test norm(pole(G2) - pole(Gf2)) / norm(pole(G1)) < 0.05
+@test norm(poles(G1) - poles(Gf1)) / norm(poles(G1)) < 0.05
+@test norm(poles(G2) - poles(Gf2)) / norm(poles(G1)) < 0.05
 
 @test freqresptest(G1, Gf1) < 1
 @test freqresptest(G2, Gf2) < 1

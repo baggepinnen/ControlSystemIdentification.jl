@@ -15,7 +15,7 @@ end
 basis = laguerre_oo(1,n)
 b2 = add_poles(basis, [-2])
 @test basislength(b2) == n+1
-@test -2 ∈ pole(b2)
+@test -2 ∈ poles(b2)
 
 basis = kautz(av, 0.001)
 y = filter_bank(basis, signal)

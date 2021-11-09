@@ -21,7 +21,7 @@ end
 
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =
-    maximum(abs, log10.(abs2.(freqresp(model, wtest))) - log10.(abs2.(freqresp(G, wtest))))
+    maximum(abs, log10.(abs2.(freqresp(model, wtest))) .- log10.(abs2.(freqresp(G, wtest))))
 
 freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
@@ -31,8 +31,8 @@ Compare a tf to a tf based on particles .. maybe replaye by correct dispatched i
 function compareTFs(tf, tfStochastic, atol = 10e-5)
     aok = bok = false
     try
-        bok = isapprox(numvec(tf), mean.(numvec(tfStochastic)), atol = atol)
-        aok = isapprox(denvec(tf), mean.(denvec(tfStochastic)), atol = atol)
+        bok = isapprox(numvec(tf), pmean.(numvec(tfStochastic)), atol = atol)
+        aok = isapprox(denvec(tf), pmean.(denvec(tfStochastic)), atol = atol)
     catch
         return false
     end  
@@ -233,7 +233,7 @@ end
 
         d = iddata(y, u, h)
         impulseestplot(d, Int(50 / h), λ = 0)
-        impulseplot!(sys, 50, l = (:dash, :blue))
+        plot!(impulse(sys, 50), l = (:dash, :blue))
     end
 
     @testset "Spectrogram" begin
