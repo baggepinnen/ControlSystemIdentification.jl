@@ -4,7 +4,7 @@ Returns a shortened output signal `y` and a regressor matrix `A` such that the l
 Return a regressor matrix used to fit an ARX model on, e.g., the form
 `A(z)y = B(z)f(u)`
 with output `y` and input `u` where the order of autoregression is `na`,
-the order of input moving average is `nb` and an optional input delay `inputdelay`. An `inputdelay = 0` results in a direct term. 
+the order of input moving average is `nb` and an optional input delay `inputdelay`. Caution, changing the input delay changes the order to `nb + inputdelay - 1`. An `inputdelay = 0` results in a direct term. 
 # Example
 Here we test the model with the Function `f(u) = √(|u|)`
 ```julia
@@ -68,8 +68,14 @@ end
     Gtf = arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator=\\, stochastic=false)
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
-- `nb` and `na` are the length of the numerator and denominator polynomials. Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-1`.  An `inputdelay = 0` results in a direct term.  `λ > 0` can be provided for L₂ regularization. `estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. `arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of heavy measurement noise.
-The number of free parameters is `na+nb`
+
+- `nb` and `na` are the number of coefficients of the numerator and denominator polynomials.
+Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-d`.
+An `inputdelay = 0` results in a direct term.
+The highest order of the B polynomial is given by `nb + inputdelay - 1`.  `λ > 0` can be provided for L₂ regularization.
+`estimator` defaults to \\ (least squares), alternatives are `estimator = tls` for total least-squares estimation. 
+`arx(Δt,yn,u,na,nb, estimator=wtls_estimator(y,na,nb)` is potentially more robust in the presence of
+heavy measurement noise. The number of free parameters is `na+nb` 
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 
 Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...] and optional inputdelay = [d₁, d₂...]
@@ -256,25 +262,25 @@ end
 """
     G, H, e = arxar(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int)
 
-Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalized least-squares medthod. For more information see Söderström - Convergence properties of the generalised least squares identitication method, 1974. 
+Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalized least-squares method. For more information see Söderström - Convergence properties of the generalized least squares identification method, 1974. 
 
 # Arguments:
 - `d`: iddata
 - `na`: order of A
-- `nb`: order of B, takes the form nb = [nb₁, nb₂...] in MISO estimation
+- `nb`: number of coefficients in B, the order is determined by `nb + inputdelay - 1`. In MISO estimation it takes the form nb = [nb₁, nb₂...]. 
 - `nd`: order of D
 
 # Keyword Arguments:
 - `H = nothing`: prior knowledge about the AR noise model
-- `inputdelay = ones(Int, size(nb))`: optinal delay of input, inputdelay = 0 results in a direct term, takes the form inputdelay = [d₁, d₂...] in MISO estimation 
+- `inputdelay = ones(Int, size(nb))`: optional delay of input, inputdelay = 0 results in a direct term, takes the form inputdelay = [d₁, d₂...] in MISO estimation 
 - `λ = 0`: `λ > 0` can be provided for L₂ regularization
 - `estimator = \\`: e.g. `\\,tls,irls,rtls`, the latter three require `using TotalLeastSquares`
 - `δmin = 10e-4`: Minimal change in the power of e, that specifies convergence.
 - `iterations = 10`: maximum number of iterations.
-- `verbose = false`: if true, more informmation is printed
+- `verbose = false`: if true, more information is printed
 
 # Example:
-```jldoctest
+```
 julia> N = 500 
 500
 
@@ -848,7 +854,7 @@ function params2poly2(w, na, nb; inputdelay = ones(Int, size(nb)))
     b = map(1:length(nb)) do i
         b = w[1:nb[i]]
         w = w[nb[i]+1:end]
-        b = [zeros(inputdelay[i]); b; zeros(maxb - inputdelay[i] - nb[i])] # compensate for different nbs and delay
+        b = [zeros(inputdelay[i]); b; zeros(max(na+1, maxb) - inputdelay[i] - nb[i])] # compensate for different nbs and delay, as well as na > nb
         b
     end
     return a, b
