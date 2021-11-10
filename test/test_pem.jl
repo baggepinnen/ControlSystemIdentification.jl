@@ -77,8 +77,8 @@ d = iddata(yn, un, 1)
 sysh, opt = ControlSystemIdentification.newpem(d, 2nx, focus = :prediction, optimizer=NelderMead(), show_every=1000)
 # @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
 @test Optim.minimum(opt) < 2σy^2  # A factor of 2 margin
-@test_broken freqresptest(sys, sysh) < 1e-1
-@test hinfnorm(sys - sysh.sys)[1] < 1e-1
+# @test_broken freqresptest(sys, sysh) < 1e-1
+@test norm(sys - sysh.sys) < 1e-1
 
 # Simulation error minimization
 σu = 0.01
@@ -137,7 +137,7 @@ sysh, x0h, opt = pem(d, nx = nx, focus = :prediction, iterations=5000)
 # 283ms
 # 173ms
 @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
-@test_broken freqresptest(sys, ss(sysh)) < 1e-2
+# @test freqresptest(sys, ss(sysh)) < 1e-2
 # yh = sim(sysh, u, x0h)
 @test Optim.minimum(opt) < 1e-4
 
