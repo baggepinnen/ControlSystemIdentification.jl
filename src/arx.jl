@@ -46,6 +46,11 @@ function getARregressor(dy::AbstractIdData, na)
     getARregressor(vec(y), na)
 end
 
+"""
+    yt,A = getARregressor(y::AbstractVector, na)
+
+Returns values such that `x = A\\yt`. See [`getARXregressor`](@ref) for more details.
+"""
 function getARregressor(y::AbstractVector, na)
     m = na + 1 # Start of yr
     n = length(y) - m + 1 # Final length of yr
@@ -56,62 +61,6 @@ function getARregressor(y::AbstractVector, na)
     return y, A
 end
 
-@userplot Find_na
-"""
-    find_na(y::AbstractVector,n::Int)
-Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
-"""
-find_na
-@recipe function find_na(p::Find_na)
-    y, n = p.args[1:2]
-    error = zeros(n, 2)
-    for i = 1:n
-        yt, A = getARXregressor(y, 0y, i, 0)
-        e = yt - A * (A \ yt)
-        error[i, 1] = rms(e)
-        error[i, 2] = aic(e, i)
-    end
-    layout --> 2
-    title --> ["RMS error" "AIC"]
-    seriestype --> :scatter
-    @series begin
-        error
-    end
-end
-
-@userplot Find_nanb
-"""
-    find_nanb(d::InputOutputData,na,nb)
-Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
-"""
-find_nanb
-@recipe function find_nanb(p::Find_nanb; logrms = false)
-    d, na, nb = p.args[1:3]
-    y, u = time1(output(d)), time1(input(d))
-    error = zeros(na, nb, 2)
-    for i = 1:na, j = 1:nb
-        yt, A = getARXregressor(y, u, i, j)
-        e = yt - A * (A \ yt)
-        error[i, j, 1] = logrms ? log10.(rms(e)) : rms(e)
-        error[i, j, 2] = aic(e, i + j)
-    end
-    layout --> 2
-    seriestype --> :heatmap
-    xticks := (1:nb, 1:nb)
-    yticks := (1:na, 1:na)
-    yguide := "na"
-    xguide := "nb"
-    @series begin
-        title := "RMS error"
-        subplot := 1
-        error[:, :, 1]
-    end
-    @series begin
-        title := "AIC"
-        subplot := 2
-        error[:, :, 2]
-    end
-end
 
 
 
@@ -137,9 +86,9 @@ function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 0 || throw(ArgumentError("na must be positive"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
-    y_train, A = getARXregressor(vec(y), u, na, nb, inputdelay = inputdelay)
+    y_train, A = getARXregressor(vec(y), u, na, nb; inputdelay)
     w = ls(A, y_train, λ, estimator)
-    a, b = params2poly2(w, na, nb, inputdelay = inputdelay)
+    a, b = params2poly2(w, na, nb; inputdelay)
     model = tf(b, a, h)
     if stochastic
         local Σ
@@ -247,6 +196,8 @@ Estimate an AR transfer function `G = 1/A`, the AR process is defined as `A(z⁻
 - `estimator`: e.g. `\\,tls,irls,rtls`
 - `scaleB`: Whether or not to scale the numerator using the variance of the prediction error.
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
+
+Estimation of AR models using least-squares is known to struggle with heavy measurement noise, using `estimator = tls` can improve the result in this case.
 
 # Example
 ```jldoctest
@@ -381,13 +332,13 @@ TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
 Sample Time: 1 (seconds)
 Discrete-time transfer function model
 
-julia> u, e = randn(N), randn(N)
+julia> u, e = randn(1, N), randn(1, N)
 [...]
 
 julia> y, v = sim(G, u), sim(H * (1/A), e) # simulate process
 [...]
 
-julia> d = iddata(y.+ v, u, 1)
+julia> d = iddata(y .+ v, u, 1)
 InputOutput data of length 500 with 1 outputs and 1 inputs
 
 julia> na, nb , nd = 1, 1, 1
@@ -442,17 +393,17 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
     eOld    = 0
     δ       = δmin + 1
     timeVec = timevec(d)
-    sim(G,u) = lsim(G, u, timeVec)[1][:]
+    sim(G,u) = lsim(G, u, timeVec)[1]
     while iter <= iterations && δ >= δmin
         # Filter input/output according to errormodel H, after initialization
         if iter > 0
-            yF = sim(1/H, output(d)')
+            yF = sim(1/H, output(d))
             if ninputs(d) == 1
-                uF = sim(1/H, input(d)')
+                uF = sim(1/H, input(d))
             else
                 uF = fill(1.0, size(d.u)) 
                 for i in 1:ninputs(d)
-                    uF[i, :] = sim(1/H, d.u[i,:])
+                    uF[i, :] = sim(1/H, d.u[i:i,:])
                 end
             end
         else
@@ -463,7 +414,7 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
 		dF = iddata(yF, uF, d.Ts)
 
 		# 2. fit arx model
-        GF = arx(dF, na, nb, estimator = estimator, λ = λ, inputdelay = inputdelay)
+        GF = arx(dF, na, nb; estimator, λ, inputdelay)
 
         # 3. Evaluate residuals
         v = residuals(GF, d)
@@ -478,15 +429,57 @@ function arxar(d::InputOutputData, na::Int, nb::Union{Int, AbstractVector{Int}},
 
         # 5. estimate new noise model from residuals
         dH = iddata(v, d.Ts)
-        H = ar(dH, nd, estimator = estimator)
+        H = ar(dH, nd; estimator)
         
         iter += 1
     end
 
     # total residuals e
-    e = lsim(1/H, v, timevec(v, Ts))[1][:]
-    return (G = GF, H = H, e = e)
+    e = lsim(1/H, v', timevec(v, Ts))[1][:]
+    return (G = GF, H, e)
 end
+
+
+"""
+    arxar_predictor(G, H)
+
+Convert the models obtained from `arxar` into a `PredictionStateSpace`. Note that the predictor in this case will predict the sum of the system and noise output, while a simulation will predict the system output alone. 
+# Examples:
+```julia
+Gp = ControlSystemIdentification.arxar_predictor(Gest, Hest) 
+pe = ControlSystemIdentification.prediction_error(Gp)
+pd = ControlSystemIdentification.predictiondata(d)
+ε = lsim(pe, pd)[1] # estimate innovation sequence
+
+yp = predict(Gp, d)  # prediction includes prediction of noise
+ys = simulate(Gp, d) # simulation includes only system output
+```
+"""
+function arxar_predictor(G, H)
+    Ts = G.Ts
+    A = denvec(G[1,1])[]
+    H2 = ss(minreal(H*tf(1,[1,0],1))) # is good idea
+
+    Ge = ss(G)
+    Hs = ss(H2)
+    # Hs = ss(tf(1, A, Ts)*H2) # not good idea
+    A,B,C,D = ssdata(Ge)
+    Ad,Bd,Cd,Dd = ssdata(Hs)
+    Ae = ControlSystems.blockdiag(A, Ad)
+    Ae[1:Hs.ny, Ge.nx+1:end] .= Cd
+    Be = [B; 0Bd]
+    Ce = [C 0Cd]
+    De = D
+    syse = ss(Ae,Be,Ce,De,Ts)
+    Bw = [0B; Bd]
+    Rw = Bw*I(1)*Bw'
+    # Rw = I(syse.nx)
+    Re = 0.0001I(syse.ny)
+    K = kalman(syse, Rw, Re)
+    PredictionStateSpace(syse, K, Rw, Re)
+end
+
+
 
 function reversal_ls(A, y)
     n = size(A, 2)
@@ -507,7 +500,7 @@ function ls(A, y, λ = 0, estimator = \)
 end
 
 """
-G, Gn = plr(d::AbstractIdData,na,nb,nc; initial_order = 20)
+    G, Gn = plr(d::AbstractIdData,na,nb,nc; initial_order = 20)
 
 Perform pseudo-linear regression to estimate a model on the form
 `Ay = Bu + Cw`
@@ -624,7 +617,7 @@ function tfest(
     opts = Optim.Options(
         store_trace       = true,
         show_trace        = true,
-        show_every        = 1,
+        show_every        = 5,
         iterations        = 10000,
         allow_f_increases = false,
         time_limit        = 100,
@@ -635,6 +628,7 @@ function tfest(
         g_calls_limit     = 0,
     ),
 )
+    # TODO: implement https://epubs.siam.org/doi/pdf/10.1137/140961511 which is the algorithm used in matlab, https://se.mathworks.com/help/ident/ref/tfest.html#bvgwvmc
 
     ladr = @. link(data.r)
     if freq_weight > 0
@@ -667,7 +661,35 @@ function tfest(data::FRD, G::LTISystem, args...; kwargs...)
     tfest(data, (; b = b, a = a), args...; kwargs...)
 end
 
+"""
+    tfest(data::FRD, basis::AbstractStateSpace; 
+        freq_weight = 1 ./ (data.w .+ data.w[2]),
+        opt = BFGS(),
+        metric::M = abs2,
+        opts = Optim.Options(
+            store_trace       = true,
+            show_trace        = true,
+            show_every        = 50,
+            iterations        = 1000000,
+            allow_f_increases = false,
+            time_limit        = 100,
+            x_tol             = 1e-5,
+            f_tol             = 0,
+            g_tol             = 1e-8,
+            f_calls_limit     = 0,
+            g_calls_limit     = 0,
+    )
 
+Fit a parametric transfer function to frequency-domain data using a pre-specified basis.
+
+# Arguments:
+- `data`: An `FRD` onbject with frequency domain data.
+function kautz(a::AbstractVector)
+- `basis`: A basis for the estimation. See, e.g., `laguerre, laguerre_oo, kautz`
+- `freq_weight`: A vector of weights per frequency. The default is approximately `1/f`. 
+- `opt`: The Optim optimizer to use.
+- `opts`: `Optim.Options` controlling the solver options.
+"""
 function tfest(data::FRD, basis::AbstractStateSpace; 
     freq_weight = 1 ./ (data.w .+ data.w[2]),
     opt = BFGS(),
@@ -759,8 +781,8 @@ end
 
 Estimate the residuals driving the dynamics of an ARMA model.
 """
-function estimate_residuals(model, y)
-    y = time1(output(y))
+function estimate_residuals(model, yi)
+    y = time1(output(yi))
     eest = zeros(length(y))
     na = length(denvec(model)[1, 1]) - 1
     nc = length(numvec(model)[1, 1])
@@ -773,7 +795,7 @@ function estimate_residuals(model, y)
         yh = w'ϕ
         eest[i] += y[i+1] - yh
     end
-    eest
+    oftype(output(yi), eest)
 end
 
 
@@ -791,7 +813,8 @@ function ControlSystems.tf(
 end
 
 """
-wtls_estimator(y,na,nb, σu=0)
+    wtls_estimator(y,na,nb, σu=0)
+
 Create an estimator function for estimation of arx models in the presence of measurement noise. If the noise variance on the input `σu` (model errors) is known, this can be specified for increased accuracy.
 """
 function wtls_estimator(y, na, nb, σu = 0)
@@ -803,6 +826,7 @@ end
 
 """
     a,b = params2poly(params,na,nb; inputdelay = zeros(Int, size(nb)))
+
 Used to get numerator and denominator polynomials after arx fitting
 """
 function params2poly(w, na, nb; inputdelay = zeros(Int, size(nb)))
@@ -878,15 +902,36 @@ end
 function parameter_covariance(y_train, A, w, λ = 0)
     σ² = var(y_train .- A * w)
     iATA = if λ == 0
-        inv(A'A)
+        R = UpperTriangular(qr(A).R)
+        R\(R'\I)
     else
-        ATA = A'A
-        ATAλ = ATA + λ * I
-        ATAλ \ ATA / ATAλ
+        Al = [A; sqrt(λ)*I]
+        R = UpperTriangular(qr(Al).R)
+        (R \ (R' \ (A'A)) / R) / R' # The parenthesis are important 
     end
     iATA = (iATA + iATA') / 2
-    Σ = σ² * iATA + sqrt(eps()) * Matrix(LinearAlgebra.I, size(iATA))
+    Σ = Hermitian(σ² * iATA + sqrt(eps()) * I)
 end
+#=
+The above formulas using qr factorization can be verified with
+A = randn(10,3)
+iA = inv(A'A)
+
+QR = qr(A)
+iA2 = QR.R\(QR.R'\I)
+@test norm(iA2 - iA) / norm(iA) < 1e-13
+
+λ = 0.4
+Al = [A; sqrt(λ)*I]
+QR = qr(Al)
+ATA = A'A
+ATAλ = ATA + λ * I
+@assert Al'Al ≈ ATAλ
+iA = ATAλ \ ATA / ATAλ
+iA2 = (QR.R\(QR.R'\(A'A)) / QR.R) / QR.R'
+
+@test norm(iA2 - iA) / norm(iA) < 1e-13
+=#
 
 """
 TransferFunction(T::Type{<:AbstractParticles}, G::TransferFunction, Σ, N=500)
@@ -920,10 +965,10 @@ function ControlSystems.TransferFunction(
     end
 
     if isAR && size(Σ, 1) < length(wm)
-        p = T(N, MvNormal(wm[1:end-nb[1]], Σ))
+        p = T(N, MvNormal(wm[1:end-nb[1]], Matrix(Σ)))
         a, b = params2poly(p, na)
     else
-        p = T(N, MvNormal(wm, Σ))
+        p = T(N, MvNormal(wm, Matrix(Σ)))
         a, b = params2poly2(p, na, nb, inputdelay = inputdelay)
     end
     arxtf = tf(b, a, G.Ts)

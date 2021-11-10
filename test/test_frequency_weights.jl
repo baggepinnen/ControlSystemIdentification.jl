@@ -24,7 +24,7 @@ G2 = c2d(tf(ω2, [1, 2 * 0.02 * ω2, ω2^2]), h)
 # bodeplot([G1, G2], ωvec)
 
 
-e = randn(N)
+e = randn(1,N)
 y1, y2 = lsim(G1, e, t)[1], lsim(G2, e, t)[1]
 d = iddata(y1 + y2, e, h)
 
@@ -45,8 +45,8 @@ Gf1 = arx(d, 2, 2, estimator = weighted_estimator(H1))
 Gf2 = arx(d, 2, 2, estimator = weighted_estimator(H2))
 
 
-@test norm(pole(G1) - pole(Gf1)) / norm(pole(G1)) < 0.05
-@test norm(pole(G2) - pole(Gf2)) / norm(pole(G1)) < 0.05
+@test norm(poles(G1) - poles(Gf1)) / norm(poles(G1)) < 0.05
+@test norm(poles(G2) - poles(Gf2)) / norm(poles(G1)) < 0.05
 
 @test freqresptest(G1, Gf1) < 0.22
 @test freqresptest(G2, Gf2) < 0.22
@@ -61,7 +61,7 @@ isinteractive() && bodeplot(
 
 Random.seed!(0)
 N = 2000
-e = randn(N)
+e = randn(1,N)
 t = range(0, length = N, step = h)
 y1, y2 = lsim(G1, e, t)[1], lsim(G2, e, t)[1]
 d = iddata(y1 + y2, e, h)
@@ -79,8 +79,8 @@ Gf1 = Gf1.sys
 Gf2 = Gf2.sys
 
 
-@test norm(pole(G1) - pole(Gf1)) / norm(pole(G1)) < 0.05
-@test norm(pole(G2) - pole(Gf2)) / norm(pole(G1)) < 0.05
+@test norm(poles(G1) - poles(Gf1)) / norm(poles(G1)) < 0.05
+@test norm(poles(G2) - poles(Gf2)) / norm(poles(G1)) < 0.05
 
 @test freqresptest(G1, Gf1) < 1
 @test freqresptest(G2, Gf2) < 1

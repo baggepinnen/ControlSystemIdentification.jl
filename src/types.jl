@@ -1,18 +1,30 @@
+"""
+See [`iddata`](@ref)
+"""
 abstract type AbstractIdData end
 
 const AnyInput = Union{AbstractArray,AbstractIdData}
 
+"""
+See [`iddata`](@ref)
+"""
 struct InputOutputData{Y,U,T} <: AbstractIdData
     y::Y
     u::U
     Ts::T
 end
 
+"""
+See [`iddata`](@ref)
+"""
 struct OutputData{Y,T} <: AbstractIdData
     y::Y
     Ts::T
 end
 
+"""
+See [`iddata`](@ref)
+"""
 struct InputOutputStateData{Y,U,X,T} <: AbstractIdData
     y::Y
     u::U
@@ -67,6 +79,20 @@ Output data of length 10 with 1 outputs
 julia> iddata(randn(10), randn(10), 1)
 InputOutput data of length 10 with 1 outputs and 1 inputs
 ```
+
+# Operations on iddata
+- [`prefilter`](@ref)
+- [`resample`](@ref)
+- append two along the time dimension `[d1 d2]`
+- index time series `d[output_index, input_index]`
+- index the time axis with indices `d[time_indices]`
+- index the time axis with seconds `d[3Sec:12Sec]` (`using ControlSystemIdentification: Sec`)
+- access number of inputs, outputs and sample time: `d.nu, d.ny, d.Ts`
+- access the time time vector `d.t`
+- premultiply to scale outputs `C * d`
+- postmultiply to scale inputs `d * B`
+- [`writedlm`](@ref)
+- [`ramp_in`](@ref), [`ramp_out`](@ref)
 """
 iddata(
     y::AbstractArray,
@@ -98,11 +124,23 @@ function Base.length(d::AbstractIdData)
     return length(y)
 end
 
+Base.axes(d::AbstractIdData, i::Integer) = Base.OneTo(i == 1 ? d.ny : d.nu)
+
 Base.lastindex(d::AbstractIdData) = length(d)
 
 function Base.getproperty(d::AbstractIdData, s::Symbol)
     if s === :fs || s === :Fs
         return 1 / d.Ts
+    elseif s === :timeevol
+        return Discrete(d.Ts)
+    elseif s === :t
+        return timevec(d)
+    elseif s === :ny
+        return noutputs(d)
+    elseif s === :nu
+        return ninputs(d)
+    elseif s === :nx
+        return nstates(d)
     end
     return getfield(d, s)
 end
@@ -149,8 +187,37 @@ function Base.getindex(d::AbstractIdData, i)
     end
 end
 
+function Base.getindex(d::AbstractIdData, i::AbstractRange)
+    apply_fun(d, d.Ts === nothing ? d.Ts : d.Ts*step(i)) do y
+        y[:, i]
+    end
+end
+
+struct Sec <: Number
+    i::Any
+end
+Base.:*(i, ::Type{Sec}) = Sec(i)
+(::Colon)(start::Sec, stop::Sec) = (start, stop)
+
+function Base.getindex(d::AbstractIdData, r::Tuple{Sec,Sec})
+    t = timevec(d)
+    s = findfirst(t .>= r[1].i)
+    e = findlast(t .<= r[2].i)
+    d[s:e]
+end
+
+function Base.:(*)(d::AbstractIdData, x)
+    y,u = d.y, d.u
+    iddata(y, x*u, d.Ts)
+end
+
+function Base.:(*)(x, d::AbstractIdData)
+    y,u = d.y, d.u
+    iddata(x*y, u, d.Ts)
+end
+
 """
-dr = resample(d::InputOutputData, f)
+    dr = resample(d::InputOutputData, f)
 
 Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
 """
@@ -169,17 +236,133 @@ function DSP.resample(M::AbstractMatrix, f)
     end
 end
 
+
 function Base.hcat(d1::InputOutputData, d2::InputOutputData)
     @assert d1.Ts == d2.Ts
     iddata([d1.y d2.y], [d1.u d2.u], d1.Ts)
 end
 
+"""
+    DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
+
+Write identification data to disk.
+"""
+function DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
+    writedlm(io, [d.y' d.u'], args...; kwargs...)
+end
+
+"""
+    ramp_in(d::InputOutputData, h::Int; rev = false)
+
+Multiply the initial `h` samples of input and output signals with a linearly increasing ramp.
+"""
+function ramp_in(d::InputOutputData, h::Int; rev=false)
+    if h <= 1
+        return d
+    end
+    u,y = input(d), output(d)
+    if rev
+        ramp = [
+            ones(length(d)-h)
+            range(1, stop=0, length=h);
+        ]
+    else
+        ramp = [
+            range(0, stop=1, length=h);
+            ones(length(d)-h)
+        ]
+    end
+    u = u .* ramp'
+    y = y .* ramp'
+    iddata(y,u,d.Ts)
+end
+
+"""
+    ramp_out(d::InputOutputData, h::Int)
+
+Multiply the final `h` samples of input and output signals with a linearly decreasing  ramp.
+"""
+ramp_out(d::InputOutputData, h::Int) = ramp_in(d,h; rev=true)
+
+
+## State space types ===========================================================
+
+abstract type AbstractPredictionStateSpace{T} <: AbstractStateSpace{T} end
+
+Base.@kwdef struct PredictionStateSpace{T} <: AbstractPredictionStateSpace{T}
+# has at least K, but perhaps also covariance matrices? Would be nice in order to be able to resample he system. Can be nothing in case they are not known
+    sys::AbstractStateSpace{T}
+    K
+    Q = nothing
+    R = nothing
+end
+
+Base.promote_rule(::Type{AbstractStateSpace{T}}, ::Type{<:AbstractPredictionStateSpace{T}}) where T<:ControlSystems.TimeEvolution  = StateSpace{T<:ControlSystems.TimeEvolution}
+
+Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{<:AbstractPredictionStateSpace{T}}) where {T<:ControlSystems.TimeEvolution, F} = StateSpace{T, F}
+
+Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{PredictionStateSpace{T}}) where {T<:ControlSystems.TimeEvolution, F} = StateSpace{T, F}
+
+Base.convert(::Type{<:StateSpace{T}}, s::AbstractPredictionStateSpace{T}) where T<:ControlSystems.TimeEvolution = deepcopy(s.sys)
+
+function Base.:(-)(sys0::ST) where ST <: AbstractPredictionStateSpace
+    otherfields = ntuple(i->getfield(sys0, i+1), fieldcount(ST)-1)
+    sys = sys0.sys
+    ST(typeof(sys)(sys.A, sys.B, -sys.C, -sys.D, sys.timeevol), otherfields...)
+end
+
+"""
+    N4SIDStateSpace <: AbstractPredictionStateSpace
+    
+The result of statespace model estimation using the `n4sid` method.
+
+# Fields:
+- `sys`: estimated model in the form of a [`StateSpace`](@ref) object
+- `Q`: estimated covariance matrix of the states
+- `R`: estimated covariance matrix of the measurements
+- `S`: estimated cross covariance matrix between states and measurements
+- `K`: kalman observer gain
+- `P`: solution to the Riccatti equation
+- `x`: estimated state trajectory
+- `s`: singular values
+- `fve`: Fraction of variance explained by singular values
+"""
+struct N4SIDStateSpace <: AbstractPredictionStateSpace{Discrete{Float64}}
+    sys::Any
+    Q::Any
+    R::Any
+    S::Any
+    K::Any
+    P::Any
+    x::Any
+    s::Any
+    fve::Any
+end
+
+@inline function Base.getproperty(res::AbstractPredictionStateSpace, p::Symbol)
+    if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
+        return getproperty(res.sys, p)
+    end
+    return getfield(res, p)
+end
+
+function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
+    if size(inds, 1) != 2
+        error("Must specify 2 indices to index statespace model")
+    end
+    rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
+    return PredictionStateSpace(ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol), sys.K[:, rows], sys.Q, sys.R[rows, rows])
+end
+
+ControlSystems.numeric_type(s::AbstractPredictionStateSpace) = ControlSystems.numeric_type(s.sys) 
+
+
 struct StateSpaceNoise{T,MT<:AbstractMatrix{T}} <:
-       ControlSystems.AbstractStateSpace{Discrete{Float64}}
+       AbstractPredictionStateSpace{Discrete{Float64}}
     A::MT
     B::MT
     K::MT
-    Ts::Discrete{Float64}
+    timeevol::Discrete{Float64}
     nx::Int
     nu::Int
     ny::Int
@@ -223,8 +406,8 @@ function Base.getproperty(sys::StateSpaceNoise, p::Symbol)
         return [I zeros(sys.ny, sys.nx - sys.ny)]
     elseif p === :D
         return zeros(sys.ny, sys.nu)
-    elseif p === :timeevol
-        return sys.Ts
+    elseif p === :Ts
+        return sys.timeevol.Ts
     end
     return getfield(sys, p)
 end
@@ -255,7 +438,7 @@ sysfilter!(s::SysFilter, u) = sysfilter!(s.state, s.sys, u)
 
 function sysfilter!(state::AbstractVector, sys::StateSpaceNoise, y, u)
     @unpack A, B, K, ny = sys
-    yh = state[1:ny] #vec(sys.C*state)
+    yh = state[1:ny] #vec(sys.C*state) # TODO: bug here if number of outputs is larger than the number of states
     e = y .- yh
     state .= vec(A * state + B * u + K * e)
     yh
@@ -340,34 +523,3 @@ function Base.iterate(i::SimulationErrorIterator, state = 1)
     (y - i.yh, state1)
 end
 Base.length(i::SimulationErrorIterator) = length(i.oi)
-
-@recipe function plot(d::AbstractIdData)
-    y = time1(output(d))
-    n = noutputs(d)
-    if hasinput(d)
-        u = time1(input(d))
-        n += ninputs(d)
-    end
-    layout --> (n, 1)
-    legend --> false
-    xguide --> "Time"
-    link --> :x
-    xvec = range(0, step = sampletime(d), length = length(d))
-
-    for i = 1:size(y, 2)
-        @series begin
-            title --> "Output $i"
-            label --> "Output $i"
-            xvec, y[:, i]
-        end
-    end
-    if hasinput(d)
-        for i = 1:size(u, 2)
-            @series begin
-                title --> "Input $i"
-                label --> "Input $i"
-                xvec, u[:, i]
-            end
-        end
-    end
-end

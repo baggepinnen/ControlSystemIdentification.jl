@@ -1,37 +1,3 @@
-
-"""
-    N4SIDStateSpace is the result of statespace model estimation using the `n4sid` method.
-
-# Fields:
-- `sys`: the estimated model in the form of a [`StateSpace`](@ref) object
-- `Q`: the estimated covariance matrix of the states
-- `R`: the estimated covariance matrix of the measurements
-- `S`: the estimated cross covariance matrix between states and measurements
-- `K`: the kalman observer gain
-- `P`: the solution to the Riccatti equation
-- `x`: the estimated state trajectory
-- `s`: The singular values
-- `fve`: Fraction of variance explained by singular values
-"""
-struct N4SIDStateSpace <: AbstractStateSpace{Discrete{Float64}}
-    sys::Any
-    Q::Any
-    R::Any
-    S::Any
-    K::Any
-    P::Any
-    x::Any
-    s::Any
-    fve::Any
-end
-
-@inline function Base.getproperty(res::N4SIDStateSpace, p::Symbol)
-    if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
-        return getproperty(res.sys, p)
-    end
-    return getfield(res, p)
-end
-
 @static if VERSION < v"1.3"
     (LinearAlgebra.I)(n) = Matrix{Float64}(I, n, n)
 end
@@ -94,7 +60,7 @@ function n4sid(
     UY1 = [U0i; hankel(u, i + 1, 2i - 1); Y0i]
     # proj(A, B) = A * (B' / (B * B'))
     # proj(A, B) = (A * B') / (B * B')
-    proj(A, B) = (svd(B * B') \ (A * B')')'
+    proj(A, B) = (svd(B * B') \ (A * B')')' # todo: these can be improved by not forming BB', use QR
     Li = proj(hankel(y, i, 2i - 1), UY0)
     Lip1 = proj(hankel(y, i + 1, 2i - 1), UY1)
 
@@ -168,7 +134,6 @@ function n4sid(
     local P, K
     try
         P, _, Kt, _ = MatrixEquations.ared(copy(A'), copy(C'), R, Q, S)
-        # K0 = ((C*P*C' + R)\(A*P*C' + S)')'
         K = Kt' |> copy
     catch
         P = fill(NaN, n, n)
@@ -207,7 +172,7 @@ function stabilize(L, XU, i, j, m, n, γ)
 end
 
 
-function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, y, u)
+function sysfilter!(state::AbstractVector, res::AbstractPredictionStateSpace{<:Discrete}, y, u)
     @unpack A, B, C, D, ny, sys, K = res
     yh = vec(C * state + D * u)
     e = y - yh
@@ -215,14 +180,14 @@ function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, y, u)
     yh
 end
 
-function sysfilter!(state::AbstractVector, res::N4SIDStateSpace, u)
+function sysfilter!(state::AbstractVector, res::AbstractPredictionStateSpace{<:Discrete}, u)
     @unpack A, B, C, D, ny, K, sys = res
     yh = vec(C * state + D * u)
     state .= vec(A * state + B * u)
     yh
 end
 
-SysFilter(res::N4SIDStateSpace, x0 = res.x[:, 1]) = SysFilter(res, x0, res.C * x0)
+SysFilter(res::AbstractPredictionStateSpace{<:Discrete}, x0 = res.x[:, 1]) = SysFilter(res, x0, res.C * x0)
 
 function simulate(
     res::N4SIDStateSpace,
@@ -244,35 +209,101 @@ function simulate(
 end
 
 m2vv(x) = [x[:, i] for i = 1:size(x, 2)]
-function predict(res::N4SIDStateSpace, d::AbstractIdData, x0 = res.x[:, 1])
+function predict(res::N4SIDStateSpace, d::AbstractIdData, x0 = nothing)
+    res.Ts == d.Ts || throw(ArgumentError("Sample tmie mismatch between data $(d.Ts) and system $(res.Ts)"))
     y = time2(output(d))
-    u = input(d)
+    u = time2(input(d))
+    x0 = get_x0(x0, res, d)
+    # u = input(d)
     @unpack C, D, sys = res
     kf = KalmanFilter(res, x0)
     U = m2vv(u)
-    X = forward_trajectory(kf, U, m2vv(y))[2] # Use the corrected state estimate [2]
+    X = forward_trajectory(kf, U, m2vv(y))[1] # Use the predicted state estimate [1]
+    
     yh = Ref(C) .* X .+ Ref(D) .* U
     oftype(y, yh)
 end
 
-function ControlSystems.lsim(res::N4SIDStateSpace, u; x0 = res.x[:, 1])
-    simulate(res.sys, input(u), x0)
+function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing)
+    sys.Ts == d.Ts || throw(ArgumentError("Sample tmie mismatch between data $(d.Ts) and system $(sys.Ts)"))
+    y = time2(output(d))
+    u = time2(input(d))
+    x0 = get_x0(x0, sys, d)
+    predict(sys, y, u, x0)
 end
 
+# causes ambiguities, should just work with regular lsim
+# function ControlSystems.lsim(res::AbstractPredictionStateSpace{<:Discrete}, u::Union{AbstractMatrix, AbstractIdData}; x0 = nothing)
+#     x0 = get_x0(x0, res, u)
+#     simulate(res.sys, input(u), x0)
+# end
 
-function LowLevelParticleFilters.KalmanFilter(res::N4SIDStateSpace, x0 = res.x[:, 1])
+Base.promote_rule(::Type{StateSpace{TE}}, ::Type{<:AbstractPredictionStateSpace{TE}}) where TE<:Discrete = StateSpace{TE}
+Base.promote_rule(::Type{<:StateSpace{TE}}, ::Type{N4SIDStateSpace}) where TE<:Discrete = StateSpace{TE}
+
+function Base.convert(::Type{StateSpace{TE}}, s::AbstractPredictionStateSpace{TE}) where TE<:Discrete
+    deepcopy(s.sys)
+end
+
+function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace, x0 = zeros(res.nx))
     sys = res.sys
-    @unpack A, B, C, D, ny, K, Q, R, P = res
-    kf = KalmanFilter(A, B, C, D, Q, R, MvNormal(x0, P))
+    @unpack A, B, C, D, ny, K, Q, R = res
+    if hasproperty(res, :P)
+        P = res.P
+    else
+        P = Matrix(Q)
+    end
+    kf = KalmanFilter(A, B, C, D, Matrix(Q), Matrix(R), MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 
 
-function LowLevelParticleFilters.forward_trajectory(kf::KalmanFilter, d::AbstractIdData)
+function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData)
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
     Y = m2vv(y)
     forward_trajectory(kf, U, Y)
+end
+
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData)
+    y = time2(output(d))
+    u = input(d)
+    U = m2vv(u)
+    Y = m2vv(y)
+    LowLevelParticleFilters.smooth(kf, U, Y)
+end
+
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, M::Int, d::AbstractIdData)
+    y = time2(output(d))
+    u = input(d)
+    U = m2vv(u)
+    Y = m2vv(y)
+    LowLevelParticleFilters.smooth(kf, M, U, Y)
+end
+
+function ControlSystems.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
+    sysr, G, T = balreal(sys.sys, args...; kwargs...)
+    nx = sysr.nx
+    K = T*sys.K # similarity transform is reversed here compared to below
+    Q = Hermitian(T*something(sys.Q, zeros(nx, nx))*T') # should be transpose here, not inverse
+    PredictionStateSpace(sysr, K, Q, sys.R), G, T
+end
+
+function ControlSystems.baltrunc(sys::AbstractPredictionStateSpace, args...; kwargs...)
+    sysr, G, T = baltrunc(sys.sys, args...; kwargs...)
+    nx = sysr.nx
+    K = (T*sys.K)[1:nx, :] # similarity transform is reversed here compared to below
+    Q = (T*something(sys.Q, zeros(nx, nx))*T')[1:nx, 1:nx]
+    PredictionStateSpace(sysr, K, Q, sys.R), G, T
+end
+
+function ControlSystems.similarity_transform(sys::AbstractPredictionStateSpace, T)
+    syss = similarity_transform(sys.sys, T)
+    nx = syss.nx
+    K = T\sys.K
+    T = pinv(T)
+    Q = Hermitian(T*something(sys.Q, zeros(nx, nx))*T') # should be transpose here, not inverse
+    PredictionStateSpace(syss, K, Q, sys.R)
 end
 
 ##

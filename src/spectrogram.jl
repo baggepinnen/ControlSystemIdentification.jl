@@ -112,7 +112,7 @@ end
 # function rootspectrogram(model, fs)
 #     roots = map(1:length(model)) do i
 #         sys = tf(1,[1;-reverse(model.θ[:,i])],1)
-#         (sort(pole(sys), by=imag, rev=true)[1:end÷2])
+#         (sort(poles(sys), by=imag, rev=true)[1:end÷2])
 #         # log.(sort(complex.(eigvals(model.At[:,:,i])), by=imag, rev=true)[1:end÷2])
 #     end
 #     S = reduce(hcat,roots)

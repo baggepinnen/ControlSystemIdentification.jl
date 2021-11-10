@@ -1,0 +1,25 @@
+site_name:        ControlSystemIdentification.jl
+repo_url:         https://github.com/baggepinnen/ControlSystemIdentification.jl
+site_description: Documentation for ControlSystemIdentification.jl
+site_author:      Fredrik Bagge Carlson
+
+theme: cinder
+
+extra_css:
+  - assets/Documenter.css
+
+extra_javascript:
+  - https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS_HTML
+  - assets/mathjaxhelper.js
+
+markdown_extensions:
+  - extra
+  - tables
+  - fenced_code
+  - mdx_math:
+      enable_dollar_delimiter: True
+
+docs_dir: 'build'
+
+pages:
+  - Home: index.md

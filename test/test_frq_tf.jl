@@ -9,12 +9,12 @@ data = FRD(w, Gtest)
 p0 = (a = [1.0, 1.0, 1.0], b = [1.1]) # Initial guess
 
 Gest = tfest(data, p0, freq_weight = 0)
-@test norm(pole(Gtest) - pole(Gest)) < 0.01
+@test norm(poles(Gtest) - poles(Gest)) < 0.01
 @test dcgain(Gtest) ≈ dcgain(Gest)
 
 Gest = tfest(data, tf(p0.b, p0.a), freq_weight = 0)
-@test norm(pole(Gtest) - pole(Gest)) < 0.01
-@test norm(pole(Gtest) - pole(minimum_phase(Gest))) < 0.01
+@test norm(poles(Gtest) - poles(Gest)) < 0.01
+@test norm(poles(Gtest) - poles(minimum_phase(Gest))) < 0.01
 @test dcgain(Gtest) ≈ dcgain(Gest)
 
 if isinteractive()
@@ -26,38 +26,39 @@ end
 
 ## Test fitting with basis functions
 a = exp10.(LinRange(-1, 1, 7))
-poles = ωζ2complex.(a, 0.1)
-poles = [poles; conj.(poles)]
-# poles = a
-# basis = kautz(poles, 1/(200))
+pols = ωζ2complex.(a, 0.1)
+pols = [pols; conj.(pols)]
+# pols = a
+# basis = kautz(pols, 1/(200))
 basis = laguerre_oo(1, 50)
 
-Gest,p = tfest(data, basis)
-r_est = FRD(w, Gest)
-
-@test mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+@test count(1:4) do _
+    Gest,p = tfest(data, basis)
+    r_est = FRD(w, Gest)
+    mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+end >= 2
 
 
 
 if isinteractive()
     Gr, Gram = baltrunc(Gest)
     Gmp = ControlSystemIdentification.minimum_phase(Gr)
-    Gr = baltrunc(Gmp)[1]
-    bodeplot(Gtest, w, show=false)
-    bodeplot!(Gest, w, show=false)
-    bodeplot!(Gr, w, show=false)
-    bodeplot!(Gmp, w, show=true)
+    Gr = minreal(Gmp, rtol=1e-6)
+    bodeplot(Gtest, w, show=false, lab="Gtest")
+    bodeplot!(Gest, w, show=false, lab="Gest")
+    bodeplot!(Gr, w, show=false, lab="Gr")
+    bodeplot!(Gmp, w, show=true, lab="Gmp")
 end
 
 
 ##
 if isinteractive()
     t = 0:0.01:100
-    u = randn(length(t))
+    u = randn(1,length(t))
     y,_ = lsim(Gtest, u, t)
     yest,_ = lsim(Gest, u, t)
     ymp,_ = lsim(Gmp, u, t)
-    plot([y yest ymp])
+    plot([y' yest' ymp'])
 end
 
 
@@ -163,3 +164,14 @@ end
 # bodeplot(Gfir, w, ticks=:default)
 # display(current())
 
+
+# Generate test case for minreal
+basis = laguerre_oo(1, 30)
+@test count(1:4) do _
+    Gest,p = tfest(data, basis)
+    r_est = FRD(w, Gest)
+    mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+end >= 2
+# Gr, Gram = baltrunc(Gest)
+# Gr = minreal(Gest)
+# hinfnorm(Gr-Gest)
