@@ -32,10 +32,11 @@ pols = [pols; conj.(pols)]
 # basis = kautz(pols, 1/(200))
 basis = laguerre_oo(1, 50)
 
-Gest,p = tfest(data, basis)
-r_est = FRD(w, Gest)
-
-@test mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+@test count(1:4) do _
+    Gest,p = tfest(data, basis)
+    r_est = FRD(w, Gest)
+    mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+end >= 2
 
 
 
@@ -166,9 +167,11 @@ end
 
 # Generate test case for minreal
 basis = laguerre_oo(1, 30)
-Gest,p = tfest(data, basis)
-r_est = FRD(w, Gest)
-@test mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+@test count(1:4) do _
+    Gest,p = tfest(data, basis)
+    r_est = FRD(w, Gest)
+    mean(abs2, log.(abs.(r_est.r)) .- log.(abs.(data.r))) < 0.05
+end >= 2
 # Gr, Gram = baltrunc(Gest)
 # Gr = minreal(Gest)
 # hinfnorm(Gr-Gest)

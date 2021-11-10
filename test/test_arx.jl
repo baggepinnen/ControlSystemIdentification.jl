@@ -1,5 +1,11 @@
 using ControlSystemIdentification, MonteCarloMeasurements
 unsafe_comparisons(true)
+wtest = exp10.(LinRange(-3, log10(pi), 30))
+freqresptest(G, model) =
+    maximum(abs, log10.(abs2.(freqresp(model, wtest))) .- log10.(abs2.(freqresp(G, wtest))))
+
+freqresptest(G, model, tol) = freqresptest(G, model) < tol
+
 """
 Compare a tf to a tf based on particles .. maybe replaye by correct dispatched isapprox
 """
