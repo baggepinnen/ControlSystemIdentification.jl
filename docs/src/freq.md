@@ -30,7 +30,7 @@ coherenceplot!(dn, subplot=3)
 plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
 plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 ```
-![window](../../figs/bodecoher.png)
+![window](https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/figs/bodecoher.png?raw=true)
 
 The left figure displays the Bode magnitude of the true system, together with the estimate (noisy), and the middle figure illustrates the estimated noise model. The right figure displays the coherence function ([`coherenceplot`](@ref)), which is close to 1 everywhere except for at the resonance peak of the noise `log10(sqrt(0.3)) = -0.26`.
 
@@ -66,7 +66,7 @@ estimator = model_spectrum(ar,1/fs,6)
 S2 = spectrogram(s,estimator,window=rect, fs=fs)     # Model-based spectrogram
 plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Requires the package LPVSpectral.jl
 ```
-![window](../../figs/ar_spectrogram.svg)
+![window](https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/figs/ar_spectrogram.svg?raw=true)
 
 
 

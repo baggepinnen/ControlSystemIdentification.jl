@@ -16,7 +16,7 @@ d  = iddata(y,u,h)
 impulseestplot(d,50, lab="Estimate")
 plot!(impulse(sys,50), lab="True system")
 ```
-![window](../../figs/impulse.svg)
+![window](https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/figs/impulse.svg?raw=true)
 
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl) for more details.

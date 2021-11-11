@@ -46,7 +46,7 @@ bodeplot!(sys,                                     ω, plotphase=false, subplot=
 bodeplot!(innovation_form(ss(sys),syse=ss(sysn)),  ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 display(fig)
 ```
-![window](../../figs/val.svg)
+![window](https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/figs/val.svg?raw=true)
 
 In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the gain of the noise dynamics.
 The figure also indicates that a model with 4 poles performs best on both prediction and simulation data. The true system has 4 poles (two in the process and two in the noise process) so this is expected. However, the third order model performs almost equally well and may be a better choice.
