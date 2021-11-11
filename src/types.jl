@@ -66,19 +66,12 @@ iddata(y::AbstractArray, u::AbstractArray, Ts::Union{Real,Nothing} = nothing) =
 Returns the appropriate IdData object, depending on the input.
 
 # Arguments
-- `y::AbstractArray`: output data
-- `u::AbstractArray`: input data
-- `x::AbstractArray`: state data
+- `y::AbstractArray`: output data (required)
+- `u::AbstractArray`: input data (if available)
+- `x::AbstractArray`: state data (if available)
 - `Ts::Union{Real,Nothing} = nothing`: optional sample time
 
-# Examples
-```jldoctest
-julia> iddata(randn(10))
-Output data of length 10 with 1 outputs
-
-julia> iddata(randn(10), randn(10), 1)
-InputOutput data of length 10 with 1 outputs and 1 inputs
-```
+If the time-series are multivariate, time is in the *last* dimension.
 
 # Operations on iddata
 - [`prefilter`](@ref)
@@ -93,6 +86,30 @@ InputOutput data of length 10 with 1 outputs and 1 inputs
 - postmultiply to scale inputs `d * B`
 - [`writedlm`](@ref)
 - [`ramp_in`](@ref), [`ramp_out`](@ref)
+
+# Examples
+```jldoctest
+julia> iddata(randn(10))
+Output data of length 10 with 1 outputs
+
+julia> iddata(randn(10), randn(10), 1)
+InputOutput data of length 10 with 1 outputs and 1 inputs
+
+julia> d = iddata(randn(2, 10), randn(3, 10), 0.1)
+InputOutput data of length 10 with 2 outputs and 3 inputs
+
+julia> [d d] # Concatenate along time
+InputOutput data of length 20 with 2 outputs and 3 inputs
+
+julia> d[1:3]
+InputOutput data of length 3 with 2 outputs and 3 inputs
+
+julia> d.nu
+3
+
+julia> d.t # access time vector
+0.0:0.1:0.9
+```
 """
 iddata(
     y::AbstractArray,

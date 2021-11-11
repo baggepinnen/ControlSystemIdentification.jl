@@ -6,7 +6,7 @@ where $T$ is the temperature, $u$ the control signal and $c$ a constant offset, 
 ```math
 \dfrac{B}{\tau s + 1}U(s)
 ```
-This is a simple first-order transfer function which can be estimated with, e.g., the functions [`arx`](@ref) och [`plr`](@ref). To illustrate this, we create such a system and simulate some data from it.
+This is a simple first-order transfer function which can be estimated with, e.g., the functions [`arx`](@ref) or [`plr`](@ref). To illustrate this, we create such a system and simulate some data from it.
 ```@example temp
 using ControlSystems, ControlSystemIdentification, Plots
 w = 2pi .* exp10.(LinRange(-3, log10(0.5), 500))
@@ -39,11 +39,13 @@ Gh, Gh2
 Least-squares estimation of ARX models from data with high measurement noise is known to lead to models with poor low-frequency fit, we therefore used the `wtls_estimator(data.y, na, nb)` which performs the estimation with total-least squares.
 
 We can plot the results in several different ways:
-```@example temp
+```@repl temp
 # Plot results
-println("Estimated system")
+println("Estimated system in continuous time")
 display(d2c(Gh)) # Convert from discrete to continuous time
+```
 
+```@example temp
 bp = bodeplot(G, w, lab = "G (true)", hz = true, l = 5)
 bodeplot!(Gh, w, lab = "arx", hz = true)
 bodeplot!(Gh2, w, lab = "plr", hz = true, ticks = :default)

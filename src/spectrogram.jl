@@ -40,6 +40,22 @@ function DSP.spectrogram(
 
 end
 
+"""
+    stft(s::AbstractVector{T}, estimator::Function, n::Int = length(s) >> 3, noverlap::Int = n >> 1, psdonly::Union{Nothing, PSDOnly} = nothing; onesided::Bool = eltype(s) <: Real, nfft::Int = nextfastfft(n), fs::Real = 1, window::Union{Function, AbstractVector, Nothing} = nothing)
+
+Model-based short-time Fourier transform.
+
+# Arguments:
+- `s`: Signal
+- `estimator`: DESCRIPTION
+- `n`: DESCRIPTION
+- `noverlap`: DESCRIPTION
+- `psdonly`: DESCRIPTION
+- `onesided`: DESCRIPTION
+- `nfft`: DESCRIPTION
+- `fs`: DESCRIPTION
+- `window`: DESCRIPTION
+"""
 function stft(
     s::AbstractVector{T},
     estimator::Function,
@@ -76,8 +92,6 @@ end
 
 """
     model_spectrum(f, h, args...; kwargs...)
-
-DOCSTRING
 
 # Arguments:
 - `f`: the model-estimation function, e.g., `ar,arma`

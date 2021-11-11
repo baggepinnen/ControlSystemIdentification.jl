@@ -155,6 +155,46 @@ end
 
 
 using Optim, Optim.LineSearches
+
+"""
+    newpem(
+        d,
+        nx;
+        zeroD = true,
+        sys0 = subspaceid(d, nx; zeroD),
+        focus = :prediction,
+        optimizer = BFGS(
+            alphaguess = LineSearches.InitialStatic(alpha = 1),
+            linesearch = LineSearches.HagerZhang(),
+        ),
+        zerox0 = false,
+        initx0 = false,
+        store_trace = true,
+        show_trace = true,
+        show_every = 50,
+        iterations = 10000,
+        allow_f_increases = false,
+        time_limit = 100,
+        x_tol = 0,
+        f_abstol = 0,
+        g_tol = 1e-12,
+        f_calls_limit = 0,
+        g_calls_limit = 0,
+    )
+
+A new implementation of the prediction-error method (PEM). Note that this is an experimental implementation and subject to breaking changes not respecting semver.
+
+# Arguments:
+- `d`: [`iddata`](@ref)
+- `nx`: Model order
+- `zeroD`: Force zero `D` matrix
+- `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
+- `focus`: `prediction` or `:simulation`. If `:simulation`, hte `K` matrix will be zero.
+- `optimizer`: One of Optim's optimizers
+- `zerox0`: Force initial state to zero.
+- `initx0`: Estimate initial state once, otherwise at each iteration
+The rest of the arguments are related to `Optim.Options`.
+"""
 function newpem(
     d,
     nx;

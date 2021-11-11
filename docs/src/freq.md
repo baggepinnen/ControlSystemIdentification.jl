@@ -71,6 +71,7 @@ plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Re
 
 
 ```@docs
+ControlSystemIdentification.FRD
 ControlSystemIdentification.tfest
 ControlSystemIdentification.coherence
 ControlSystemIdentification.laguerre_oo

@@ -50,3 +50,13 @@ display(fig)
 
 In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the gain of the noise dynamics.
 The figure also indicates that a model with 4 poles performs best on both prediction and simulation data. The true system has 4 poles (two in the process and two in the noise process) so this is expected. However, the third order model performs almost equally well and may be a better choice.
+
+
+
+```@docs
+ControlSystemIdentification.simulate
+ControlSystemIdentification.predplot
+ControlSystemIdentification.simplot
+ControlSystemIdentification.coherenceplot
+ControlSystemIdentification.bodeconfidence
+```

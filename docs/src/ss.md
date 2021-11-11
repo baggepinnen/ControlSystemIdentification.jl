@@ -126,3 +126,11 @@ Furthermore, we have the utility functions below
 - [`predictiondata`](@ref)
 
 
+```@docs
+ControlSystemIdentification.subspaceid
+ControlSystemIdentification.n4sid
+ControlSystemIdentification.pem
+ControlSystemIdentification.newpem
+ControlSystemIdentification.era
+ControlSystemIdentification.okid
+```
