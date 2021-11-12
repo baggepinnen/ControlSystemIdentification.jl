@@ -13,11 +13,13 @@ struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
     w::WT
     r::RT
 end
-
+"Represents frequencies in Herz for indexing of `FRD` objects: frd[2Hz:10Hz]"
 struct Hz <: Number
     i::Any
 end
 Base.:*(i, ::Type{Hz}) = Hz(i)
+
+"Represents frequencies in rad/s for indexing of `FRD` objects: frd[2rad:10rad]"
 struct rad <: Number
     i::Any
 end

@@ -38,12 +38,12 @@ See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 ## Parametric estimation
-To estimate a parametric, rational transfer function from frequency-domain data, call [`tfest`](@ref) with an `FRD` object and an initial guess for the system model. This initial guess determines the number of coefficients in the numerator and denominator of the estimated model.
+To estimate a parametric, rational transfer function from frequency-domain data, call [`tfest`](@ref) with an [`FRD`](@ref) object and an initial guess for the system model. This initial guess determines the number of coefficients in the numerator and denominator of the estimated model.
 ```julia
 G0 = tf(1.0, [1,1,1]) # Initial guess
 G = tfest(d::FRD, G0)
 ```
-Internally, Optim is using a gradient-based optimizer to find the optimal fit of the bode curve of the system. The defaut optimizer `BFGS` can be changed, see the docstring `?tfest`.
+Internally, Optim is using a gradient-based optimizer to find the optimal fit of the bode curve of the system. The default optimizer `BFGS` can be changed, see the docstring `?tfest`.
 
 For a comparison between estimation in the time and frequency domains, see [this notebook](https://nbviewer.jupyter.org/github/JuliaControl/ControlExamples.jl/blob/master/identification_time_vs_freq.ipynb).
 
@@ -71,7 +71,6 @@ plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Re
 
 
 ```@docs
-ControlSystemIdentification.FRD
 ControlSystemIdentification.tfest
 ControlSystemIdentification.coherence
 ControlSystemIdentification.laguerre_oo

@@ -22,6 +22,11 @@ function kautz(a::AbstractVector)
     d2c(b)
 end
 
+"""
+    kautz(a::Vector, h)
+
+Construct a discrete-time Kautz basis of length with poles at `a` amd sample time `h`.
+"""
 function kautz(a::AbstractVector, h)
     if maximum(abs, a) > 1
         if all(>(0) ∘ real, a)
@@ -43,6 +48,11 @@ function kautz(a::AbstractVector, h)
 end
 
 
+"""
+    laguerre_oo(a::Number, Nq)
+
+Construct an output orthogonalized Laguerre basis of length `Nq` with poles at `a`.
+"""
 function laguerre_oo(a::Number, Nq)
     A = diagm(fill(-a, Nq))
     for i = 2:Nq
@@ -52,7 +62,11 @@ function laguerre_oo(a::Number, Nq)
     ss(A,I(Nq),C,0)
 end
 
+"""
+    laguerre(a::Number, Nq)
 
+Construct a Laguerre basis of length `Nq` with poles at `a`.
+"""
 function laguerre(a, Nq)
     A = diagm(fill(-a, Nq))
     A[diagind(A, 1)] .= 1
@@ -160,6 +174,11 @@ function basis_responses(basis::AbstractStateSpace, ω; inverse=false)
     end
 end
 
+"""
+    filter_bank(basis::AbstractStateSpace{<:Discrete}, signal::AbstractMatrix)
+
+Filter `signal` through all systems in `basis`
+"""
 function filter_bank(basis::AbstractStateSpace{<:Discrete}, signal::AbstractMatrix)
     size(signal, 1) == 1 || throw(ArgumentError("Only supporting 1D signals"))
     no = ninputs(basis)
@@ -182,7 +201,14 @@ Base.one(::TransferFunction{Continuous, ControlSystems.SisoRational{Float64}}) =
 
 
 reflect(x) = complex(-abs(real(x)), imag(x))
-function minimum_phase(G::TransferFunction)
+
+
+"""
+    minimum_phase(G::TransferFunction)
+
+Move zeros and poles of `G` from the unstable half plane to the stable.
+"""
+function minimum_phase(G::TransferFunction{Continuous})
     z,p,k = zpkdata(G) .|> first
     z = reflect.(z)
     p = reflect.(p)

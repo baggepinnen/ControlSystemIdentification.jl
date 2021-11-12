@@ -53,10 +53,4 @@ The figure also indicates that a model with 4 poles performs best on both predic
 
 
 
-```@docs
-ControlSystemIdentification.simulate
-ControlSystemIdentification.predplot
-ControlSystemIdentification.simplot
-ControlSystemIdentification.coherenceplot
-ControlSystemIdentification.bodeconfidence
-```
+See also [`simulate`](@ref), [`predplot`](@ref), [`simplot`](@ref), [`coherenceplot`](@ref)
