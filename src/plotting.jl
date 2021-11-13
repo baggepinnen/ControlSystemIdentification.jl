@@ -242,7 +242,7 @@ impulseestplot
         t, ir
     end
     linestyle := :dash
-    color := :black
+    seriescolor := :black
     label := ""
     seriestype := :hline
     @series begin
