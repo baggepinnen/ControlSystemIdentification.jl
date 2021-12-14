@@ -296,6 +296,8 @@ The method used comes from theorem 5 in the reference below.
 Ref: "Discrete-time Solutions to the Continuous-time
 Differential Lyapunov Equation With Applications to Kalman Filtering", 
 Patrik Axelsson and Fredrik Gustafsson
+
+On singular covariance matrices: The traditional double integrator with covariance matrix `Q = diagm([0,σ²])` can not be sampled with this method. Instead, the input matrix ("Cholesky factor") of `Q` must be manually kept track of, e.g., the noise of variance `σ²` enters like `N = [0, 1]` which is sampled using ZoH and becomes `Nd = [1/2 Ts^2; Ts]` which results in the covariance matrix `σ² * Nd * Nd'`. 
 """
 function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qc::AbstractMatrix, R=nothing)
     Ad  = sys.A
@@ -315,6 +317,21 @@ function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, 
         Qd, R ./ h
     end
 end
+
+function ControlSystems.c2d(sys::AbstractPredictionStateSpace{ControlSystems.Continuous}, Ts::Real; kwargs...)
+    nx, nu, ny = sys.nx, sys.nu, sys.ny
+    sysd = c2d(sys.sys, Ts)
+    Qd, Rd = c2d(sysd, sys.Q, sys.R)
+    M = exp([sys.A.*Ts  sys.K.*Ts;
+            zeros(ny, nx+ny)])
+    # Ac = M[1:nx, 1:nx]
+    Kd = M[1:nx, nx+1:nx+ny]
+    if eltype(sys.A) <: Real
+        Kd = real.(Kd)
+    end
+    PredictionStateSpace(sysd, Kd, Qd, Rd) # modifying R is required to get kalman(sys,Q,R) ≈ K
+end
+
 
 function ControlSystems.d2c(sys::AbstractPredictionStateSpace{<:ControlSystems.Discrete})
     nx, nu, ny = sys.nx, sys.nu, sys.ny

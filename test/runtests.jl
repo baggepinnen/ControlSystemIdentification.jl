@@ -280,10 +280,15 @@ end
         @test sum(!isfinite, y) == 0
         yn = y + 0.1randn(size(y))
         d = iddata(yn, u, 1)
-        res = n4sid(d, r, γ = 0.99)
-        Qc = d2c(res.sys, res.Q)
-        Qd = c2d(res.sys, Qc)
-        @test Qd ≈ res.Q
+        sys = n4sid(d, r, γ = 0.99)
+        Qc = d2c(sys, sys.Q)
+        Qd = c2d(sys, Qc)
+        @test Qd ≈ sys.Q
+
+        sysc = d2c(sys)
+        sysd = c2d(sysc, sys.Ts)
+        @test sysd.Q ≈ sys.Q
+        @test sysd.K ≈ sys.K rtol=1e-2
     end
 end
 
