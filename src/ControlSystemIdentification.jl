@@ -4,7 +4,6 @@ using BandedMatrices,
     ComponentArrays,
     ControlSystems,
     DelimitedFiles,
-    DSP,
     FFTW,
     FillArrays,
     LinearAlgebra,
@@ -18,6 +17,8 @@ using BandedMatrices,
     Statistics,
     StatsBase,
     TotalLeastSquares
+import DSP
+using DSP: filt, filtfilt, freqz, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients
 import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
@@ -324,7 +325,6 @@ function ControlSystems.c2d(sys::AbstractPredictionStateSpace{ControlSystems.Con
     Qd, Rd = c2d(sysd, sys.Q, sys.R)
     M = exp([sys.A.*Ts  sys.K.*Ts;
             zeros(ny, nx+ny)])
-    # Ac = M[1:nx, 1:nx]
     Kd = M[1:nx, nx+1:nx+ny]
     if eltype(sys.A) <: Real
         Kd = real.(Kd)
