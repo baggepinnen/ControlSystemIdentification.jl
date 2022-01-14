@@ -1,3 +1,4 @@
+using ControlSystemIdentification: rms
 N = 10000
 t = 1:N
 y = zeros(1,N)
@@ -37,7 +38,7 @@ Gh = ar(d, na)
 @test Gh ≈ G atol = 0.02 # We should be able to recover this transfer function
 @test freqresptest(G, Gh, 0.05)
 yh = predict(Gh, y)
-@test rms(y[1:1, 2:end] - yh) < 0.0102
+@test rms(y[1, 2:end] - yh[:]) < 0.0102
 
 Gh2 = ar(d, na, stochastic = true)
 @test denvec(Gh2)[1][end] ≈ denvec(Gh)[1][end]

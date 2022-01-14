@@ -9,7 +9,7 @@ Represents frequency-response data. `w` holds the frequency vector and `r` the r
 - `plot`
 - `feedback`
 """
-struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem
+struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem{Continuous}
     w::WT
     r::RT
 end

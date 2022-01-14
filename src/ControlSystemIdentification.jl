@@ -18,7 +18,7 @@ using BandedMatrices,
     StatsBase,
     TotalLeastSquares
 import DSP
-using DSP: filt, filtfilt, freqz, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients
+using DSP: filt, filtfilt, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients, hamming, hanning, gaussian, xcorr
 import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options

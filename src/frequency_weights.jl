@@ -8,7 +8,7 @@ get_frequencyweight_tf(G::FilterCoefficients) = G
 function frequency_weight(system, N)
     ω = range(0, stop = pi, length = N)
     G = get_frequencyweight_tf(system)
-    Φ = freqz(G, ω)
+    Φ = DSP.freqresp(G, ω)
     acf = irfft(abs2.(Φ), 2length(Φ) - 1)[1:end÷2+1]
     n = length(acf)
 

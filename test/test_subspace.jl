@@ -63,7 +63,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         if m == l # == 1
             iy, it, ix = impulse(G, 20)
             H = okid(d, r, 20)
-            @test norm(iy - permutedims(H, (1, 3, 2))) < 0.05
+            @test norm(iy - permutedims(H, (1, 3, 2))) < 0.06
             # plot([iy vec(H)])
 
             sys = era(d, r)
@@ -194,12 +194,12 @@ end
 
     # test that the transformation of K leaves the closed-loop poles intact
     Gb, gra, T = balreal(sys)
-    @test cl_eig(Gb, Gb.K) ≈ e0
+    @test cl_eig(Gb, Gb.K) ≈ e0 rtol=1e-6
     @test iscontinuous(Gb)
 
     # test that the transformation of Q is correct
     Kb = kalman(Gb.sys, Gb.Q, Gb.R)
-    @test cl_eig(Gb, Kb) ≈ e0
+    @test cl_eig(Gb, Kb) ≈ e0 rtol=1e-6
 
     Gr = baltrunc(sys, n=1)[1]
     @test Gr.nx == 1
@@ -214,7 +214,7 @@ end
 
     Kt = kalman(syst.sys, syst.Q, syst.R)
     @test Kt ≈ syst.K
-    @test cl_eig(syst, Kt) ≈ e0 rtol=0.01
+    @test cl_eig(syst, Kt) ≈ e0 rtol=1e-6
 
 
     # Discrete
@@ -234,7 +234,7 @@ end
 
         # test that the transformation of Q is correct
     Kb = kalman(Gb.sys, Gb.Q, Gb.R)
-    @test cl_eig(Gb, Kb) ≈ e0
+    @test cl_eig(Gb, Kb) ≈ e0 rtol=1e-6
 
     T = [1 0.1; 0.1 1]#randn(2,2)
     syst = similarity_transform(sys, T)
@@ -244,7 +244,7 @@ end
 
     Kt = kalman(syst.sys, syst.Q, syst.R)
     @test Kt ≈ syst.K
-    @test cl_eig(syst, Kt) ≈ e0 rtol=0.01
+    @test cl_eig(syst, Kt) ≈ e0 rtol=1e-6
 
 end
 

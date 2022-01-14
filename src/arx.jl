@@ -474,7 +474,7 @@ function arxar_predictor(G, H)
     Bw = [0B; Bd]
     Rw = Bw*I(1)*Bw'
     # Rw = I(syse.nx)
-    Re = 0.0001I(syse.ny)
+    Re = Matrix(0.0001I(syse.ny))
     K = kalman(syse, Rw, Re)
     PredictionStateSpace(syse, K, Rw, Re)
 end

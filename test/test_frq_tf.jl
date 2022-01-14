@@ -8,11 +8,11 @@ data = FRD(w, Gtest)
 
 p0 = (a = [1.0, 1.0, 1.0], b = [1.1]) # Initial guess
 
-Gest = tfest(data, p0, freq_weight = 0)
+Gest = tfest(data, p0, freq_weight = 0) |> minimum_phase
 @test norm(poles(Gtest) - poles(Gest)) < 0.01
 @test dcgain(Gtest) ≈ dcgain(Gest)
 
-Gest = tfest(data, tf(p0.b, p0.a), freq_weight = 0)
+Gest = tfest(data, tf(p0.b, p0.a), freq_weight = 0) |> minimum_phase
 @test norm(poles(Gtest) - poles(Gest)) < 0.01
 @test norm(poles(Gtest) - poles(minimum_phase(Gest))) < 0.01
 @test dcgain(Gtest) ≈ dcgain(Gest)
@@ -41,13 +41,14 @@ end >= 2
 
 
 if isinteractive()
-    Gr, Gram = baltrunc(Gest)
+    Gr, Gram = baltrunc(ss(Gest))
     Gmp = ControlSystemIdentification.minimum_phase(Gr)
     Gr = minreal(Gmp, rtol=1e-6)
     bodeplot(Gtest, w, show=false, lab="Gtest")
     bodeplot!(Gest, w, show=false, lab="Gest")
     bodeplot!(Gr, w, show=false, lab="Gr")
     bodeplot!(Gmp, w, show=true, lab="Gmp")
+    display(current())
 end
 
 
@@ -55,10 +56,10 @@ end
 if isinteractive()
     t = 0:0.01:100
     u = randn(1,length(t))
-    y,_ = lsim(Gtest, u, t)
-    yest,_ = lsim(Gest, u, t)
-    ymp,_ = lsim(Gmp, u, t)
-    plot([y' yest' ymp'])
+    y = lsim(Gtest, u, t)
+    yest = lsim(Gest, u, t)
+    ymp = lsim(Gmp, u, t)
+    plot([y, yest, ymp])
 end
 
 
@@ -71,7 +72,7 @@ end
 
 # plotly(show=false)
 
-# function DSP.freqz(filter::AbstractVector, w::AbstractVector, h::Real)
+# function DSP.freqresp(filter::AbstractVector, w::AbstractVector, h::Real)
 #     n = h/length(filter)
 #     map(w) do w
 #         sum(filter[i]*cis(-w*(i-1)*n) for i in eachindex(filter))
