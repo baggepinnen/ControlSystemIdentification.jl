@@ -3,7 +3,9 @@ if haskey(ENV, "CI")
     ENV["GKSwstype"] = "100" # gr segfault workaround
 end
 
-using ControlSystemIdentification, ControlSystems, Optim, Plots, DSP, TotalLeastSquares
+using ControlSystemIdentification, ControlSystems, Optim, Plots, TotalLeastSquares
+import DSP
+using DSP: spectrogram, hanning
 using Test, Random, LinearAlgebra, Statistics
 import ControlSystemIdentification as CSI
 
@@ -244,10 +246,10 @@ end
         @info "Testing Spectrogram"
         T = 1000
         s = sin.((1:T) .* 2pi / 10)
-        S1 = spectrogram(s, window = hanning)
+        S1 = spectrogram(s, window = DSP.hanning)
 
         estimator = model_spectrum(ar, 1, 2)
-        S2 = spectrogram(s, estimator, window = hanning)
+        S2 = spectrogram(s, estimator, window = DSP.hanning)
         @test maximum(
             findmax(S1.power, dims = 1)[2][:] - findmax(S2.power, dims = 1)[2][:],
         ) <= CartesianIndex(1, 0)
@@ -256,7 +258,7 @@ end
         ) >= CartesianIndex(-1, 0)
 
         estimator = model_spectrum(arma, 1, 2, 1)
-        S2 = spectrogram(s, estimator, window = hanning)
+        S2 = spectrogram(s, estimator, window = DSP.hanning)
         @test maximum(
             findmax(S1.power, dims = 1)[2][:] - findmax(S2.power, dims = 1)[2][:],
         ) <= CartesianIndex(1, 0)

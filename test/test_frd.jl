@@ -24,8 +24,9 @@ k = coherence(d)
 
 k = coherence(dn)
 @test all(k.r[1:10] .> 0.9)
-@test k.r[end] .> 0.7
-@test k.r[findfirst(k.w .> ωn)] < 0.6
+@test k.r[end-1] > 0.5
+i = findfirst(k.w .> ωn)
+@test mean(k.r[i .+ (-2:5)]) < 0.6
 G, N = tfest(dn, 0.02)
 noisemodel = innovation_form(ss(sys), syse = ss(sysn))
 noisemodel.D .*= 0
