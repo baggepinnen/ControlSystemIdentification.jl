@@ -580,15 +580,15 @@ Freqresp
 function vconv(w::T, vars::AbstractArray{R}) where {T, R}
     n = size(vars,1)
     S = promote_type(T, R)
-    c = zeros(S, 2n - 1)
+    c = zero(S)
     vars = reverse(vars)
     sv = [1,0,-1,0]
     for i in 1:n, j in 1:n
         s = sv[abs(i-j) % 4 + 1]
         val = (w^(i-1) * w^(j-1) * vars[i]*vars[j])[]
-        @inbounds c[i + j - 1] += s*val
+        @inbounds c += s*val
     end
-    return sum(c)
+    return c
 end
 
 
