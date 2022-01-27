@@ -623,7 +623,7 @@ The initial pahse of the optimization solves
 ```
 and the second stage (if refine=true) solves 
 ```math
-\\operatorname{minimize}_{B,A}{|| \\text{link}\left(\\dfrac{B}{A}\right) - \\text{link}\left(l\right)||}
+\\operatorname{minimize}_{B,A}{|| \\text{link}\\left(\\dfrac{B}{A}\\right) - \\text{link}\\left(l\\right)||}
 ```
 (`abs2(link(B/A) - link(l))`)
 
@@ -635,6 +635,8 @@ and the second stage (if refine=true) solves
 - `refine`: Indicate whether or not a second optimization stage is performed to refine the results of the first.
 - `opt`: The Optim optimizer to use.
 - `opts`: `Optim.Options` controlling the solver options.
+
+See also [`minimum_phase`](@ref) to transform a possibly non-minimum phase system to minimum phase.
 """
 function tfest(
     data::FRD,
@@ -679,7 +681,7 @@ function tfest(
     function loss(p)
         a, b = p.a, p.b
         mean(eachindex(w)) do i
-            abs2(vconv(w[i], b) - vconv(w[i], a) .* abs2(l[i]))
+            abs2(vconv(w[i], b) - vconv(w[i], a) * abs2(l[i]))
         end
     end
 
