@@ -68,8 +68,8 @@ export kautz, laguerre, laguerre_oo, adhocbasis, sum_basis, basis_responses, fil
 
 include("utils.jl")
 include("types.jl")
-include("pem.jl")
 include("frd.jl")
+include("pem.jl")
 include("arx.jl")
 include("subspace.jl")
 include("subspace2.jl")

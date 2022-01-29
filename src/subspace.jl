@@ -297,8 +297,8 @@ function ControlSystems.baltrunc(sys::AbstractPredictionStateSpace, args...; kwa
     PredictionStateSpace(sysr, K, Q, sys.R), G, T
 end
 
-function ControlSystems.similarity_transform(sys::AbstractPredictionStateSpace, T)
-    syss = similarity_transform(sys.sys, T)
+function ControlSystems.similarity_transform(sys::AbstractPredictionStateSpace, T; kwargs...)
+    syss = similarity_transform(sys.sys, T; kwargs...)
     nx = syss.nx
     K = T\sys.K
     T = pinv(T)

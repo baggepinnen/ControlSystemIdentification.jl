@@ -1,4 +1,4 @@
-using ControlSystemIdentification, MonteCarloMeasurements
+using ControlSystemIdentification, MonteCarloMeasurements, ControlSystems
 unsafe_comparisons(true)
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =

@@ -96,6 +96,31 @@ function simplified_laguerre(a)
 end
 
 
+# function Q_basis(P, K0, h, q)
+#     Nq = length(q)
+#     Pd = c2d(P, h, :foh)
+#     # Nominal Q based on nominal controller
+#     K0d, _ = balreal(c2d(K0, h, :foh))
+#     Q0d, _ = balreal(feedback(K0d, Pd))
+#     isstable(Q0d) || error("Sampled nominal design gives unstable closed loop")
+
+#     # Q parametrization by finite pulse response
+#     AQ1 = diagm(1=>ones(Nq-2))  # Q = K/(1+PK)
+#     BQ1 = q[2:Nq]            # The other Nq-1 values of pulse response
+#     CQ1 = [1 zeros(1, Nq-2)]
+#     DQ1 = q[1]               # The first (k=0) value of pulse response
+
+#     Q = Q0d + ss(AQ1, BQ1, CQ1, DQ1, h)
+#     T = Pd*Q
+#     S = 1-T
+#     PS = P*S
+#     isstable(PS) || error("PS is not stable")
+#     Q,T,S,PS,Pd
+# end
+
+
+
+
 # Utils ===============================================================================
 const SomeBasis = Union{AbstractVector{<:LTISystem}, LTISystem}
 

@@ -286,3 +286,126 @@ function newpem(
     syso.Q .= Q
     syso, res
 end
+
+
+# function vec2modal(p, ny, nu, nx, timeevol)
+#     al = (1:nx-1)
+#     a  = (1:nx) .+ al[end]
+#     au = (1:nx-1) .+ a[end]
+#     bi = (1:nx*nu) .+ au[end]
+#     ci = (1:nx*ny) .+ bi[end]
+#     di = (1:nu*ny) .+ ci[end]
+#     A = Tridiagonal(p[al], p[a], p[au])
+#     B = reshape(p[bi], nx, nu)
+#     C = reshape(p[ci], ny, nx)
+#     D = reshape(p[di], ny, nu)
+#     ss(A, B, C, D, timeevol)
+# end
+
+# function modal2vec(sys)
+#     [
+#         sys.A[diagind(sys.A, -1)]
+#         sys.A[diagind(sys.A, 0)]
+#         sys.A[diagind(sys.A, 1)]
+#         vec(sys.B)
+#         vec(sys.C)
+#         vec(sys.D)
+#     ]
+# end
+
+# function vec2sys(v::AbstractArray, ny::Int, nu::Int, ts=nothing)
+#     n = length(v)
+#     p = (ny+nu)
+#     nx = Int(-p/2 + sqrt(p^2 - 4nu*ny + 4n)/2)
+#     @assert n == nx^2 + nx*nu + ny*nx + ny*nu
+#     ai = (1:nx^2)
+#     bi = (1:nx*nu) .+ ai[end]
+#     ci = (1:nx*ny) .+ bi[end]
+#     di = (1:nu*ny) .+ ci[end]
+#     A = reshape(v[ai], nx, nx)
+#     B = reshape(v[bi], nx, nu)
+#     C = reshape(v[ci], ny, nx)
+#     D = reshape(v[di], ny, nu)
+#     ts === nothing ? ss(A, B, C, D) : ss(A, B, C, D, ts)
+# end
+
+# function Base.vec(sys::LTISystem)
+#     [vec(sys.A); vec(sys.B); vec(sys.C); vec(sys.D)]
+# end
+
+
+# """
+#     ssest(data::FRD, p0; opt = BFGS(), modal = false, opts = Optim.Options(store_trace = true, show_trace = true, show_every = 5, iterations = 2000, allow_f_increases = false, time_limit = 100, x_tol = 1.0e-5, f_tol = 0, g_tol = 1.0e-8, f_calls_limit = 0, g_calls_limit = 0))
+
+# Estimate a statespace model from frequency-domain data.
+
+# It's often a good idea to start with `opt = NelderMead()` and then refine with `opt = BFGS()`.
+
+# # Arguments:
+# - `data`: DESCRIPTION
+# - `p0`: Statespace model of Initial guess
+# - `opt`: Optimizer
+# - `modal`: indicate whether or not to estimate the model with a tridiagonal A matrix. This reduces the number of parameters (for nx >= 3).
+# - `opts`: `Optim.Options`
+# """
+# function ssest(data::FRD, p0; 
+#     # freq_weight = 1 ./ (data.w .+ data.w[2]),
+#     opt = BFGS(),
+#     modal = false,
+#     opts = Optim.Options(
+#         store_trace       = true,
+#         show_trace        = true,
+#         show_every        = 5,
+#         iterations        = 2000,
+#         allow_f_increases = false,
+#         time_limit        = 100,
+#         x_tol             = 1e-5,
+#         f_tol             = 0,
+#         g_tol             = 1e-8,
+#         f_calls_limit     = 0,
+#         g_calls_limit     = 0,
+#     ),
+# )
+
+
+#     function loss(p)
+#         if modal
+#             sys = vec2modal(p, p0.ny, p0.nu, p0.nx, p0.timeevol)
+#         else
+#             sys = vec2sys(p, p0.ny, p0.nu)
+#         end
+#         F = freqresp(sys, data.w).parent
+#         F .-= data.r
+#         mean(abs2, F)
+#     end
+    
+#     res = Optim.optimize(
+#         loss,
+#         modal ? modal2vec(p0) : vec(p0),
+#         opt,
+#         opts,
+#         autodiff=:forward
+#     )
+#     (modal ? vec2modal(res.minimizer, p0.ny, p0.nu, p0.nx, p0.timeevol) : 
+#         vec2sys(res.minimizer, p0.ny, p0.nu)), res
+# end
+
+
+
+
+# using ControlSystems, ControlSystemIdentification, Optim
+# G = modal_form(ssrand(2,3,4))[1]
+# w = exp10.(LinRange(-2, 2, 30))
+# r = freqresp(G, w).parent
+# data = FRD(w, r)
+
+
+# G0 = modal_form(ssrand(2,3,4))[1]
+# Gh, _ = ControlSystemIdentification.ssest(data, G0, opt=NelderMead(), modal=true)
+# Gh, _ = ControlSystemIdentification.ssest(data, Gh, modal=true)
+
+
+# bodeplot(G, w)
+# bodeplot!(Gh, w)
+
+
