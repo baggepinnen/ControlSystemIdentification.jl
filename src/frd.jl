@@ -82,6 +82,8 @@ Base.:(==)(f1::FRD, f2::FRD) = (f1.w == f2.w) && ==(f1.r, f2.r)
 
 sensitivity(P::FRD, K) = FRD(P.w, 1.0 ./ (1.0 .+ vec(P) .* vec(K)))
 feedback(P::FRD, K) = FRD(P.w, vec(P) ./ (1.0 .+ vec(P) .* vec(K)))
+feedback(P::FRD, K::Number=1) = FRD(P.w, vec(P) ./ (1.0 .+ vec(P) .* K))
+feedback(P::Number, K::FRD) = FRD(K.w, P ./ (1.0 .+ P .* vec(K)))
 feedback(P, K::FRD) = FRD(K.w, vec(P) ./ (1.0 .+ vec(P) .* vec(K)))
 feedback(P::FRD, K::FRD) = feedback(P, vec(K))
 

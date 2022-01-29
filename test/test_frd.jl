@@ -68,3 +68,23 @@ S2, D2, N2, T2 = gangoffour(FRD(ω, P), FRD(ω, C))
 @test FRD(ω, P)*P ≈ FRD(ω, P)*FRD(ω, P)
 @test FRD(ω, P)-P ≈ FRD(ω, P)-FRD(ω, P)
 @test FRD(ω, P)+P ≈ FRD(ω, P)+FRD(ω, P)
+
+
+
+## Algebra
+G = tf(1, [1, 2])
+w = exp10.(LinRange(-2, 2, 20))
+Gf = FRD(w, G)
+
+@test feedback(Gf, 1) ≈ FRD(w, feedback(G, 1))
+@test feedback(1, Gf) ≈ FRD(w, feedback(1, G))
+
+@test feedback(Gf, Gf) ≈ FRD(w, feedback(G, G))
+
+@test feedback(Gf, G) ≈ FRD(w, feedback(G, G))
+@test feedback(G, Gf) ≈ FRD(w, feedback(G, G))
+
+
+## Indexing
+Gf[0.011rad:0.03rad] == Gf[2:3]
+Gf[(0.011/2pi)Hz:(0.03/2pi)Hz] == Gf[2:3]
