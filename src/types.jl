@@ -241,9 +241,10 @@ end
 Resample iddata `d` with fraction `f`, e.g., `f = fs_new / fs_original`.
 """
 function DSP.resample(d::AbstractIdData, f)
-    apply_fun(d, d.Ts / f) do y
+    Ts = d.Ts === nothing ? 1.0 : d.Ts
+    apply_fun(d, Ts / f) do y
         yr = mapslices(y, dims = 2) do y
-            resample(y, f)
+            DSP.resample(y, f)
         end
         yr
     end
@@ -251,7 +252,7 @@ end
 
 function DSP.resample(M::AbstractMatrix, f)
     mapslices(M, dims = 1) do y
-        resample(y, f)
+        DSP.resample(y, f)
     end
 end
 

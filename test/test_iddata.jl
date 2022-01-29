@@ -134,3 +134,42 @@ end
     @test_nowarn plot(d)
 
 end
+
+
+@testset "ramp in/out" begin
+    T = 100
+    u = randn(1, T)
+    y = randn(1, T)
+    d = iddata(y, u)
+    d2 = ramp_in(d, 10)
+    # plot(d); plot!(d2)
+    for i = 0:9
+        @test d2.y[i+1] == i/9*d.y[i+1]
+    end
+
+    d2 = ControlSystemIdentification.ramp_out(d, 10)
+    # plot(d); plot!(d2)
+    for i = 0:9
+        @test d2.y[end-i] == i/9*d.y[end-i]
+    end
+end
+
+@testset "indexing" begin
+    T = 10
+    u = randn(1, T)
+    y = randn(1, T)
+    d = iddata(y, u)
+    @test d[2:4] == iddata(y[:, 2:4], u[:, 2:4])
+end
+
+
+@testset "resample" begin
+    T = 100
+    u = randn(1, T)
+    y = randn(1, T)
+    d = iddata(y, u, 0.1)
+    d2 = ControlSystemIdentification.DSP.resample(d, 1/10)
+    @test length(d2) == 10
+    @test d2.y[:] == ControlSystemIdentification.DSP.resample(d.y[:], 1/10)
+    @test d2.u[:] == ControlSystemIdentification.DSP.resample(d.u[:], 1/10)
+end
