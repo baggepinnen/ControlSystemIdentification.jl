@@ -619,7 +619,7 @@ Fit a parametric transfer function to frequency-domain data.
 
 The initial pahse of the optimization solves
 ```math
-\\operatorname{minimize}_{B,A}{|| B - A|l|^2||}
+\\operatorname{minimize}_{B,A}{|| B/l - A||}
 ```
 and the second stage (if refine=true) solves 
 ```math
@@ -675,22 +675,26 @@ function tfest(
         if freq_weight > 0
             mag .*= wv
         end
-        mean(abs2, mag)
+        mean(abs2, mag) + 0.001abs2(a[1]-1) # Promote a monic polynomial for regularization (could enforce it without loss of generality.
     end
 
     function loss(p)
         a, b = p.a, p.b
         mean(eachindex(w)) do i
-            abs2(vconv(w[i], b) - vconv(w[i], a) * abs2(l[i]))
-        end
+            # abs2(vconv(w[i], b) - vconv(w[i], a) * abs2(l[i])) # This formulation does not care about phase
+
+            # One can fit B/l - A  or  B - A*l, the former corresponds to relative fit, which is often desired
+            iw = complex(0, w[i])
+            abs2(evalpoly(iw, reverse(b))/l[i] - evalpoly(iw, reverse(a))) 
+        end + 0.001abs2(a[1]-1) # Promote a monic polynomial for regularization (could enforce it without loss of generality.
     end
 
     res = Optim.optimize(loss, ComponentVector(p0), opt, opts, autodiff = :forward)
     if refine
         res = Optim.optimize(loss2, res.minimizer, opt, opts, autodiff = :forward)
     end
-
-    tf(res.minimizer.b, res.minimizer.a)
+    a0 = res.minimizer.a[1]
+    tf(res.minimizer.b ./ a0, res.minimizer.a ./ a0)
 end
 
 tfest(data, G::LTISystem, args...; kwargs...) = tfest(tfest(data)[1], G, args...; kwargs...)
