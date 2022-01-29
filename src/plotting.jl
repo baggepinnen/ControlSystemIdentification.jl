@@ -6,7 +6,7 @@
         n += ninputs(d)
     end
     layout --> (n, 1)
-    legend --> false
+    label --> ""
     xguide --> "Time"
     link --> :x
     xvec = range(0, step = sampletime(d), length = length(d))
@@ -29,7 +29,7 @@
     end
 end
 
-@recipe function plot_spectrogram(::Type{Val{:specplot}}, p)
+@recipe function plot_spectrogram(p::DSP.Periodograms.Spectrogram)
     seriestype := :heatmap
     title --> "Spectrogram"
     yscale --> :log10
@@ -40,6 +40,12 @@ end
 
 @userplot Specplot
 
+"""
+    specplot(d::IdData)
+
+Plot a spectrogram of the input and output timeseries.
+"""
+specplot
 @recipe function specplot(p::Specplot)
     d = p.args[1]
     d isa ControlSystemIdentification.AbstractIdData || throw(ArgumentError("Expected AbstractIdData"))
@@ -143,23 +149,24 @@ end
 @recipe function plot_frd(frd::FRD; hz = false, plotphase=false)
     xscale --> :log10
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
-    yguide --> "Magnitude"
-    title --> "Bode Plot"
-    legend --> false
-    layout --> (plotphase ? 2 : 1)
+    label --> ""
+    layout --> (plotphase ? (2,1) : 1)
+    link --> :x
     @series begin
+        subplot --> 1
+        yguide --> "Magnitude"
         yscale --> :log10
         inds = findall(x -> x == 0, frd.w)
-        subplot --> 1
         useinds = setdiff(1:length(frd.w), inds)
         (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
     end
     if plotphase
         @series begin
-            inds = findall(x -> x == 0, frd.w)
+            yguide --> "Phase [deg]"
             subplot --> 2
+            inds = findall(x -> x == 0, frd.w)
             useinds = setdiff(1:length(frd.w), inds)
-            (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* unwrap(angle.(frd.r[useinds]))
+            (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* ControlSystems.unwrap(angle.(frd.r[useinds]))
         end
     end
     nothing
@@ -207,7 +214,7 @@ coherenceplot
     ylims --> (0, 1)
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     title --> "Coherence"
-    legend --> false
+    label --> false
     for i = 1:d.ny
         frd = coherence(d[i,1]; kwargs...)
         @series begin

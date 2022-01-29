@@ -7,9 +7,14 @@ Represents frequency-response data. `w` holds the frequency vector and `r` the r
 - `+-*`
 - `length, vec, sqrt`
 - `plot`
-- `feedback`
+- [`feedback`](@ref)
+- [`freqvec`](@ref)
+- [`tfest`](@ref) to estimate a rational model
+- Indexing in the frequency domain using, e.g., `G[1Hz : 5Hz]`, `G[1rad : 5rad]`
+
+If `r` represents a MIMO frequency response, the dimensions are `ny × nu × nω`. `freqresp` returns a `PermutedDimsArray` whose `.parent` field follows this convention.
 """
-struct FRD{WT<:AbstractVector,RT<:AbstractVector} <: LTISystem{Continuous}
+struct FRD{WT<:AbstractVector,RT<:AbstractArray} <: LTISystem{Continuous}
     w::WT
     r::RT
 end

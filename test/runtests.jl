@@ -134,8 +134,13 @@ end
         include("test_frd.jl")
     end
 
+    @testset "plots" begin
+        @info "Testing plots"
+        include("test_plots.jl")
+    end
 
-    @testset "plots and difficult" begin
+
+    @testset "simplots and difficult" begin
 
         Random.seed!(1)
         ##

@@ -55,7 +55,7 @@ function Base.show(io::IO, d::InputOutputData)
     )
 end
 
-
+iddata(res::ControlSystems.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
 iddata(y::AbstractArray, Ts::Union{Real,Nothing} = nothing) = OutputData(autodim(y), Ts)
 iddata(y::AbstractArray, u::AbstractArray, Ts::Union{Real,Nothing} = nothing) =
     InputOutputData(autodim(y), autodim(u), Ts)
@@ -86,6 +86,8 @@ If the time-series are multivariate, time is in the *last* dimension.
 - postmultiply to scale inputs `d * B`
 - [`writedlm`](@ref)
 - [`ramp_in`](@ref), [`ramp_out`](@ref)
+- `plot`
+- [`specplot`](@ref)
 
 # Examples
 ```jldoctest
