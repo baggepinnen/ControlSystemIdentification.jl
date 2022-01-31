@@ -375,14 +375,17 @@ end
 """
     subspaceid(frd::FRD, args...; estimate_x0 = false, kwargs...)
 
-If a frequency-reponse data object is supplied, the FRD will be automatically converted to an [`InputOutputFreqData`](@ref) and `estimate_x0` is by default set to 0.
+If a frequency-reponse data object is supplied
+- The FRD will be automatically converted to an [`InputOutputFreqData`](@ref)
+- `estimate_x0` is by default set to 0.
 """
-function subspaceid(frd::FRD, args...; estimate_x0 = false, weights = nothing, kwargs...)
+function subspaceid(frd::FRD, Ts::Real, args...; estimate_x0 = false, weights = nothing, kwargs...)
     if weights !== nothing && ndims(frd.r) > 1
         nu = size(frd.r, 2)
         weights = repeat(weights, nu)
     end
-    subspaceid(ifreqresp(frd), args...; weights, estimate_x0, kwargs...)
+    data = ifreqresp(frd)
+    subspaceid(data, Ts, args...; weights, estimate_x0, kwargs...)
 end
 
 """
@@ -419,8 +422,8 @@ Estimate a state-space model using subspace-based identification in the frequenc
 """
 function subspaceid(
     data::InputOutputFreqData,
-    Ts = data.Ts,
-    nx = :auto;
+    Ts::Real = data.Ts,
+    nx::Union{Int, Symbol} = :auto;
     cont = false,
     verbose = false,
     r = nx === :auto ? min(length(data) ÷ 20, 20) : 2nx, # the maximal prediction horizon used
@@ -649,18 +652,6 @@ function find_similarity_transform(sys1, sys2, method = :obsv)
     end
 end
 
-"""
-    ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp = 0)
-
-Transform continuous-time frequency vector `w` to discrete time using a bilinear
-(Tustin) transform. This is useful in cases where a frequency response is obtained through frequency-response analysis, and the function [`subspaceidf`](@ref) is to be used.
-"""
-function ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp=0)
-    a = w_prewarp == 0 ? Ts/2 : tan(w_prewarp*Ts/2)/w_prewarp
-    @. 2*atan(w*a)
-end
-
-
 function evalfr2(sys::AbstractStateSpace, w_vec::AbstractVector{Complex{W}}, u) where W
     ny, nu = size(sys)
     T = promote_type(Complex{real(eltype(sys.A))}, Complex{W})
@@ -713,13 +704,19 @@ end
 
 
 """
-    U,Y,Ω = ifreqresp(F, ω)
+    U,Y,Ω = ifreqresp(F, ω, Ts=0)
 
 Given a frequency response array `F: ny × nu × nω`, return input-output frequency data data consistent with `F` and an extended frequency vector `Ω` of matching length.
+If `Ts > 0` is provided, a bilinear transform from continuous to discrete domain is performed on the frequency vector. This is required for subspace-based identification if the data is obtained by, e.g., frequency-response analysis.
 """
-function ifreqresp(F, ω)
+function ifreqresp(F, ω, Ts=0)
     F isa PermutedDimsArray && (F = F.parent)
-    ny,nu,nw = size(F)
+    if ndims(F) == 3
+        ny,nu,nw = size(F)
+    else
+        nw = length(F)
+        ny = nu = 1
+    end
     U = similar(F, nu, nw*nu)
     Y = similar(F, ny, nw*nu)
     Ω = Vector{Float64}(undef, nw*nu)
@@ -732,7 +729,11 @@ function ifreqresp(F, ω)
         Ω[r] = ω
     end
 
+    if Ts > 0
+        Ω = c2d(Ω, Ts)
+    end
+
     return Y, U, Ω
 end
 
-ifreqresp(frd::FRD) = InputOutputFreqData(ifreqresp(frd.r, frd.w)...)
+ifreqresp(frd::FRD, Ts=0) = InputOutputFreqData(ifreqresp(frd.r, frd.w, Ts)...)

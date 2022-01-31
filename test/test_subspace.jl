@@ -320,9 +320,10 @@ end
         Gh, x0 = subspaceid(frd, G.Ts, nx; r=2nx, zeroD, verbose=true)
         @test hinfnorm(G-Gh)[1] < 1e-12
 
-        # df = iddata(Y, U, 2pi*(0:(N-1))/N)
         d = iddata(y, u, G.Ts)
         df = ControlSystemIdentification.fft(d)
+        @test df.Ts == 1
+
         Gh, x0 = subspaceid(df, df.Ts, nx; r=2nx, estimate_x0=true, zeroD)
         @test hinfnorm(G-Gh)[1] < 1e-12
 

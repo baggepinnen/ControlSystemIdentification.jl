@@ -94,6 +94,20 @@ feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
 freqvec(h, k) = LinRange(0, π / h, length(k))
 
 """
+    c2d(w::AbstractVector{<:Real}, Ts; w_prewarp = 0)
+    c2d(frd::FRD, Ts; w_prewarp = 0)
+
+Transform continuous-time frequency vector `w` or frequency-response data `frd` from continuous to discrete time using a bilinear (Tustin) transform. This is useful in cases where a frequency response is obtained through frequency-response analysis, and the function [`subspaceidf`](@ref) is to be used.
+"""
+function ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp=0)
+    a = w_prewarp == 0 ? Ts/2 : tan(w_prewarp*Ts/2)/w_prewarp
+    @. 2*atan(w*a)
+end
+
+ControlSystems.c2d(f::FRD, Ts::Real; kwargs...) = FRD(c2d(f.w, Ts; kwargs...), f.r)
+
+
+"""
     H, N = tfest(data, σ = 0.05)
 
 Estimate a transfer function model using the Correlogram approach.

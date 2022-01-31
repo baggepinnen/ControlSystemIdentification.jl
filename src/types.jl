@@ -163,6 +163,11 @@ Base.axes(d::AbstractIdData, i::Integer) = Base.OneTo(i == 1 ? d.ny : d.nu)
 
 Base.lastindex(d::AbstractIdData) = length(d)
 
+function w2Ts(w)
+    N = length(w)
+    N*maximum(w)/(2π*(N-1))
+end
+
 function Base.getproperty(d::AbstractIdData, s::Symbol)
     if s === :fs || s === :Fs
         return 1 / d.Ts
@@ -170,7 +175,7 @@ function Base.getproperty(d::AbstractIdData, s::Symbol)
         if d isa InputOutputFreqData
             d.w isa AbstractRange || error("Sample time is only aviable from a InputOutputFreqData if the frequency vector is an AbstractRange")
             N = length(d)
-            return d.w[end]/(2π*(N-1)/N)
+            return w2Ts(getfield(d, :w))
         else
             return getfield(d, :Ts)
         end
