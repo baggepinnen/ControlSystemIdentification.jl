@@ -1,3 +1,4 @@
+using ControlSystemIdentification, ControlSystems
 using ControlSystems: isdiscrete
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =

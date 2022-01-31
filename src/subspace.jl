@@ -15,8 +15,6 @@ The frequency weighting is borrowing ideas from
 
 # Arguments:
 - `data`: Identification data `data = iddata(y,u)`
-- `y`: Measurements N×ny
-- `u`: Control signal N×nu
 - `r`: Rank of the model (model order)
 - `verbose`: Print stuff?
 - `Wf`: A frequency-domain model of measurement disturbances. To focus the attention of the model on a narrow frequency band, try something like `Wf = Bandstop(lower, upper, fs=1/Ts)` to indicate that there are disturbances *outside* this band.
@@ -33,8 +31,9 @@ function n4sid(
     Wf = nothing,
     zeroD = false,
     svd::F1 = svd,
-    estimator::F2 = \,
-) where {F1,F2}
+    svd!::F2 = svd!,
+    estimator::F3 = \,
+) where {F1,F2,F3}
 
     y, u = time1(output(data)), time1(input(data))
     N, l = size(y, 1), size(y, 2)
@@ -60,7 +59,7 @@ function n4sid(
     UY1 = [U0i; hankel(u, i + 1, 2i - 1); Y0i]
     # proj(A, B) = A * (B' / (B * B'))
     # proj(A, B) = (A * B') / (B * B')
-    proj(A, B) = (svd(B * B') \ (A * B')')' # todo: these can be improved by not forming BB', use QR
+    proj(A, B) = (svd!(B * B') \ (A * B')')' # todo: these can be improved by not forming BB', use QR
     Li = proj(hankel(y, i, 2i - 1), UY0)
     Lip1 = proj(hankel(y, i + 1, 2i - 1), UY1)
 
@@ -79,7 +78,7 @@ function n4sid(
         s = svd(Zi)
     else
         W = frequency_weight(Wf, size(Zi, 1))
-        s = svd(W \ Zi)
+        s = svd!(W \ Zi)
         estimator = weighted_estimator(Wf)
     end
     if r === :auto

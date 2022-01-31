@@ -1,5 +1,3 @@
-using ControlSystems, ControlSystemIdentification
-import ControlSystemIdentification: InputOutputData, time1
 
 function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\, weights=nothing)
     nx = size(A, 1)
@@ -169,7 +167,7 @@ end
         zeroD = false,
         stable = true, 
         focus = :prediction,
-        svd::F1 = svd,
+        svd::F1 = svd!,
         scaleU = true,
         Aestimator::F2 = \\,
         Bestimator::F3 = \\,
@@ -209,7 +207,7 @@ function subspaceid(
     zeroD = false,
     stable = true, 
     focus = :prediction,
-    svd::F1 = svd,
+    svd::F1 = svd!,
     scaleU = true,
     Aestimator::F2 = \,
     Bestimator::F3 = \,
@@ -254,7 +252,7 @@ function subspaceid(
     @assert size(Φ) == (s, N)
 
     UΦY = [U; Φ; Y]
-    l = lq(UΦY)
+    l = lq!(UΦY)
     L = l.L
     Q = Matrix(l.Q) # (pr+mr+s × N) but we have adjusted effective N
     @assert size(Q) == (p*r+m*r+s, N) "size(Q) == $(size(Q))"
@@ -320,7 +318,6 @@ function subspaceid(
     S1 = sv.S[1:n]
     R = Diagonal(sqrt.(S1))
     if W !== :CVA
-        sv = svd(G)
         U1 = sv.U[:, 1:n]
         V1 = sv.V[:, 1:n]
         Or = W1\(U1*R)
@@ -390,18 +387,19 @@ end
 
 """
     subspaceid(data::InputOutputFreqData,
-    Ts = data.Ts,
-    nx = :auto;
-    cont = false,
-    verbose = false,
-    r = nx === :auto ? min(length(data) ÷ 20, 20) : 2nx, # the maximal prediction horizon used
-    zeroD = false,
-    estimate_x0 = true,
-    stable = true, 
-    svd = svd!,
-    Aestimator = \\,
-    Bestimator = \\,
-    weights = nothing,
+        Ts = data.Ts,
+        nx = :auto;
+        cont = false,
+        verbose = false,
+        r = nx === :auto ? min(length(data) ÷ 20, 20) : 2nx, # Internal model order
+        zeroD = false,
+        estimate_x0 = true,
+        stable = true, 
+        svd = svd!,
+        Aestimator = \\,
+        Bestimator = \\,
+        weights = nothing
+    )
 
 Estimate a state-space model using subspace-based identification in the frequency domain.
 
