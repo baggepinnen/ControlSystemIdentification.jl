@@ -59,6 +59,88 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\, weights=nothing)
     B,D,x0
 end
 
+function find_BDf(A, C, U, Y, λ, zeroD, Bestimator, estimate_x0)
+    nx = size(A,1)
+    ny, nw = size(Y)
+    nu = size(U, 1)
+    if estimate_x0
+        ue = [U; transpose(λ)] # Form "extended input"
+        nup1 = nu + 1
+    else
+        ue = U
+        nup1 = nu
+    end
+
+    sys0 = ss(A,I(nx),C,0) 
+    F = evalfr2(sys0, λ)
+    # Form kron matrices
+    if zeroD      
+        AA = similar(U, nw*ny, nup1*nx)
+        for i in 1:nw
+            r = ny*(i-1) + 1:ny*i
+            for j in 1:nup1
+                @views AA[r, ((j-1)nx) + 1:j*nx] .= ue[j, i] .* (F[:, :, i])
+            end
+        end
+    else
+        AA = similar(U, nw*ny, nup1*nx+nu*ny) 
+        for i in 1:nw
+            r = (ny*(i-1) + 1) : ny*i
+            for j in 1:nup1
+                @views AA[r, (j-1)nx + 1:j*nx] .= ue[j, i] .* (F[:, :, i])
+            end
+            for j in 1:nu
+                AA[r, nup1*nx + (j-1)ny + 1:nup1*nx+ny*j] = ue[j, i] * I(ny)
+            end
+        end
+    end
+    vy = vec(Y)
+    YY = [real(vy); imag(vy)]
+    AAAA = [real(AA); imag(AA)]
+    BD = Bestimator(AAAA, YY)
+    e = YY - AAAA*BD
+    B = reshape(BD[1:nx*nup1], nx, :)
+    D = zeroD ? zeros(eltype(B), ny, nu) : reshape(BD[nx*nup1+1:end], ny, nu)
+    if estimate_x0
+        x0 = B[:, end]
+        B = B[:, 1:end-1]
+    else
+        x0 = zeros(eltype(B), nx)
+    end
+    return B, D, x0, e
+end
+
+function find_CDf(A, B, U, Y, λ, x0, zeroD, Bestimator, estimate_x0)
+    nx = size(A,1)
+    ny, nw = size(Y)
+    nu = size(U, 1)
+    if estimate_x0
+        Ue = [U; transpose(λ)] # Form "extended input"
+        Bx0 = [B x0]
+    else
+        Ue = U
+        Bx0 = B
+    end
+
+    sys0 = ss(A,Bx0,I(nx),0)
+    F = evalfr2(sys0, λ, Ue)
+    # Form kron matrices
+    if zeroD      
+        AA = F
+    else
+        AA = [F; U]
+    end
+
+
+    YY = [real(transpose(Y)); imag(transpose(Y))]
+    AAAA = [real(AA) imag(AA)]
+    CD = Bestimator(transpose(AAAA), YY) |> transpose
+    e = YY - transpose(AAAA)*transpose(CD)
+    C = CD[:, 1:nx]
+    D = zeroD ? zeros(eltype(C), ny, nu) : CD[:, nx+1:end]
+    return C, D, e
+end
+
 function proj(Yi, U)
     UY = [U; Yi]
     l = lq(UY)
@@ -258,6 +340,7 @@ function subspaceid(
 
     # 4. Estimate B, D, x0 by linear regression
     B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, Bestimator, weights)
+    # TODO: iterate find C/D and find B/D a couple of times
 
     if scaleU
         B = B ./ CU
@@ -288,6 +371,135 @@ function subspaceid(
     
     sys  = ControlSystemIdentification.N4SIDStateSpace(ss(A,  B,  C,  D, data.Ts), Qc,Rc,Sc,K,P,x0,sv,fve)
 end
+
+"""
+    subspaceid(frd::FRD, args...; estimate_x0 = false, kwargs...)
+
+If a frequency-reponse data object is supplied, the FRD will be automatically converted to an [`InputOutputFreqData`](@ref) and `estimate_x0` is by default set to 0.
+"""
+function subspaceid(frd::FRD, args...; estimate_x0 = false, weights = nothing, kwargs...)
+    if weights !== nothing && ndims(frd.r) > 1
+        nu = size(frd.r, 2)
+        weights = repeat(weights, nu)
+    end
+    subspaceid(ifreqresp(frd), args...; weights, estimate_x0, kwargs...)
+end
+
+"""
+    subspaceid(data::InputOutputFreqData,
+    Ts = data.Ts,
+    nx = :auto;
+    cont = false,
+    verbose = false,
+    r = nx === :auto ? min(length(data) ÷ 20, 20) : 2nx, # the maximal prediction horizon used
+    zeroD = false,
+    estimate_x0 = true,
+    stable = true, 
+    svd = svd!,
+    Aestimator = \\,
+    Bestimator = \\,
+    weights = nothing,
+
+Estimate a state-space model using subspace-based identification in the frequency domain.
+
+# Arguments:
+- `data`: A frequency-domain identification data object.
+- `Ts`: Sample time at which the data was collected
+- `nx`: Desired model order, an interer or `:auto`.
+- `cont`: Return a continuous-time model? A bilinear transformation is used to convert the estimated discrete-time model, see function `d2c`.
+- `verbose`: Print stuff?
+- `r`: Internal model order, must be ≥ `nx`.
+- `zeroD`: Force the `D` matrix to be zero.
+- `estimate_x0`: Esimation of extra parameters to account for initial conditions. This may be required if the data comes from the fft of time-domain data, but may not be required if the data is collected using frequency-response analysis with exactly periodic input and proper handling of transients.
+- `stable`: For the model to be stable (uses [`schur_stab`](@ref)).
+- `svd`: The `svd` function to use.
+- `Aestimator`: The estimator of the `A` matrix (and initial `C`-matrix).
+- `Bestimator`: The estimator of B/D and C/D matrices.
+- `weights`: An optional vector of frequency weights of the same length as the number of frequencies in `data.
+"""
+function subspaceid(
+    data::InputOutputFreqData,
+    Ts = data.Ts,
+    nx = :auto;
+    cont = false,
+    verbose = false,
+    r = nx === :auto ? min(length(data) ÷ 20, 20) : 2nx, # the maximal prediction horizon used
+    zeroD = false,
+    estimate_x0 = true,
+    stable = true, 
+    svd::F1 = svd!,
+    Aestimator::F2 = \,
+    Bestimator::F3 = \,
+    weights = nothing,
+) where {F1,F2,F3}
+
+    w = data.w
+    Ts ≤ 2π/maximum(w) || error("Highest frequency ($(maximum(w))) is larger that the Nyquist frequency for sample time Ts = $Ts")
+    nx !== :auto && r < nx && throw(ArgumentError("r must be at least nx"))
+    y, u = time2(output(data)), time2(input(data))
+
+    ny, nw = size(y)
+    
+    λ = cis.(w)
+
+    if weights !== nothing
+        W = Diagonal(weights)
+        y = y*W
+        u = u*W
+        # λ = W*λ # Verified to not be needed
+    end
+
+    ue = estimate_x0 ? [u; transpose(λ)] : u
+    nu = size(ue, 1)
+    U = zeroD ? similar(u, (r-1)nu, nw) : similar(u, r*nu, nw)
+    Y = similar(y, r*ny, nw)
+
+    @views for i in 1:nw
+        U[1:nu, i] = ue[:, i]
+        Y[1:ny, i] = y[:, i]
+        λi = λ[i]
+
+        for j in 2:r
+            Y[((j-1)ny + 1:j*ny), i] = λi*y[:, i]
+            if !zeroD || j < r
+                U[((j-1)nu + 1):j*nu, i] = λi*ue[:, i]
+            end
+            λi *= λ[i]
+        end
+    end
+
+    AA = [real(U) imag(U); real(Y) imag(Y)]
+    L = lq!(AA).L
+    if zeroD
+        L22 = L[((r-1)nu + 1):end, ((r-1)nu + 1):end]
+    else
+        L22 = L[(r*nu + 1):end, (r*nu + 1):end]
+    end
+    
+    S = svd(L22)
+    if nx === :auto
+        nx = sum(sv.S .> sqrt(sv.S[1] * sv.S[end]))
+        verbose && @info "Choosing order $nx"
+    end
+
+    # Observability matrix given by U, C is the first block-row
+    Or = S.U 
+    C = Or[1:ny, 1:nx]
+    A = Aestimator(Or[1:(r-1)ny, 1:nx], Or[ny+1:ny*r, 1:nx])
+    if stable && !all(e->abs(e)<=1, eigvals(A))
+        verbose && @info "A matrix unstable, stabilizing by Schur projection"
+        A = schur_stab(A)
+    end
+
+    B,D,x0 = find_BDf(A, C, u, y, λ, zeroD, Bestimator, estimate_x0)
+    C,D = find_CDf(A, B, u, y, λ, x0, zeroD, Bestimator, estimate_x0)
+    B,D,x0 = find_BDf(A, C, u, y, λ, zeroD, Bestimator, estimate_x0)
+    C,D = find_CDf(A, B, u, y, λ, x0, zeroD, Bestimator, estimate_x0)
+    sysd = ss(A,B,C,D, Ts)
+    sys = cont ? d2c(sysd, :tustin) : sysd
+    sys, x0
+end
+
 
 function find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
     X1 = L2[p+1:r*p, 1:m*(s2+r)+p*s1+p]
@@ -329,6 +541,31 @@ function reflectd(A::AbstractMatrix)
         return real(A2)
     end
     A2
+end
+
+"""
+    schur_stab(A::AbstractMatrix{T}, ϵ = 0.01)
+
+Stabilize the eigenvalues of discrete-time matrix `A` by transforming `A` to complex
+Schur form and projecting unstable eigenvalues 1-ϵ < λ ≤ 2 into the unit disc.
+Eigenvalues > 2 are set to 0.
+"""
+function schur_stab(A::AbstractMatrix{T}, ϵ=0.01) where T
+    S = schur(complex.(A))
+    for i in diagind(A)
+        λ = S.T[i]
+        aλ = abs(λ)
+        if 1 < aλ ≤ 2
+            λ = λ*(2/aλ - 1)
+        elseif aλ > 2
+            λ = complex(0.0, 0.0)
+        elseif 1-ϵ < aλ ≤ 1
+            λ = (1-ϵ)*cis(angle(λ))
+        end
+        S.T[i] = λ
+    end
+    A2 = S.Z*S.T*S.Z'
+    T <: Real ? real(A2) : A2
 end
 
 # plotly(show=false)
@@ -411,3 +648,91 @@ function find_similarity_transform(sys1, sys2, method = :obsv)
         error("Unknown method $method")
     end
 end
+
+"""
+    ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp = 0)
+
+Transform continuous-time frequency vector `w` to discrete time using a bilinear
+(Tustin) transform. This is useful in cases where a frequency response is obtained through frequency-response analysis, and the function [`subspaceidf`](@ref) is to be used.
+"""
+function ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp=0)
+    a = w_prewarp == 0 ? Ts/2 : tan(w_prewarp*Ts/2)/w_prewarp
+    @. 2*atan(w*a)
+end
+
+
+function evalfr2(sys::AbstractStateSpace, w_vec::AbstractVector{Complex{W}}, u) where W
+    ny, nu = size(sys)
+    T = promote_type(Complex{real(eltype(sys.A))}, Complex{W})
+    F = hessenberg(sys.A)
+    Q = Matrix(F.Q)
+    A = F.H
+    C = sys.C*Q
+    B = Q\sys.B 
+    D = sys.D
+    te = sys.timeevol
+    R = Array{T, 2}(undef, ny, length(w_vec))
+    Bi = B*u[:, 1]
+    Bc = similar(Bi, T) # for storage
+    for i in eachindex(w_vec)
+        @views mul!(Bi, B, u[:, i])
+        Ri = @views R[:,i]
+        Ri .= 0
+        isinf(w_vec[i]) && continue
+        copyto!(Bc,Bi) # initialize storage to Bi
+        w = -w_vec[i] # This differs from standard freqresp, hence the name evalfr2
+        ldiv!(A, Bc, shift = w) # B += (A - w*I)\B # solve (A-wI)X = B, storing result in B
+        mul!(Ri, C, Bc, -1, 1) # use of 5-arg mul to subtract from D already in Ri. - rather than + since (A - w*I) instead of (w*I - A)
+    end
+    R
+end
+
+function evalfr2(sys::AbstractStateSpace, w_vec::AbstractVector{Complex{W}}) where W <: Real
+    ny, nu = size(sys)
+    T = promote_type(Complex{real(eltype(sys.A))}, Complex{W})
+    F = hessenberg(sys.A)
+    Q = Matrix(F.Q)
+    A = F.H
+    C = sys.C*Q
+    B = Q\sys.B 
+    D = sys.D
+    te = sys.timeevol
+    R = Array{T, 3}(undef, ny, nu, length(w_vec))
+    Bc = similar(B, T) # for storage
+    for i in eachindex(w_vec)
+        Ri = @views R[:,:,i]
+        copyto!(Ri,D) # start with the D-matrix
+        isinf(w_vec[i]) && continue
+        copyto!(Bc,B) # initialize storage to B
+        w = -w_vec[i] # This differs from standard freqresp, hence the name evalfr2
+        ldiv!(A, Bc, shift = w) # B += (A - w*I)\B # solve (A-wI)X = B, storing result in B
+        mul!(Ri, C, Bc, -1, 1) # use of 5-arg mul to subtract from D already in Ri. - rather than + since (A - w*I) instead of (w*I - A)
+    end
+    R
+end
+
+
+"""
+    U,Y,Ω = ifreqresp(F, ω)
+
+Given a frequency response array `F: ny × nu × nω`, return input-output frequency data data consistent with `F` and an extended frequency vector `Ω` of matching length.
+"""
+function ifreqresp(F, ω)
+    F isa PermutedDimsArray && (F = F.parent)
+    ny,nu,nw = size(F)
+    U = similar(F, nu, nw*nu)
+    Y = similar(F, ny, nw*nu)
+    Ω = Vector{Float64}(undef, nw*nu)
+    B = I(nu)
+
+    for i in 1:nu
+        r = (i-1)*nw+1:i*nw
+        Y[:, r] = F[:, i, :]
+        U[:, r] = repeat(B[:, i], 1, nw)
+        Ω[r] = ω
+    end
+
+    return Y, U, Ω
+end
+
+ifreqresp(frd::FRD) = InputOutputFreqData(ifreqresp(frd.r, frd.w)...)
