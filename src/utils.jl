@@ -40,18 +40,18 @@ end
 
 
 @inline time1(y::Vector) = y
-@inline time1(y::Vector{<:Vector}) = reduce(hcat, y)'
+@inline time1(y::Vector{<:Vector}) = transpose(reduce(hcat, y))
 @inline function time1(y::Matrix)
     if size(y, 1) == 1
         return vec(y)
     end
-    Matrix(y')
+    Matrix(transpose(y))
 end
 @inline function time1(y::AbstractMatrix)
     if size(y, 1) == 1
         return vec(y)
     end
-    Matrix(y')
+    Matrix(transpose(y))
 end
 
 @inline time2(y::Vector) = oftype(Matrix, y)

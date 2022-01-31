@@ -40,7 +40,7 @@ function autodim(x)
     if (c < 5 && c < r) || (r > 4c)
         @info "Transposing input. The convention used in ControlSystemIdentification is that input-output data is made out of either of 1) Vectors with scalars, 2) vectors of vectors or 3) matrices with time along the second dimension. The supplied input appears to be multidimensional and have time in the first dimension." maxlog =
             3
-        return copy(x')
+        return copy(transpose(x))
     end
     x
 end
@@ -370,7 +370,7 @@ function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
     if size(inds, 1) != 2
         error("Must specify 2 indices to index statespace model")
     end
-    rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
+    rows, cols = ControlSystems.index2range(inds...) 
     return PredictionStateSpace(ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol), sys.K[:, rows], sys.Q, sys.R[rows, rows])
 end
 
@@ -439,7 +439,7 @@ function Base.getindex(sys::StateSpaceNoise, inds...)
     if size(inds, 1) != 2
         error("Must specify 2 indices to index statespace model")
     end
-    rows, cols = ControlSystems.index2range(inds...) # FIXME: ControlSystems.index2range(inds...)
+    rows, cols = ControlSystems.index2range(inds...)
     return StateSpaceNoise(copy(sys.A), sys.B[:, cols], sys.K[:, rows], sys.Ts)
 end
 
