@@ -54,7 +54,7 @@ length(f::FRD) = length(f.w)
 Base.size(f::FRD) = (1, 1) # Size in the ControlSystems sense
 Base.lastindex(f::FRD) = length(f)
 function Base.getproperty(f::FRD, s::Symbol)
-    s === :Ts && return 1 / ((f.w[2] - f.w[2]) / (2π))
+    s === :Ts && return π / maximum(f.w)
     getfield(f, s)
 end
 Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts)
@@ -62,7 +62,13 @@ ControlSystems.noutputs(f::FRD) = 1
 ControlSystems.ninputs(f::FRD) = 1
 
 sqrt(f::FRD) = FRD(f.w, sqrt.(f.r))
-getindex(f::FRD, i) = FRD(f.w[i], f.r[i])
+function getindex(f::FRD, i)
+    if ControlSystems.issiso(f)
+        FRD(f.w[i], f.r[i])
+    else
+        FRD(f.w[i], f.r[:,:,i])
+    end
+end
 getindex(f::FRD, i::Int) = f.r[i]
 getindex(f::FRD, i::Int, j::Int) = (@assert(i == 1 && j == 1); f)
 function getindex(f::FRD, r::Tuple{Hz,Hz})
@@ -93,6 +99,8 @@ feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
 
 freqvec(h, k) = LinRange(0, π / h, length(k))
 
+ControlSystems.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(frd.r, 2) == 1)
+
 """
     c2d(w::AbstractVector{<:Real}, Ts; w_prewarp = 0)
     c2d(frd::FRD, Ts; w_prewarp = 0)
@@ -118,8 +126,12 @@ Estimate a transfer function model using the Correlogram approach.
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
 function tfest(d, σ::Real = 0.05)
+    d.nu == 1 || error("Cannot perform tfest on multiple-input data. Consider using time-domain estimation or statespace estimation.")
     if d.ny > 1
-        return [tfest(d[i,:], σ) for i in 1:d.ny]
+        HNs = [tfest(d[i,1], σ) for i in 1:d.ny]
+        HR = reshape(reduce(vcat, [transpose(hn[1].r) for hn in HNs]), d.ny, 1, :)
+        NR = reshape(reduce(vcat, [transpose(hn[2].r) for hn in HNs]), d.ny, 1, :)
+        return FRD(HNs[1][1].w, HR), FRD(HNs[1][1].w, NR)
     end
     y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
     Syy, Suu, Syu = fft_corr(y, u, σ)

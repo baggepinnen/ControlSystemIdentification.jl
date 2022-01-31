@@ -150,23 +150,34 @@ end
     xscale --> :log10
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     label --> ""
-    layout --> (plotphase ? (2,1) : 1)
-    link --> :x
-    @series begin
-        subplot --> 1
-        yguide --> "Magnitude"
-        yscale --> :log10
-        inds = findall(x -> x == 0, frd.w)
-        useinds = setdiff(1:length(frd.w), inds)
-        (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(frd.r[useinds])
+    if ControlSystems.issiso(frd)
+        r = reshape(frd.r, 1, 1, :)
+    else
+        r = frd.r
     end
-    if plotphase
-        @series begin
-            yguide --> "Phase [deg]"
-            subplot --> 2
-            inds = findall(x -> x == 0, frd.w)
-            useinds = setdiff(1:length(frd.w), inds)
-            (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* ControlSystems.unwrap(angle.(frd.r[useinds]))
+    ny,nu,nw = size(r)
+    s2i(i,j) = LinearIndices((nu,(plotphase ? 2 : 1)*ny))[j,i]
+    layout --> ((plotphase ? 2 : 1)*ny, nu)
+    link --> :x
+    for j=1:nu
+        for i=1:ny
+            @series begin
+                subplot   --> min(s2i((plotphase ? (2i-1) : i),j), prod(plotattributes[:layout]))
+                yguide --> "Magnitude"
+                yscale --> :log10
+                inds = findall(x -> x == 0, frd.w)
+                useinds = setdiff(1:length(frd.w), inds)
+                (hz ? 1 / (2π) : 1) .* frd.w[useinds], abs.(r[i,j,useinds])
+            end
+            if plotphase
+                @series begin
+                    yguide --> "Phase [deg]"
+                    subplot   --> s2i(2i,j)
+                    inds = findall(x -> x == 0, frd.w)
+                    useinds = setdiff(1:length(frd.w), inds)
+                    (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* ControlSystems.unwrap(angle.(r[i,j,useinds]))
+                end
+            end
         end
     end
     nothing

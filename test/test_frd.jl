@@ -28,6 +28,7 @@ k = coherence(dn)
 i = findfirst(k.w .> ωn)
 @test mean(k.r[i .+ (-2:5)]) < 0.6
 G, N = tfest(dn, 0.02)
+@test ControlSystems.issiso(G) 
 noisemodel = innovation_form(ss(sys), syse = ss(sysn))
 noisemodel.D .*= 0
 bodeplot(
@@ -88,3 +89,29 @@ Gf = FRD(w, G)
 ## Indexing
 Gf[0.011rad:0.03rad] == Gf[2:3]
 Gf[(0.011/2pi)Hz:(0.03/2pi)Hz] == Gf[2:3]
+
+
+## MIMO
+G = ss(tf(1, [1,1,1]))
+G = let (A,B,C,D) = ssdata(G)
+    ss(A,B,I(2),0)
+end
+G = c2d(G, 0.01)
+
+
+T = 1000
+u = randn(1,T)
+res = lsim(G, u)
+d = iddata(res)
+H,N = tfest(d)
+@test size(H.r,1) == 2
+@test size(H.r,2) == 1
+@test size(H.r,3) == T
+
+@test !ControlSystems.issiso(H)
+plot(H, plotphase=true)
+
+@test H.Ts == G.Ts
+H5 = H[1:5]
+@test H5.w == H.w[1:5]
+@test H5.r == H.r[:,:,1:5]
