@@ -260,3 +260,93 @@ end
     @test T3 ≈ T atol=1e-8
 
 end
+
+@testset "schur_stab" begin
+    a = diagm([1.1, 0.999, 0.5, 0])
+    Q = randn(4,4)
+    A = Q\a*Q
+    As = ControlSystemIdentification.schur_stab(A)
+    @test all(abs.(eigvals(As)) .< 1)
+    @test eigvals(As) ≈ reverse([0.99, 0.9, 0.5, 0]) atol=1e-8
+end
+
+
+## Freq domain
+@testset "freq domain" begin
+    @info "Testing subspaceid freq domain"
+
+    N = 200
+    ny,nu,nx = 2,3,4
+    u = randn(nu, N)
+
+    # BD/CD
+    zeroD = false
+    for zeroD = (true, false)
+        @show zeroD
+        G = ssrand(ny,nu,nx, Ts=1, proper=zeroD)
+        y, t, x = ControlSystems.lsim(G, u)
+
+        w = exp10.(LinRange(-4, log10(2pi*0.5), 200))
+        F = freqresp(G, w).parent
+        Y, U, Ω = ControlSystemIdentification.ifreqresp(F, w)
+
+        for j = 1:N
+            for m = 0:nu-1
+                @test Y[:,j+m*N] ≈ F[:,:,j]*U[:,j+m*N]
+            end
+        end
+
+        λ = cis.(Ω)
+
+        C,D,e = ControlSystemIdentification.find_CDf(G.A, G.B, U, Y, λ, zeros(G.nx), zeroD, \, false)
+
+        @test sum(abs2, e) < eps()
+        @test C ≈ G.C
+        @test D ≈ G.D
+
+        B,D,x0,e = ControlSystemIdentification.find_BDf(G.A, G.C, U, Y, λ, zeroD, \, false)
+        
+        @test sum(abs2, e) < eps()
+        @test iszero(x0)
+        @test B ≈ G.B
+        @test D ≈ G.D
+
+        Y = ControlSystemIdentification.fft(y, 2)
+        U = ControlSystemIdentification.fft(u, 2)
+
+        frd = FRD(w, F)
+        df = ControlSystemIdentification.ifreqresp(frd)
+        
+        Gh, x0 = subspaceid(frd, G.Ts, nx; r=2nx, zeroD, verbose=true)
+        @test hinfnorm(G-Gh)[1] < 1e-12
+
+        # df = iddata(Y, U, 2pi*(0:(N-1))/N)
+        d = iddata(y, u, G.Ts)
+        df = ControlSystemIdentification.fft(d)
+        Gh, x0 = subspaceid(df, df.Ts, nx; r=2nx, estimate_x0=true, zeroD)
+        @test hinfnorm(G-Gh)[1] < 1e-12
+
+
+    end
+
+    # Weights
+    N = 200
+    ny,nu,nx = 3,2,3
+    u = randn(nu, N)
+    G = ssrand(ny,nu,nx, Ts=1, proper=zeroD)
+    y, t, x = ControlSystems.lsim(G, u)
+    
+    w = exp10.(LinRange(-4, log10(2pi*0.5), 200))
+    F = freqresp(G, w).parent
+    F = F .+ 1 .* randn.(ComplexF64)
+    
+    frd = FRD(w, F)
+    Gh,_ = ControlSystemIdentification.subspaceid(frd, G.Ts, nx; r=5nx, zeroD, verbose=true)
+    
+    weights = [ones(100); 10ones(100)]
+    Ghw,_ = ControlSystemIdentification.subspaceid(frd, G.Ts, nx; r=5nx, zeroD, verbose=true, weights)
+    
+    isinteractive() && bodeplot([G, Gh, Ghw], w, plotphase=false)
+
+end
+
