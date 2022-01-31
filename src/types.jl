@@ -1,3 +1,6 @@
+import DSP.AbstractFFTs
+import DSP.AbstractFFTs: fft
+
 """
 See [`iddata`](@ref)
 """
@@ -12,6 +15,12 @@ struct InputOutputData{Y,U,T} <: AbstractIdData
     y::Y
     u::U
     Ts::T
+end
+
+struct InputOutputFreqData{Y,U,W} <: AbstractIdData
+    y::Y
+    u::U
+    w::W
 end
 
 """
@@ -33,7 +42,7 @@ struct InputOutputStateData{Y,U,X,T} <: AbstractIdData
 end
 
 autodim(x::Vector{<:AbstractVector}) = x
-autodim(x::AbstractVector) = x'
+autodim(x::AbstractVector) = transpose(x)
 function autodim(x)
     r = size(x, 1)
     c = size(x, 2)
@@ -59,6 +68,13 @@ iddata(res::ControlSystems.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
 iddata(y::AbstractArray, Ts::Union{Real,Nothing} = nothing) = OutputData(autodim(y), Ts)
 iddata(y::AbstractArray, u::AbstractArray, Ts::Union{Real,Nothing} = nothing) =
     InputOutputData(autodim(y), autodim(u), Ts)
+
+"""
+    iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector)
+
+Create a frequency-domain input-output data object. `w` is expected to be in rad/s.
+"""
+iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector) = InputOutputFreqData(autodim(y), autodim(u), w)
 
 """
     iddata(y, u, x, Ts = nothing)
@@ -150,14 +166,22 @@ Base.lastindex(d::AbstractIdData) = length(d)
 function Base.getproperty(d::AbstractIdData, s::Symbol)
     if s === :fs || s === :Fs
         return 1 / d.Ts
+    elseif s === :Ts
+        if d isa InputOutputFreqData
+            d.w isa AbstractRange || error("Sample time is only aviable from a InputOutputFreqData if the frequency vector is an AbstractRange")
+            N = length(d)
+            return d.w[end]/(2π*(N-1)/N)
+        else
+            return getfield(d, :Ts)
+        end
     elseif s === :timeevol
         return Discrete(d.Ts)
     elseif s === :t
         return timevec(d)
     elseif s === :w
-        return (2π/length(d)).*timevec(d)
+        return d isa InputOutputFreqData ? getfield(d,:w) : (2π/length(d)).*timevec(d)
     elseif s === :f
-        return (1/length(d)).*timevec(d)
+        return d isa InputOutputFreqData ? getfield(d,:w)./(2π) : (1/length(d)).*timevec(d)
     elseif s === :ny
         return noutputs(d)
     elseif s === :nu
@@ -178,6 +202,11 @@ end
 timevec(d::AbstractIdData) = range(0, step = sampletime(d), length = length(d))
 timevec(d::AbstractVector, h::Real) = range(0, step = h, length = length(d))
 timevec(d::AbstractMatrix, h::Real) = range(0, step = h, length = maximum(size(d)))
+function timevec(d::InputOutputFreqData)
+    
+
+end
+
 
 function apply_fun(fun, d::OutputData, Ts = d.Ts)
     iddata(fun(d.y), Ts)
@@ -260,6 +289,13 @@ function DSP.resample(M::AbstractMatrix, f)
     end
 end
 
+function AbstractFFTs.fft(d::InputOutputData)
+    y,u = time2(output(d)), time2(input(d))
+    sN = √length(d)
+    InputOutputFreqData(fft(y, 2) ./ sN, fft(u, 2) ./ sN, d.w)
+end
+
+
 
 function Base.hcat(d1::InputOutputData, d2::InputOutputData)
     @assert d1.Ts == d2.Ts
@@ -272,7 +308,7 @@ end
 Write identification data to disk.
 """
 function DelimitedFiles.writedlm(io::IO, d::AbstractIdData, args...; kwargs...)
-    writedlm(io, [d.y' d.u'], args...; kwargs...)
+    writedlm(io, transpose([d.y; d.u]), args...; kwargs...)
 end
 
 """
