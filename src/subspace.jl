@@ -371,50 +371,46 @@ era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; kwargs...) =
 
 
 """
-    H = okid(d::AbstractIdData, r, l = 5r; λ=0)
+    H = okid(d::AbstractIdData, nx, l = 5r; λ=0, estimator = /)
 
 Observer Kalman filter identification. Returns the Markov parameters `H` size `n_out×n_in×l+1`
 
 # Arguments:
-- `r`: Model order
+- `nx`: Model order
 - `l`: Number of Markov parameters to estimate.
 - `λ`: Regularization parameter
 """
-@views function okid(d::AbstractIdData, r, l = 5r; λ = 0)
+@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0, estimator = /)
     y, u = time2(output(d)), time2(input(d))
-    p, m = size(y) # p is the number of outputs
-    q = size(u, 1) # q is the number of inputs
-
+    q, N = size(y) # p is the number of outputs
+    m = size(u, 1) # q is the number of inputs
     # Step 2, form y, V, solve for observer Markov params, Ȳ
-    V = zeros(eltype(y), q + (q + p) * l, m)
-    for i = 1:m
-        V[1:q, i] = u[1:q, i]
+    V = zeros(eltype(y), m + (m + q) * l, N)
+    for i = 1:N
+        V[1:m, i] = u[1:m, i]
     end
     for i = 2:l+1
-        for j = 1:m+1-i
+        for j = 1:N+1-i
             vtemp = [u[:, j]; y[:, j]]
-            V[q+(i-2)*(q+p)+1:q+(i-1)*(q+p), i+j-1] = vtemp
+            V[m+(i-2)*(m+q)+1:m+(i-1)*(m+q), i+j-1] = vtemp
         end
     end
     if λ > 0
-        Ȳ = [y zeros(size(y, 1), size(V, 1))] / [V λ * I]
+        Ȳ = estimator([y zeros(size(y, 1), size(V, 1))], [V λ * I])
     else
-        Ȳ = y / V
+        Ȳ = estimator(y, V)
     end
-    # @show size(Ȳ,1),p,q
 
-    D = Ȳ[:, 1:q] # Feed-through term (D) is first term
-    Ȳ1, Ȳ2 = similar(Ȳ, p, q, l), similar(Ȳ, p, q, l)
-    Y = similar(Ȳ, p, q, l)
-    # Ȳ1(1:PP,1:QQ,i) = Ȳ(:,QQ+1+(QQ+PP)*(i-1):QQ+(QQ+PP)*(i-1)+QQ);
-    # Ȳ2(1:PP,1:QQ,i) = Ȳ(:,QQ+1+(QQ+PP)*(i-1)+QQ:QQ+(QQ+PP)*i);
+    D = Ȳ[:, 1:m] # Feed-through term (D) is first term
+    Ȳ1, Ȳ2 = similar(Ȳ, q, m, l), similar(Ȳ, q, q, l)
+    Y = similar(Ȳ, q, m, l)
+    inds1 = (1:m) .+ m
+    inds2 = (1:q) .+ 2m
     for i = 1:l
-        # @show ind1 = q+1+(q+p)*(i-1):2q+(q+p)*(i-1)
-        # @show ind2 = 2q+1+(q+p)*(i-1):q+(q+p)*i
-        ind1 = q+1+(q+p)*(i-1):2q+(q+p)*(i-1)
-        ind2 = 2q+1+(q+p)*(i-1):q+(q+p)*i
-        Ȳ1[:, :, i] = Ȳ[:, ind1]
-        Ȳ2[:, :, i] = Ȳ[:, ind2]
+        Ȳ1[:, :, i] = Ȳ[:, inds1]
+        Ȳ2[:, :, i] = Ȳ[:, inds2]
+        inds1 = inds1 .+ (m+q)
+        inds2 = inds2 .+ (m+q)
     end
     Y[:, :, 1] = Ȳ1[:, :, 1] + Ȳ2[:, :, 1] * D
     for k = 2:l
