@@ -77,9 +77,11 @@ Create a frequency-domain input-output data object. `w` is expected to be in rad
 iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector) = InputOutputFreqData(autodim(y), autodim(u), w)
 
 """
+    iddata(y,       Ts = nothing)
+    iddata(y, u,    Ts = nothing)
     iddata(y, u, x, Ts = nothing)
 
-Returns the appropriate IdData object, depending on the input.
+Returns the appropriate identification-data object, depending on the input.
 
 # Arguments
 - `y::AbstractArray`: output data (required)

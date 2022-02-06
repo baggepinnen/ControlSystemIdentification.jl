@@ -267,7 +267,7 @@ Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using gene
 # Arguments:
 - `d`: iddata
 - `na`: order of A
-- `nb`: number of coefficients in B, the order is determined by `nb + inputdelay - 1`. In MISO estimation it takes the form nb = [nb₁, nb₂...]. 
+- `nb`: number of coefficients in B, the order is determined by `nb + inputdelay - 1`. In MISO estimation it takes the form `nb = [nb₁, nb₂...]`. 
 - `nd`: order of D
 
 # Keyword Arguments:
@@ -548,7 +548,7 @@ Returns the model and the estimated noise sequence driving the system.
 # Arguments:
 - `d`: iddata
 - `initial_order`: An initial AR model of this order is used to estimate the residuals
-- `estimator`: A function `(A,y)->minimizeₓ(Ax-y)` default is `\` but another option is `wtls_estimator(1:length(y)-initial_order,na,nc,ones(nc))`
+- `estimator`: A function `(A,y)->minimizeₓ(Ax-y)` default is `\\` but another option is `wtls_estimator(1:length(y)-initial_order,na,nc,ones(nc))`
 
 See also [`estimate_residuals`](@ref)
 """
