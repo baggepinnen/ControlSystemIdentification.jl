@@ -38,6 +38,7 @@ See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 ## Parametric estimation
+### Transfer functions
 To estimate a parametric, rational transfer function from frequency-domain data, call [`tfest`](@ref) with an [`FRD`](@ref) object and an initial guess for the system model. This initial guess determines the number of coefficients in the numerator and denominator of the estimated model.
 ```julia
 G0 = tf(1.0, [1,1,1]) # Initial guess
@@ -53,6 +54,13 @@ basis = laguerre_oo(1, 50) # Use 50 basis functions, the final model order may b
 Gest,p = tfest(d::FRD, basis)
 ```
 
+### Statespace
+The function [`subspaceid`](@ref) handles frequency-domain data (as well as time-domain data). If an [`InputOutputFreqData`](@ref) is passed (may be created with function [`iddata`](@ref)), a frequency-domain method is automatically used. Further, a frequency-response object, [`FRD`](@ref), may also be passed, in which case it is transformed to an `InputOutputFreqData` automatically. If the frequency-response data stems from a frequency-response analysis, you may need to perform a bilinear transform on the frequency axis of the data object to convert the continuous-time frequency axis to discrete time, example:
+```julia
+Ts    = 0.01 # Sample time
+frd_d = c2d(frd_c::FRD, Ts) # Perform a bilinear transformation to discrete-time frequency vector
+Ph, _ = subspaceid(frd_d, Ts, nx)
+```
 
 ## Model-based spectral estimation
 The model estimation procedures can be used to estimate spectrograms. This package extends some methods from DSP.jl to accept a estimation function as the second argument. To create a suitable such function, we provide the function [`model_spectrum`](@ref). Usage is illustrated below.
