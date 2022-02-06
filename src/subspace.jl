@@ -357,7 +357,7 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
 end
 
 """
-    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; λ=0)
+    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, λ=0)
 
 Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as an initial step.
 
@@ -365,13 +365,14 @@ Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as a
 - `r`: Model order
 - `l`: Number of Markov parameters to estimate.
 - `λ`: Regularization parameter
+- `p`: Optionally, delete the first `p` columns in the internal Hankel matrices to account for initial conditions != 0. If `x0 != 0`, for `era`, `p` defaults to `l`, while when calling `okid` directly, `p` defaults to 0.
 """
-era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; kwargs...) =
-    era(okid(d, r, l; kwargs...), d.Ts, r, m, n)
+era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...) =
+    era(okid(d, r, l; p, kwargs...), d.Ts, r, m, n)
 
 
 """
-    H = okid(d::AbstractIdData, nx, l = 5r; λ=0, estimator = /)
+    H = okid(d::AbstractIdData, nx, l = 5nx; p = 1, λ=0, estimator = /)
 
 Observer Kalman filter identification. Returns the Markov parameters `H` size `n_out×n_in×l+1`
 
@@ -379,8 +380,9 @@ Observer Kalman filter identification. Returns the Markov parameters `H` size `n
 - `nx`: Model order
 - `l`: Number of Markov parameters to estimate.
 - `λ`: Regularization parameter
+- `p`: Optionally, delete the first `p` columns in the internal Hankel matrices to account for initial conditions != 0. If `x0 != 0`, try setting `p` around the same value as `l`.
 """
-@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0, estimator = /)
+@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0, p = 1, estimator = /)
     y, u = time2(output(d)), time2(input(d))
     q, N = size(y) # p is the number of outputs
     m = size(u, 1) # q is the number of inputs
@@ -394,6 +396,10 @@ Observer Kalman filter identification. Returns the Markov parameters `H` size `n
             vtemp = [u[:, j]; y[:, j]]
             V[m+(i-2)*(m+q)+1:m+(i-1)*(m+q), i+j-1] = vtemp
         end
+    end
+    if p > 0
+        V = V[:, p+1:end]
+        y = y[:, p+1:end]
     end
     if λ > 0
         Ȳ = estimator([y zeros(size(y, 1), size(V, 1))], [V λ * I])

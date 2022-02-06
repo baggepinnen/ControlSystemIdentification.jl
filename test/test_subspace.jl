@@ -64,13 +64,18 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         d2 = iddata(y, u)
         iy, it, ix = impulse(G, 20)
-        H = okid(d2, r, 20)
-        @test norm(iy - permutedims(H, (1, 3, 2))) < 0.06
+        H = okid(d2, r, 20, p=1)
+        # @show norm(iy - permutedims(H, (1, 3, 2)))
+        @test norm(iy - permutedims(H, (1, 3, 2))) < 1e-4
         # plot([iy vec(H)])
+
+        H = okid(d2, r, 20, p = 20)
+        @test norm(iy - permutedims(H, (1, 3, 2))) < 1e-10
 
         sys = era(d2, r)
         @test sys.nx == r
-        @test freqresptest(G, sys) < 0.02 * m * l
+        # @show freqresptest(G, sys)
+        @test freqresptest(G, sys) < 1e-4
 
         res = ControlSystemIdentification.n4sid(d)
         @test res.sys.nx <= r # test that auto rank selection don't choose too high rank when noise is low
