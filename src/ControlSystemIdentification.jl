@@ -209,12 +209,17 @@ end
     noise_model(sys::AbstractPredictionStateSpace)
 
 Return a model of the noise driving the system, `v`, in
+```math
 x' = Ax + Bu + Kv
 y = Cx + Du + v
+```
 
 The model neglects u and is given by
+```math
 x' = Ax + Kv
 y = Cx + v
+```
+Also called the "innovation form"
 """
 function noise_model(sys::AbstractPredictionStateSpace)
     A,B,C,D = ssdata(sys)
@@ -228,9 +233,9 @@ end
     observer_predictor(sys::StateSpaceNoise)
 
 Return the predictor system
-x' = (A - KC)x + (B-KD)u + Ke
-y  = Cx + Du + e
-with the input equation [B K] * [u; y]
+x' = (A - KC)x + (B-KD)u + Ky
+y  = Cx + Du
+with the input equation [B-KD K] * [u; y]
 
 See also `noise_model` and `prediction_error`.
 """
