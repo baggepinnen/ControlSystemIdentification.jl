@@ -115,3 +115,16 @@ plot(H, plotphase=true)
 H5 = H[1:5]
 @test H5.w == H.w[1:5]
 @test H5.r == H.r[:,:,1:5]
+
+
+## MIMO
+ny,nu,nx = 2,3,4                     # number of outputs, inputs and states
+Ts = 1                                  # Sample time
+G = ssrand(ny,nu,nx; Ts, proper=true);  # Generate a random system
+
+N = 200                                 # Number of frequency points
+w = range(0, stop=pi/Ts-1/N, length=N)  # Frequency vector
+
+frd = FRD(w, G);                        # Build a frequency-response data object
+@test frd.r == freqresp(G, w).parent
+@test frd.w == w

@@ -32,7 +32,13 @@ Base.:*(i, ::Type{rad}) = rad(i)
 (::Colon)(start::Union{Hz,rad}, stop::Union{Hz,rad}) = (start, stop)
 
 import Base: +, -, *, /, length, sqrt, getindex
-FRD(w, s::LTISystem) = FRD(w, freqresp(s, w)[:, 1, 1])
+function FRD(w, s::LTISystem)
+    if ControlSystems.issiso(s)
+        FRD(w, freqresp(s, w).parent[:])
+    else
+        FRD(w, freqresp(s, w).parent)
+    end
+end
 Base.vec(f::FRD) = f.r
 *(f::FRD, f2)    = FRD(f.w, f.r .* vec(f2))
 +(f::FRD, f2)    = FRD(f.w, f.r .+ vec(f2))
