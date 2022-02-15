@@ -34,9 +34,13 @@ Base.:*(i, ::Type{rad}) = rad(i)
 import Base: +, -, *, /, length, sqrt, getindex
 function FRD(w, s::LTISystem)
     if ControlSystems.issiso(s)
-        FRD(w, freqresp(s, w).parent[:])
+        FRD(w, freqresp(s, w)[:])
     else
-        FRD(w, freqresp(s, w).parent)
+        if s isa AbstractStateSpace
+            FRD(w, freqresp(s, w).parent)
+        else
+            FRD(w, permutedims(freqresp(s, w), (2,3,1)))
+        end
     end
 end
 Base.vec(f::FRD) = f.r
