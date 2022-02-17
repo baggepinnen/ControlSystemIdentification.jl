@@ -22,7 +22,7 @@
     @test freqresptest(G, Gls) < 1.5
     @test freqresptest(G, Gtls) < 1
     @test freqresptest(G, Gwtls) < 0.1
-    @test freqresptest(G, Gplr) < 0.1
+    @test freqresptest(G, Gplr) < 0.11
 
     d = iddata(y, u, 1)
     Gls = arx(d, na, nb)
