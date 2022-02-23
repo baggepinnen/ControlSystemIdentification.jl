@@ -40,18 +40,18 @@ end
 @testset "arma" begin
     @info "Testing arma"
 
-    N  = 2000     # Number of time steps
+    N  = 5000     # Number of time steps
     t  = 1:N
     Δt = 1        # Sample time
     u  = randn(1,N) # A random control input
     a  = 0.9
 
-    G = tf([1, 0.1], [1, -a, 0], 1)
+    G = tf([1, 0.1], [1, -a, 0.1], 1)
     y, t, x = lsim(G, u, 1:N) 
 
     na, nc = 2, 2   # Number of polynomial coefficients
-    e = 0.0001randn(1,N) #+ 20randn(1,N) .* (rand(N) .< 0.01)
-    yn = y + e    # Measurement signal with noise
+    # e = 0.00001randn(1,N) #+ 20randn(1,N) .* (rand(N) .< 0.01)
+    yn = y #+ e    # Measurement signal with noise
 
     d = iddata(yn, Δt)
     model = arma(d, na, nc, initial_order = 20)
