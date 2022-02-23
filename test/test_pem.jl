@@ -184,7 +184,7 @@ sysh, x0h, opt = pem(d, nx = 3nx, focus = :prediction, iterations = 400)
 # sysh, opt = ControlSystemIdentification.newpem(d, 2nx, focus = :prediction, optimizer=NelderMead())
 @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
 @test Optim.minimum(opt) < 2σy^2  # A factor of 2 margin
-@test hinfnorm(sys - ss(sysh))[1] < 1e-1
+@test hinfnorm(sys - ss(sysh))[1] < 2e-1
 
 # Simulation error minimization
 σu = 0.01
