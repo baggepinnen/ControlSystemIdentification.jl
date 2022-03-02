@@ -1,5 +1,6 @@
 
 function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\, weights=nothing)
+    T = eltype(A)
     nx = size(A, 1)
     p = size(C, 1)
     N = size(U, 2)
@@ -38,7 +39,7 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\, weights=nothing)
         end
     end
 
-    φ3 = zeroD ? cat(φB, φx0, dims=3) : cat(φB, φx0, φD, dims=3)
+    φ3 = zeroD ? cat(φB, φx0, dims=Val(3)) : cat(φB, φx0, φD, dims=Val(3))
     # φ4 = permutedims(φ3, (1,3,2))
     φ = reshape(φ3, p*N, :)
     if weights === nothing
@@ -46,13 +47,13 @@ function find_BD(A,K,C,U,Y,m, zeroD=false, estimator=\, weights=nothing)
     else
         BD = estimator(φ, vec(Y .- ε), weights)
     end
-    B = reshape(BD[1:m*nx], nx, m)
+    B = copy(reshape(BD[1:m*nx], nx, m))
     x0 = BD[m*nx .+ (1:nx)]
     if zeroD
-        D = zeros(p, m)
+        D = zeros(T, p, m)
     else
         D = reshape(BD[end-p*m+1:end], p, m)
-        B = B + K*D
+        B .+= K*D
     end
     B,D,x0
 end
@@ -215,10 +216,10 @@ function subspaceid(
 ) where {F1,F2,F3}
 
     nx !== :auto && r < nx && throw(ArgumentError("r must be at least nx"))
-    y, u = time1(output(data)), time1(input(data))
+    y, u = copy(time1(output(data))), copy(time1(input(data)))
     if scaleU
         CU = std(u, dims=1)
-        u = u ./ CU
+        u ./= CU
     end
     t, p = size(y, 1), size(y, 2)
     m = size(u, 2)
@@ -287,8 +288,8 @@ function subspaceid(
             YΠUt = proj(Y, U)
             G = YΠUt*Φ' #* 1/N # 10.109, pr×s # N does not matter here
             @assert size(G) == (p*r, s)
-            W1 = sqrt((pinv(1/N * (YΠUt*Y')))) |> real
-            W2 = sqrt((pinv(1/N * Φ*Φ'))) |> real
+            W1 = sqrt(Symmetric(pinv(1/N * (YΠUt*Y')))) |> real
+            W2 = sqrt(Symmetric(pinv(1/N * Φ*Φ'))) |> real
             G = W1*G*W2
             @assert size(G, 1) == r*p
         elseif W === :CVA
@@ -340,7 +341,7 @@ function subspaceid(
     # TODO: iterate find C/D and find B/D a couple of times
 
     if scaleU
-        B = B ./ CU
+        B ./= CU
     end
 
     # 5. If noise model, form Xh from (10.123) and estimate noise contributions using (10.124)

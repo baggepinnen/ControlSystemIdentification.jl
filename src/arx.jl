@@ -891,23 +891,23 @@ end
     a,b = params2poly2(params,na,nb; inputdelay = ones(Int, size(nb)))
 Used to get numerator and denominator polynomials after arx fitting. Updated version supporting a direct term.
 """
-function params2poly2(w, na, nb; inputdelay = ones(Int, size(nb)))
+function params2poly2(w::AbstractVector{T}, na, nb; inputdelay = ones(Int, size(nb))) where T
     maxb = maximum(nb .+ inputdelay)
-    a = [1; -w[1:na]]
-    a = [a; zeros(max(0, maxb - na -1))] # if nb > na
+    a = [one(T); -w[1:na]]
+    a = [a; zeros(T, max(0, maxb - na -1))] # if nb > na
     w = w[na+1:end]
     b = map(1:length(nb)) do i
         b = w[1:nb[i]]
         w = w[nb[i]+1:end]
-        b = [zeros(inputdelay[i]); b; zeros(max(na+1, maxb) - inputdelay[i] - nb[i])] # compensate for different nbs and delay, as well as na > nb
+        b = [zeros(T, inputdelay[i]); b; zeros(T, max(na+1, maxb) - inputdelay[i] - nb[i])] # compensate for different nbs and delay, as well as na > nb
         b
     end
     return a, b
 end
 
-function params2poly(w, na)
-    a = [1; -w]
-    b = [1; zeros(na)]
+function params2poly(w::AbstractVector{T}, na) where T
+    a = [one(1); -w]
+    b = [one(1); zeros(T, na)]
     return a, b
 end
 
