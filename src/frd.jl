@@ -143,7 +143,7 @@ function tfest(d, σ::Real = 0.05)
         NR = reshape(reduce(vcat, [transpose(hn[2].r) for hn in HNs]), d.ny, 1, :)
         return FRD(HNs[1][1].w, HR), FRD(HNs[1][1].w, NR)
     end
-    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
+    y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
     Syy, Suu, Syu = fft_corr(y, u, σ)
     w = freqvec(h, Syu)
     H = FRD(w, Syu ./ Suu)

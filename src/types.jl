@@ -149,10 +149,10 @@ hasinput(::OutputData)                           = false
 hasinput(::AbstractIdData)                       = true
 hasinput(::AbstractArray)                        = true
 hasinput(::ControlSystems.LTISystem)             = true
-ControlSystems.noutputs(d::AbstractIdData)       = obslength(d.y)
-ControlSystems.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(d.u) : 0
+ControlSystems.noutputs(d::AbstractIdData)       = obslength(getfield(d, :y))
+ControlSystems.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(getfield(d, :u)) : 0
 ControlSystems.nstates(d::AbstractIdData)        = 0
-ControlSystems.nstates(d::InputOutputStateData)  = obslength(d.x)
+ControlSystems.nstates(d::InputOutputStateData)  = obslength(getfield(d, :x))
 obslength(d::AbstractIdData)                     = ControlSystems.noutputs(d)
 sampletime(d::AbstractIdData)                    = d.Ts === nothing ? 1.0 : d.Ts
 function Base.length(d::AbstractIdData)
