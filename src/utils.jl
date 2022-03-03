@@ -42,16 +42,13 @@ end
 @inline time1(y::Vector) = y
 @inline time1(y::Vector{<:Vector}) = transpose(reduce(hcat, y))
 @inline function time1(y::Matrix)
-    if size(y, 1) == 1
-        return vec(y)
-    end
     Matrix(transpose(y))
 end
 @inline function time1(y::AbstractMatrix)
-    if size(y, 1) == 1
-        return vec(y)
-    end
     Matrix(transpose(y))
+end
+@inline function time1(y::Union{Adjoint{T, Vector{T}}, Transpose{T, Vector{T}}}) where T
+    transpose(y)
 end
 
 @inline time2(y::Vector) = oftype(Matrix, y)

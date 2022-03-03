@@ -143,7 +143,7 @@ function tfest(d, σ::Real = 0.05)
         NR = reshape(reduce(vcat, [transpose(hn[2].r) for hn in HNs]), d.ny, 1, :)
         return FRD(HNs[1][1].w, HR), FRD(HNs[1][1].w, NR)
     end
-    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
+    y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
     Syy, Suu, Syu = fft_corr(y, u, σ)
     w = freqvec(h, Syu)
     H = FRD(w, Syu ./ Suu)
@@ -173,7 +173,7 @@ N: Noise model
 function coherence(d; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
     noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     ninputs(d) == 1 || throw(ArgumentError("coherence only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
-    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
+    y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
     Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
     k = (abs2.(Syu) ./ (Suu .* Syy))#[end÷2+1:end]
     Sch = FRD(freqvec(h, k), k)

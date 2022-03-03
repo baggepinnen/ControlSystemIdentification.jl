@@ -331,7 +331,8 @@ Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
 find_na
 @recipe function find_na(p::Find_na)
     y, n = p.args[1:2]
-    y = time1(y)
+    size(y, 1) == 1 || size(y, 2) == 1 || throw(ArgumentError("Only one-dimensional time series supported."))
+    y = vec(y)
     error = zeros(n, 2)
     for i = 1:n
         yt, A = getARXregressor(y, 0y, i, 0)
@@ -355,7 +356,8 @@ Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
 find_nanb
 @recipe function find_nanb(p::Find_nanb; logrms = false)
     d, na, nb = p.args[1:3]
-    y, u = time1(output(d)), time1(input(d))
+    d.ny == 1 || throw(ArgumentError("Only one-dimensional outputs supported."))
+    y, u = vec(output(d)), time1(input(d))
     error = zeros(na, nb, 2)
     for i = 1:na, j = 1:nb
         yt, A = getARXregressor(y, u, i, j)

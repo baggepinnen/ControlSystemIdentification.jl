@@ -164,7 +164,7 @@ Predict AR model
 """
 function predict(G::ControlSystems.TransferFunction, y)
     _, a, _, _ = params(G)
-    yr, A = getARregressor(time1(output(y)), length(a))
+    yr, A = getARregressor(vec(output(y)), length(a))
     yh = A * a
     oftype(output(y), yh)
 end
