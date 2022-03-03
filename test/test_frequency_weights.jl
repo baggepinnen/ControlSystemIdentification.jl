@@ -85,4 +85,4 @@ Gf2 = Gf2.sys
 @test freqresptest(G1, Gf1) < 1
 @test freqresptest(G2, Gf2) < 1
 
-# isinteractive() && bodeplot([G1, G2, Gf1, Gf2], ωvec, plotphase=false, lab=["G1" "G2" "Focus f1" "Focus f2"])
+isinteractive() && bodeplot([G1, G2, Gf1, Gf2], ωvec, plotphase=false, lab=["G1" "G2" "Focus f1" "Focus f2"])

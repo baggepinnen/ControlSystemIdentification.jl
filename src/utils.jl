@@ -47,6 +47,9 @@ end
 @inline function time1(y::AbstractMatrix)
     Matrix(transpose(y))
 end
+@inline function time1(y::Union{Adjoint{T, Vector{T}}, Transpose{T, Vector{T}}}) where T
+    transpose(y)
+end
 
 @inline time2(y::Vector) = oftype(Matrix, y)
 @inline time2(y::Vector{<:Vector}) = oftype(Matrix, y)

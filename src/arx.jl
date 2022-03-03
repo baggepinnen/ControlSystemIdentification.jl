@@ -37,12 +37,15 @@ function getARXregressor(y::AbstractVector, u::AbstractVecOrMat, na, nb; inputde
     end
     return y, A
 end
-getARXregressor(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb))) =
-    getARXregressor(time1(output(d)), time1(input(d)), na, nb; inputdelay = inputdelay)
+
+function getARXregressor(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)))
+    d.ny == 1 || throw(ArgumentError("getARXregressor only supports single output."))
+    getARXregressor(vec(output(d)), time1(input(d)), na, nb; inputdelay = inputdelay)
+end
 
 function getARregressor(dy::AbstractIdData, na)
     noutputs(dy) == 1 || throw(ArgumentError("Only 1d time series supported"))
-    y = time1(output(dy))
+    y = vec(output(dy))
     getARregressor(vec(y), na)
 end
 
@@ -81,13 +84,13 @@ heavy measurement noise. The number of free parameters is `na+nb`
 Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...] and optional inputdelay = [d₁, d₂...]
 """
 function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator = \, stochastic = false)
-    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
-    @assert size(y, 2) == 1 "arx only supports single output."
+    d.ny == 1 || throw(ArgumentError("arx only supports single output."))
+    y, u, h = vec(output(d)), time1(input(d)), sampletime(d)
     # all(nb .<= na) || throw(DomainError(nb,"nb must be <= na"))
     na >= 0 || throw(ArgumentError("na must be positive"))
     size(nb) == size(inputdelay) || throw(ArgumentError("inputdelay has to have the same structure as nb"))
-    y_train, A = getARXregressor(vec(y), u, na, nb; inputdelay)
-    w = ls(A, y_train, λ, estimator)
+    y_train, A = getARXregressor(y, u, na, nb; inputdelay)
+    w = ls(A, y_train, λ, estimator) |> vec
     a, b = params2poly2(w, na, nb; inputdelay)
     model = tf(b, a, h)
     if stochastic
@@ -243,7 +246,7 @@ true
 """
 function ar(d::AbstractIdData, na; λ = 0, estimator = \, scaleB = false, stochastic = false)
     noutputs(d) == 1 || throw(ArgumentError("Only 1d time series supported"))
-    y = vec(time1(output(d)))
+    y = vec(output(d))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARregressor(y, na)
     w = ls(A, y_train, λ, estimator)
@@ -509,7 +512,8 @@ The residual sequence is estimated by first estimating a high-order arx model, w
 `armax` is an alias for `plr`. See also [`pem`](@ref), [`ar`](@ref), [`arx`](@ref)
 """
 function plr(d::AbstractIdData, na, nb, nc; initial_order = 20, method = :ls)
-    y, u, h = time1(output(d)), time1(input(d)), sampletime(d)
+    d.ny == 1 || throw(ArgumentError("arx only supports single output."))
+    y, u, h = vec(output(d)), time1(input(d)), sampletime(d)
     all(nb .<= na) || throw(DomainError(nb, "nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
@@ -553,7 +557,8 @@ Returns the model and the estimated noise sequence driving the system.
 See also [`estimate_residuals`](@ref)
 """
 function arma(d::AbstractIdData, na, nc; initial_order = 20, estimator = \)
-    y, h = time1(output(d)), sampletime(d)
+    d.ny == 1 || throw(ArgumentError("arx only supports single output."))
+    y, h = vec(output(d)), sampletime(d)
     all(nc .<= na) || throw(DomainError(nb, "nc must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
@@ -799,7 +804,8 @@ DOCSTRING
 - `robust`: Use robust PCA to be resistant to outliers.
 """
 function arma_ssa(d::AbstractIdData, na, nc; L = nothing, estimator = \, robust = false)
-    y, h = time1(output(d)), sampletime(d)
+    d.ny == 1 || throw(ArgumentError("arx only supports single output."))
+    y, h = vec(output(d)), sampletime(d)
     all(nc .<= na) || throw(DomainError(nc, "nc must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
 
