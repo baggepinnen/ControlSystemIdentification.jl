@@ -108,14 +108,17 @@ end
     end
 
     @testset "pem" begin
+        @info "Testing pem"
         include("test_pem.jl")
     end
 
     @testset "arx" begin
+        @info "Testing arx"
         include("test_arx.jl")
     end
 
     @testset "ar" begin
+        @info "Testing ar"
         include("test_ar.jl")
     end
 

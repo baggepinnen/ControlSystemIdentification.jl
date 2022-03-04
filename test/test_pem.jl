@@ -1,4 +1,4 @@
-using ControlSystemIdentification, Optim
+using ControlSystemIdentification, Optim, ControlSystems
 using ControlSystems.DemoSystems: resonant
 Random.seed!(1)
 T = 1000
@@ -19,21 +19,13 @@ y  = sim(sys, un, x0)
 yn = y + sim(sysn, σy * randn(size(u)), 0 * x0)
 d  = iddata(yn, un, 1)
 
-# using BenchmarkTools
-# @btime begin
-# Random.seed!(0)
-# sysh, x0h, opt = pem(d, nx = nx, focus = :prediction, iterations=5000)
-sysh, opt = ControlSystemIdentification.newpem(d, nx, optimizer=LBFGS(), show_every=1000)
-# bodeplot([sys,ss(sysh)], exp10.(range(-3, stop=log10(pi), length=150)), legend=false, ylims=(0.01,100))
-# end
+sysh, opt = ControlSystemIdentification.newpem(d, nx, show_every=1000)
 # 462ms 121 29
 # 296ms
 # 283ms
 # 173ms
-# @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
 @test freqresptest(sys, sysh.sys) < 1e-2
-# yh = sim(sysh, u, x0h)
-@test Optim.minimum(opt) < 1e-4
+@test Optim.minimum(opt) < T*1e-4
 
 # Test with some noise
 # Only measurement noise
@@ -46,9 +38,7 @@ yn = y + sim(sysn, σy * randn(size(u)), 0 * x0)
 d = iddata(yn, un, 1)
 # sysh, x0h, opt = pem(d, nx = nx, focus = :prediction)
 sysh, opt = ControlSystemIdentification.newpem(d, nx, focus = :prediction, show_every=1000)
-# @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
-@test Optim.minimum(opt) < 2σy^2 * T # A factor of 2 margin
-# @test freqresptest(sys, sysh) < 1e-1
+@test Optim.minimum(opt) < T*2σy^2 * T # A factor of 2 margin
 
 # Only input noise
 σu = 0.1
@@ -58,10 +48,8 @@ un = u + sim(sysn, σu * randn(size(u)), 0 * x0)
 y = sim(sys, un, x0)
 yn = y + sim(sysn, σy * randn(size(u)), 0 * x0)
 d = iddata(yn, un, 1)
-# @time sysh, x0h, opt = pem(d, nx = nx, focus = :prediction)
 sysh, opt = ControlSystemIdentification.newpem(d, nx, focus = :prediction, show_every=1000)
-# @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
-@test Optim.minimum(opt) < 1e-3 # Should depend on system gramian, but too lazy to figure out
+@test Optim.minimum(opt) < T*1e-3 # Should depend on system gramian, but too lazy to figure out
 @test freqresptest(sys, sysh.sys) < 0.5
 
 # Both noises
@@ -73,11 +61,8 @@ un = u + sim(sysn, σu * randn(size(u)), 0 * x0)
 y = sim(sys, un, x0)
 yn = y + sim(sysn, σy * randn(size(u)), 0 * x0)
 d = iddata(yn, un, 1)
-# sysh, x0h, opt = pem(d, nx = 3nx, focus = :prediction, iterations = 400)
 sysh, opt = ControlSystemIdentification.newpem(d, 2nx, focus = :prediction, optimizer=NelderMead(), show_every=1000)
-# @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
-@test Optim.minimum(opt) < 2σy^2  # A factor of 2 margin
-# @test_broken freqresptest(sys, sysh) < 1e-1
+@test Optim.minimum(opt) < T*2σy^2  # A factor of 2 margin
 @test norm(sys - sysh.sys) < 1e-1
 
 # Simulation error minimization
@@ -92,7 +77,7 @@ d = iddata(yn, un, 1)
 # @time sysh, x0h, opt = pem(d, nx = nx, focus = :simulation)
 @time sysh, opt = ControlSystemIdentification.newpem(d, nx, focus = :simulation, show_every=1000)
 # @test sysh.C * x0h ≈ sys.C * x0 atol = 0.3
-@test Optim.minimum(opt) < 0.01
+@test Optim.minimum(opt) < T*0.01
 # @test freqresptest(sys, sysh) < 1e-1
 
 

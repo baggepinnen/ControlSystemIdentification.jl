@@ -201,10 +201,10 @@ function newpem(
     d,
     nx;
     zeroD = true,
-    sys0 = subspaceid(d, nx; zeroD),
     focus = :prediction,
+    sys0 = subspaceid(d, nx; zeroD, focus),
     optimizer = BFGS(
-        alphaguess = LineSearches.InitialStatic(alpha = 1),
+        # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.HagerZhang(),
     ),
     zerox0 = false,
@@ -216,47 +216,50 @@ function newpem(
     allow_f_increases = false,
     time_limit = 100,
     x_tol = 0,
-    f_abstol = 0,
+    f_abstol = 1e-16,
     g_tol = 1e-12,
     f_calls_limit = 0,
     g_calls_limit = 0,
     metric::F = abs2,
 ) where F
+    T = promote_type(eltype(d.y), eltype(sys0.A))
     nu = d.nu
     ny = d.ny
     ny <= nx || throw(ArgumentError("ny > nx not supported by this method."))
+    sys0, Tmodal = modal_form(sys0)
     A, B, C, D = ssdata(sys0)
-    K = sys0.K
-    pred = focus === :prediction
-    pd = ControlSystemIdentification.predictiondata(d)
-    if pred
-        p0 = zeroD ? ComponentArray(; A, B, C, K) : ComponentArray(; A, B, C, D, K)
+    K = if hasfield(typeof(sys0), :K)
+        convert(Matrix{T}, sys0.K)
     else
-        p0 = zeroD ? ComponentArray(; A, B, C) : ComponentArray(; A, B, C, D)
+        zeros(T, nx, ny)
+    end
+    pred = focus === :prediction
+    pd = predictiondata(d)::typeof(d)
+    p0::Vector{T} = if pred
+        T.(zeroD ? [trivec(A); vec(B); vec(C); vec(K)] : [trivec(A); vec(B); vec(C); vec(D); vec(K)])
+    else
+        T.(zeroD ? [trivec(A); vec(B); vec(C)] : [trivec(A); vec(B); vec(C); vec(D)])
+    end
+    if zeroD
+        D0 = zeros(T, ny, nu)
     end
     if initx0
-        x0i = estimate_x0(sys0, d, min(length(pd), 10nx))
+        x0i = T.(estimate_x0(sys0, d, min(length(pd), 10nx)))
     end
     function predloss(p)
-        # p0 .= p # write into already existing initial guess
-        syso = ControlSystemIdentification.PredictionStateSpace(
-            ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol),
-            p.K,
-            0,
-            0,
-        )
-        Pe = ControlSystemIdentification.prediction_error(syso)
-        x0 = initx0 ? x0i : zerox0 ? zeros(eltype(d.y), Pe.nx) : estimate_x0(Pe, pd, min(length(pd), 10nx))
+        sysi, Ki = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+        syso = PredictionStateSpace(sysi, Ki, 0, 0)
+        Pe = prediction_error(syso)
+        x0::Vector{eltype(p)} = initx0 ? x0i : zerox0 ? zeros(eltype(p), Pe.nx) : estimate_x0(Pe, pd, min(length(pd), 10nx))
         e, _ = lsim(Pe, pd; x0)
-        mean(metric, e)
+        sum(metric, e) #+ 1e-5*sum(abs2, p - p0)
     end
     function simloss(p)
-        # p0 .= p # write into already existing initial guess
-        syso = ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol)
-        x0 = initx0 ? x0i : zerox0 ? zeros(eltype(d.y), syso.nx) : estimate_x0(syso, d, min(length(d), 10nx))
-        y, _ = lsim(syso, d; x0)
+        syssim, _ = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+        x0sim = initx0 ? x0i : zerox0 ? zeros(T, syssim.nx) : estimate_x0(syssim, d, min(length(d), 10nx))
+        y, _ = lsim(syssim, d; x0=x0sim)
         y .= metric.(y .- d.y)
-        mean(y)
+        sum(y)
     end
     res = Optim.optimize(
         pred ? predloss : simloss,
@@ -267,54 +270,67 @@ function newpem(
             time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
         autodiff = :forward,
     )
-    p = res.minimizer
-    syso = ControlSystemIdentification.PredictionStateSpace(
-        ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol),
-        pred ? p.K : zeros(nx, d.ny),
-        zeros(nx, nx),
-        zeros(ny, ny),
+    sys_opt::StateSpace{Discrete{Int64}, T}, K_opt::Matrix{T} = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+    sysp_opt = PredictionStateSpace(
+        sys_opt,
+        pred ? K_opt : zeros(T, nx, ny),
+        zeros(T, nx, nx),
+        zeros(T, ny, ny),
     )
-    all(e -> abs(e) < 1, eigvals(syso.A - syso.K * syso.C)) ||
+    all(e -> abs(e) < 1, eigvals(sysp_opt.A - sysp_opt.K * sysp_opt.C)) ||
         @warn("Predictor A-KC unstable")
-    Pe = ControlSystemIdentification.prediction_error(syso)
+    Pe = prediction_error(sysp_opt)
     e = lsim(Pe, pd)[1]
     R = cov(e, dims = 2)
-    @warn "K not updated after opt"
-    Q = Hermitian(K * R * K' + eps() * I)
+    # @warn "K not updated after opt"
+    Q = Hermitian(K_opt * R * K_opt' + eps() * I)
     # K = ((R+CXC')^(-1)(CXA'+S'))'
     # solve for X
     # solve for Q from  A'XA - X - (A'XB+S)(R+B'XB)^(-1)(B'XA+S') + Q = 0
-    @warn "probaby some error in Q matrix"
-    syso.R .= R
-    syso.Q .= Q
-    syso, res
+    # @warn "probaby some error in Q matrix"
+    sysp_opt.R .= R
+    sysp_opt.Q .= Q
+    sysp_opt, res
 end
 
+trivec(A) = [A[diagind(A, -1)]; A[diagind(A, 0)]; A[diagind(A, 1)]]
 
-# function vec2modal(p, ny, nu, nx, timeevol)
-#     al = (1:nx-1)
-#     a  = (1:nx) .+ al[end]
-#     au = (1:nx-1) .+ a[end]
-#     bi = (1:nx*nu) .+ au[end]
-#     ci = (1:nx*ny) .+ bi[end]
-#     di = (1:nu*ny) .+ ci[end]
-#     A = Tridiagonal(p[al], p[a], p[au])
-#     B = reshape(p[bi], nx, nu)
-#     C = reshape(p[ci], ny, nx)
-#     D = reshape(p[di], ny, nu)
-#     ss(A, B, C, D, timeevol)
-# end
 
-# function modal2vec(sys)
-#     [
-#         sys.A[diagind(sys.A, -1)]
-#         sys.A[diagind(sys.A, 0)]
-#         sys.A[diagind(sys.A, 1)]
-#         vec(sys.B)
-#         vec(sys.C)
-#         vec(sys.D)
-#     ]
-# end
+function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
+    al = (1:nx-1)
+    a  = (1:nx) .+ al[end]
+    au = (1:nx-1) .+ a[end]
+    bi = (1:nx*nu) .+ au[end]
+    ci = (1:nx*ny) .+ bi[end]
+    A = Tridiagonal(p[al], p[a], p[au])
+    B = reshape(p[bi], nx, nu)
+    C = reshape(p[ci], ny, nx)
+    if zeroD
+        di = (0:0) .+ ci[end]
+        D = D0
+    else
+        di = (1:nu*ny) .+ ci[end]
+        D = reshape(p[di], ny, nu)
+    end
+    if pred
+        ki = (1:nx*ny) .+ di[end]
+        K = reshape(p[ki], nx, ny)
+    else
+        K = K0
+    end
+    ss(A, B, C, D, timeevol), K
+end
+
+function modal2vec(sys)
+    [
+        sys.A[diagind(sys.A, -1)]
+        sys.A[diagind(sys.A, 0)]
+        sys.A[diagind(sys.A, 1)]
+        vec(sys.B)
+        vec(sys.C)
+        vec(sys.D)
+    ]
+end
 
 # function vec2sys(v::AbstractArray, ny::Int, nu::Int, ts=nothing)
 #     n = length(v)
@@ -412,3 +428,125 @@ end
 # bodeplot!(Gh, w)
 
 
+
+
+
+
+## modal_form from RobustAndOptimalControl, to be removed when ROC is faster to load and https://github.com/andreasvarga/DescriptorSystems.jl/issues/8 is resolved
+
+"""
+    Db,Vb,E = blockdiagonalize(A::AbstractMatrix)
+
+`Db` is a block-diagonal matrix and `Vb` is the corresponding "eigenvectors" such that `Vb*Db/Vb = A`
+"""
+function blockdiagonalize(A::AbstractMatrix)
+    E = eigen(A, sortby=eigsortby)
+    Db,Vb = cdf2rdf(E)
+    Db,Vb,E
+end
+
+eigsortby(λ::Real) = λ
+eigsortby(λ::Complex) = (abs(imag(λ)),real(λ))
+
+function complex_indices(A::Matrix) # assumes A on block diagonal form
+    findall(diag(A, -1) .!= 0)
+end
+
+function real_indices(A::Matrix) # assumes A on block diagonal form
+    size(A,1) == 1 && return [1]
+    setdiff(findall(diag(A, -1) .== 0), complex_indices(A).+1)
+end
+
+function complex_indices(D::AbstractVector)
+    complex_eigs = imag.(D) .!= 0
+    findall(complex_eigs)
+end
+
+function cdf2rdf(E::Eigen)
+    # Implementation inspired by scipy https://docs.scipy.org/doc/scipy/reference/generated/scipy.linalg.cdf2rdf.html
+    # with the licence https://github.com/scipy/scipy/blob/v1.6.3/LICENSE.txt
+    D,V = E
+    n = length(D)
+
+    # get indices for each first pair of complex eigenvalues
+    complex_inds = complex_indices(D)
+
+    # eigvals are sorted so conjugate pairs are next to each other
+    j = complex_inds[1:2:end]
+    k = complex_inds[2:2:end]
+
+    # put real parts on diagonal
+    Db = zeros(n, n)
+    Db[diagind(Db)] .= real(D)
+
+    # compute eigenvectors for real block diagonal eigenvalues
+    U = zeros(eltype(D), n, n)
+    U[diagind(U)] .= 1.0
+
+    # transform complex eigvals to real blockdiag form
+    for (k,j) in zip(k,j)
+        Db[j, k] = imag(D[j]) # put imaginary parts in blocks 
+        Db[k, j] = imag(D[k])
+
+        U[j, j] = 0.5im
+        U[j, k] = 0.5
+        U[k, j] = -0.5im
+        U[k, k] = 0.5
+    end
+    Vb = real(V*U)
+
+    return Db, Vb
+end
+
+"""
+    sysm, T, E = modal_form(sys; C1 = false)
+
+Bring `sys` to modal form.
+
+The modal form is characterized by being tridiagonal with the real values of eigenvalues of `A` on the main diagonal and the complex parts on the first sub and super diagonals. `T` is the similarity transform applied to the system such that 
+```julia
+sysm ≈ similarity_transform(sys, T)
+```
+
+If `C1`, then an additional convention for SISO systems is used, that the `C`-matrix coefficient of real eigenvalues is 1. If `C1 = false`, the `B` and `C` coefficients are chosen in a balanced fashion.
+
+`E` is an eigen factorization of `A`.
+
+See also [`hess_form`](@ref) and [`schur_form`](@ref)
+"""
+function modal_form(sys; C1 = false)
+    Ab,T,E = blockdiagonalize(sys.A)
+    Ty = eltype(Ab)
+    # Calling similarity_transform looks like a detour, but this implementation allows modal_form to work with any AbstractStateSpace which implements a custom method for similarity transform
+    sysm = similarity_transform(sys, T)
+    sysm.A .= Ab # sysm.A should already be Ab after similarity_transform, but Ab has less numerical noise
+    if ControlSystems.issiso(sysm)
+        # This enforces a convention: the C matrix entry for the first component in each mode is positive. This allows SISO systems on modal form to be interpolated in a meaningful way by interpolating their coefficients. 
+        # Ref: "New Metrics Between Rational Spectra and their Connection to Optimal Transport" , Bagge Carlson,  Chitre
+        ci = complex_indices(sysm.A)
+        flips = ones(Ty, sysm.nx)
+        for i in ci
+            if sysm.C[1, i] < 0
+                flips[i] = -1
+                flips[i .+ 1] = -1
+            end
+        end
+        ri = real_indices(sysm.A)
+        for i in ri
+            c = sysm.C[1, i]
+            if C1
+                if c != 0
+                    flips[i] /= c
+                end
+            else
+                b = sysm.B[i, 1]
+                flips[i] *= sqrt(abs(b))/(sqrt(abs(c)) + eps(b))
+            end
+        end
+        T2 = diagm(flips)
+        sysm = similarity_transform(sysm, T2)
+        T = T*T2
+        sysm.A .= Ab # Ab unchanged by diagonal T
+    end
+    sysm, T, E
+end
