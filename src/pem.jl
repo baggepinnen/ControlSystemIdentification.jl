@@ -297,12 +297,17 @@ trivec(A) = [A[diagind(A, -1)]; A[diagind(A, 0)]; A[diagind(A, 1)]]
 
 
 function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
-    al = (1:nx-1)
-    a  = (1:nx) .+ al[end]
-    au = (1:nx-1) .+ a[end]
+    if nx > 1
+        al = (1:nx-1)
+        a  = (1:nx) .+ al[end]
+        au = (1:nx-1) .+ a[end]
+        A = Matrix(Tridiagonal(p[al], p[a], p[au]))
+    else
+        A = [p[1];;]
+        au = 1:1
+    end
     bi = (1:nx*nu) .+ au[end]
     ci = (1:nx*ny) .+ bi[end]
-    A = Tridiagonal(p[al], p[a], p[au])
     B = reshape(p[bi], nx, nu)
     C = reshape(p[ci], ny, nx)
     if zeroD
