@@ -64,37 +64,14 @@ end
         include("test_frq_tf.jl")
     end
 
-
     @testset "Frequency weights" begin
         @info "Testing Frequency weights"
         include("test_frequency_weights.jl")
     end
 
-
     @testset "Utils" begin
         @info "Testing Utils"
-        v = zeros(2)
-        M = zeros(2, 4)
-        vv = fill(v, 4)
-        @test time1(v) == v
-        @test time1(M) == M'
-        @test time1(vv) == M'
-        @test time2(v) == v'
-        @test time2(M) == M
-        @test time2(vv) == M
-
-        v = zeros(2)
-        M = zeros(1, 2)
-        vv = [[0.0], [0.0]]
-        for x in (v, M, vv), t in (M, vv)
-            # @show typeof(t), typeof(x)
-            @test oftype(t, t) == t
-            @test typeof(oftype(t, x)) == typeof(t)
-        end
-
-        y = randn(1, 3)
-        @test ControlSystemIdentification.modelfit(y, y) == [100]
-
+        include("test_utils.jl")
     end
 
     @testset "iddata" begin
@@ -139,112 +116,14 @@ end
         include("test_plots.jl")
     end
 
-
     @testset "simplots and difficult" begin
-
-        Random.seed!(1)
-        ##
-        T = 200
-        nx = 2
-        nu = 1
-        ny = 1
-        x0 = randn(nx)
-        σy = 0.5
-        sim(sys, u) = lsim(sys, u, 1:T)[1]
-        sys = tf(1, [1, 2 * 0.1, 0.1])
-        sysn = tf(σy, [1, 2 * 0.1, 0.3])
-
-        u  = randn(nu, T)
-        un = u + 0.1randn(size(u))
-        y  = sim(sys, u)
-        yn = y + sim(sysn, σy * randn(size(u)))
-        dd = iddata(yn, un, 1)
-
-        uv  = randn(nu, T)
-        yv  = sim(sys, uv)
-        ynv = yv + sim(sysn, σy * randn(size(uv)))
-        dv  = iddata(yv, uv, 1)
-        dnv = iddata(ynv, uv, 1)
-        ##
-
-        res = [
-            ControlSystemIdentification.newpem(dnv, nx)
-            for nx in [1, 3, 4]
-        ]
-
-        ω = exp10.(range(-2, stop = log10(pi), length = 150))
-        fig = plot(layout = 4, size = (1000, 600))
-        for i in eachindex(res)
-            (sysh, opt) = res[i]
-            ControlSystemIdentification.simplot!(
-                sysh,
-                dnv;
-                subplot = 1,
-                ploty = i == 1,
-            )
-            ControlSystemIdentification.predplot!(
-                sysh,
-                dnv;
-                subplot = 2,
-                ploty = i == 1,
-            )
-        end
-        bodeplot!(
-            getindex.(res, 1),
-            ω,
-            plotphase = false,
-            subplot = 3,
-            title = "Process",
-            linewidth = 2 * [4 3 2 1],
-        )
-        bodeplot!(
-            noise_model.(getindex.(res, 1)),
-            ω,
-            plotphase = false,
-            subplot = 4,
-            linewidth = 2 * [4 3 2 1],
-        )
-        bodeplot!(
-            sys,
-            ω,
-            plotphase = false,
-            subplot = 3,
-            lab = "True",
-            linecolor = :blue,
-            l = :dash,
-            legend = :bottomleft,
-            title = "System model",
-        )
-        bodeplot!(
-            ControlSystems.innovation_form(ss(sys), syse = ss(sysn), R2 = σy^2 * I),
-            ω,
-            plotphase = false,
-            subplot = 4,
-            lab = "True",
-            linecolor = :blue,
-            l = :dash,
-            ylims = (0.1, 100),
-            legend = :bottomleft,
-            title = "Noise model",
-        )
-        display(fig)
-
+        @info "Testing simplots and difficult"
+        include("test_simplots_difficult.jl")
     end
 
-
     @testset "impulseest" begin
-        T = 200
-        h = 0.1
-        t = h:h:T
-        sim(sys, u) = lsim(sys, u, t)[1]
-        sys = c2d(tf(1, [1, 2 * 0.1, 0.1]), h)
-
-        u = randn(1,length(t))
-        y = sim(sys, u) + 0.1randn(1,length(t))
-
-        d = iddata(y, u, h)
-        impulseestplot(d, Int(50 / h), λ = 0)
-        plot!(impulse(sys, 50), l = (:dash, :blue))
+        @info "Testing impulseest"
+        include("test_impulseest.jl")
     end
 
     @testset "Spectrogram" begin
