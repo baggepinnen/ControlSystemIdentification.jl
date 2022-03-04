@@ -3,21 +3,41 @@
 There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`pem`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas `n4sid` is an older implementation. [`pem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
 
 ## Subspace-based identification using n4sid
-```julia
-d = iddata(y,u,sampletime)
-sys = n4sid(d, :auto; verbose=false)
+```@example ss
+using ControlSystemIdentification, ControlSystems
+Ts = 1
+G  = ssrand(1,1,3; Ts, proper=true)
+u  = randn(1,1000)
+y  = lsim(G,u).y
+d  = iddata(y,u,Ts)
+sys = n4sid(d, :auto; verbose=false, zeroD=true)
 # or use a robust version of svd if y has outliers or missing values
-using TotalLeastSquares
-sys = n4sid(d, :auto; verbose=false, svd=x->rpca(x)[3])
+# using TotalLeastSquares
+# sys = n4sid(d, :auto; verbose=false, svd=x->rpca(x)[3])
+bodeplot([G, sys.sys])
 ```
 Estimate a statespace model using the [`n4sid`](@ref) method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `sys.sys`. The frequency-weighting functionality is borrowing ideas from
 *"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 
+Using the function [`subspaceid`](@ref) instead, we have
+```@example ss
+sys2 = subspaceid(d, :auto; verbose=false, zeroD=true)
+bodeplot!(sys2.sys)
+```
+[`subspaceid`](@ref) allows you to choose the weighting between `:MOESP, :CVA, :N4SID, :IVM` and is generally preferred over [`n4sid`](@ref).
+
+Both functions allow you to choose which functions are used for least-squares estimates and computing the SVD.
+
 ## ERA and OKID
-See [`era`](@ref) and [`okid`](@ref).
+The "Eigenvalue realization algorithm" and "Observer Kalman identification" algorithms are available as [`era`](@ref) and [`okid`](@ref).
+```@example ss
+sys3 = era(d, 3)
+bodeplot!(sys3)
+```
 
 
-## PEM
+
+## PEM (Prediction-error method)
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
 x' = Ax + Bu + Ke
@@ -39,8 +59,9 @@ sys = c2d(tf(1, [1, 0.5, 1]) * tf(1, [1, 1]), 0.1)
 Random.seed!(1)
 T   = 1000                      # Number of time steps
 nx  = 3                         # Number of poles in the true system
+nu  = 1                         # Number of inputs
 x0  = randn(nx)                 # Initial state
-sim(sys,u,x0=x0) = lsim(ss(sys), u, x0=x0)[1] # Helper function
+sim(sys,u,x0=x0) = lsim(ss(sys), u, x0=x0).y # Helper function
 u   = randn(nu,T)               # Generate random input
 y   = sim(sys, u, x0)           # Simulate system
 d   = iddata(y,u,0.1)
@@ -76,8 +97,8 @@ Furthermore, we have the utility functions below
 ```@docs
 ControlSystemIdentification.subspaceid
 ControlSystemIdentification.n4sid
-ControlSystemIdentification.pem
 ControlSystemIdentification.newpem
+ControlSystemIdentification.pem
 ControlSystemIdentification.era
 ControlSystemIdentification.okid
 ```

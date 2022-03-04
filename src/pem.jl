@@ -180,6 +180,7 @@ using Optim, Optim.LineSearches
         g_tol = 1e-12,
         f_calls_limit = 0,
         g_calls_limit = 0,
+        metric::F = abs2,
     )
 
 A new implementation of the prediction-error method (PEM). Note that this is an experimental implementation and subject to breaking changes not respecting semver.
@@ -193,6 +194,7 @@ A new implementation of the prediction-error method (PEM). Note that this is an 
 - `optimizer`: One of Optim's optimizers
 - `zerox0`: Force initial state to zero.
 - `initx0`: Estimate initial state once, otherwise at each iteration
+- `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
 """
 function newpem(
@@ -218,7 +220,8 @@ function newpem(
     g_tol = 1e-12,
     f_calls_limit = 0,
     g_calls_limit = 0,
-)
+    metric::F = abs2,
+) where F
     nu = d.nu
     ny = d.ny
     ny <= nx || throw(ArgumentError("ny > nx not supported by this method."))
@@ -245,15 +248,15 @@ function newpem(
         Pe = ControlSystemIdentification.prediction_error(syso)
         x0 = initx0 ? x0i : zerox0 ? zeros(eltype(d.y), Pe.nx) : estimate_x0(Pe, pd, min(length(pd), 10nx))
         e, _ = lsim(Pe, pd; x0)
-        mean(abs2, e)
+        mean(metric, e)
     end
     function simloss(p)
         # p0 .= p # write into already existing initial guess
         syso = ss(p.A, p.B, p.C, zeroD ? 0 : p.D, d.timeevol)
         x0 = initx0 ? x0i : zerox0 ? zeros(eltype(d.y), syso.nx) : estimate_x0(syso, d, min(length(d), 10nx))
         y, _ = lsim(syso, d; x0)
-        y .= abs2.(y .- d.y)
-        mean(abs2, y)
+        y .= metric.(y .- d.y)
+        mean(y)
     end
     res = Optim.optimize(
         pred ? predloss : simloss,
