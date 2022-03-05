@@ -356,12 +356,12 @@ ramp_out(d::InputOutputData, h::Int) = ramp_in(d,h; rev=true)
 
 abstract type AbstractPredictionStateSpace{T} <: AbstractStateSpace{T} end
 
-Base.@kwdef struct PredictionStateSpace{T} <: AbstractPredictionStateSpace{T}
+struct PredictionStateSpace{T, ST <: AbstractStateSpace{T}, KT, QT, RT} <: AbstractPredictionStateSpace{T}
 # has at least K, but perhaps also covariance matrices? Would be nice in order to be able to resample he system. Can be nothing in case they are not known
-    sys::AbstractStateSpace{T}
-    K
-    Q = nothing
-    R = nothing
+    sys::ST
+    K::KT
+    Q::QT
+    R::RT
 end
 
 Base.promote_rule(::Type{AbstractStateSpace{T}}, ::Type{<:AbstractPredictionStateSpace{T}}) where T<:ControlSystems.TimeEvolution  = StateSpace{T<:ControlSystems.TimeEvolution}
@@ -394,21 +394,21 @@ The result of statespace model estimation using the `n4sid` method.
 - `s`: singular values
 - `fve`: Fraction of variance explained by singular values
 """
-struct N4SIDStateSpace <: AbstractPredictionStateSpace{Discrete{Float64}}
-    sys::Any
-    Q::Any
-    R::Any
-    S::Any
-    K::Any
-    P::Any
-    x::Any
-    s::Any
-    fve::Any
+struct N4SIDStateSpace{Tsys,TQ,TR,TS,TK,TP,Tx,Ts,Tfve} <: AbstractPredictionStateSpace{Discrete{Float64}}
+    sys::Tsys
+    Q::TQ
+    R::TR
+    S::TS
+    K::TK
+    P::TP
+    x::Tx
+    s::Ts
+    fve::Tfve
 end
 
 @inline function Base.getproperty(res::AbstractPredictionStateSpace, p::Symbol)
     if p ∈ (:A, :B, :C, :D, :nx, :ny, :nu, :Ts, :timeevol)
-        return getproperty(res.sys, p)
+        return getproperty(getfield(res, :sys), p)
     end
     return getfield(res, p)
 end
