@@ -249,7 +249,7 @@ function ar(d::AbstractIdData, na; λ = 0, estimator = \, scaleB = false, stocha
     y = vec(output(d))
     na >= 1 || throw(ArgumentError("na must be positive"))
     y_train, A = getARregressor(y, na)
-    w = ls(A, y_train, λ, estimator)
+    w = ls(A, y_train, λ, estimator) |> vec
     a, b = params2poly(w, na)
     if scaleB
         b = √mean(abs2, y_train - A * w) * b

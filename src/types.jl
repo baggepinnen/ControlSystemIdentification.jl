@@ -356,13 +356,31 @@ ramp_out(d::InputOutputData, h::Int) = ramp_in(d,h; rev=true)
 
 abstract type AbstractPredictionStateSpace{T} <: AbstractStateSpace{T} end
 
-struct PredictionStateSpace{T, ST <: AbstractStateSpace{T}, KT, QT, RT} <: AbstractPredictionStateSpace{T}
+Base.@kwdef struct PredictionStateSpace{T, ST <: AbstractStateSpace{T}, KT, QT, RT, ST2} <: AbstractPredictionStateSpace{T}
 # has at least K, but perhaps also covariance matrices? Would be nice in order to be able to resample he system. Can be nothing in case they are not known
     sys::ST
     K::KT
-    Q::QT
-    R::RT
+    Q::QT = nothing
+    R::RT = nothing
+    S::ST2 = nothing
+    PredictionStateSpace(sys, K, Q=nothing, R=nothing, S=nothing) = new{typeof(sys.timeevol), typeof(sys),typeof(K),typeof(Q),typeof(R),typeof(S)}(sys, K, Q, R, S)
 end
+
+
+"""
+    PredictionStateSpace{T, ST <: AbstractStateSpace{T}, KT, QT, RT, ST2} <: AbstractPredictionStateSpace{T}
+    PredictionStateSpace(sys, K, Q=nothing, R=nothing, S=nothing)
+
+A statespace type that contains an additional Kalman-filter model for prediction purposes.
+
+# Arguments:
+- `sys`: DESCRIPTION
+- `K`: Infinite-horizon Kalman gain
+- `Q = nothing`: Dynamics covariance
+- `R = nothing`: Measurement covariance
+- `S = nothing`: Cross-covariance
+"""
+PredictionStateSpace
 
 Base.promote_rule(::Type{AbstractStateSpace{T}}, ::Type{<:AbstractPredictionStateSpace{T}}) where T<:ControlSystems.TimeEvolution  = StateSpace{T<:ControlSystems.TimeEvolution}
 

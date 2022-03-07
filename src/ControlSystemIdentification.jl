@@ -325,6 +325,7 @@ function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, 
 end
 
 function ControlSystems.c2d(sys::AbstractPredictionStateSpace{ControlSystems.Continuous}, Ts::Real; kwargs...)
+    sys.S === nothing || iszero(sys.S) || @warn "c2d does not handle a non-zero cross covariance S, S will be set to zero"
     nx, nu, ny = sys.nx, sys.nu, sys.ny
     sysd = c2d(sys.sys, Ts)
     Qd, Rd = c2d(sysd, sys.Q, sys.R)
@@ -339,6 +340,7 @@ end
 
 
 function ControlSystems.d2c(sys::AbstractPredictionStateSpace{<:ControlSystems.Discrete})
+    sys.S === nothing || iszero(sys.S) || @warn "d2c does not handle a non-zero cross covariance S, S will be set to zero"
     nx, nu, ny = sys.nx, sys.nu, sys.ny
     Qc = d2c(sys, sys.Q)
     M = log([sys.A  sys.K;

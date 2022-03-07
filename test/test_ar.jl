@@ -36,9 +36,9 @@ end
 d = iddata(y, 1)
 Gh = ar(d, na)
 @test Gh ≈ G atol = 0.02 # We should be able to recover this transfer function
-@test freqresptest(G, Gh, 0.05)
+@test freqresptest(G, Gh) < 0.075
 yh = predict(Gh, y)
-@test rms(y[1, 2:end] - yh[:]) < 0.0102
+@test rms(y[1, 2:end] - yh[:]) < 0.0105
 
 Gh2 = ar(d, na, stochastic = true)
 @test denvec(Gh2)[1][end] ≈ denvec(Gh)[1][end]

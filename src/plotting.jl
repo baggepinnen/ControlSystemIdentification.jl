@@ -125,7 +125,7 @@ predplot
     u = oftype(randn(2, 2), input(d))
     x0 = length(p.args) > 2 ? p.args[3] : :estimate
     x0 = get_x0(x0, sys, d)
-    yh = predict(sys, y, u, x0)
+    yh = predict(sys, d, x0)
     xguide --> "Time [s]"
     yguide --> "Output"
     t = timevec(d)
