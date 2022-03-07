@@ -157,33 +157,45 @@ end
 using Optim, Optim.LineSearches
 
 """
-    newpem(
+    sys, x0, res = newpem(
         d,
         nx;
-        zeroD = true,
-        sys0 = subspaceid(d, nx; zeroD),
-        focus = :prediction,
+        zeroD  = true,
+        focus  = :prediction,
+        sys0   = subspaceid(d, nx; zeroD, focus),
+        metric = abs2,
+        regularizer = (p, P) -> 0,
         optimizer = BFGS(
-            alphaguess = LineSearches.InitialStatic(alpha = 1),
             linesearch = LineSearches.HagerZhang(),
         ),
-        zerox0 = false,
-        initx0 = false,
         store_trace = true,
-        show_trace = true,
-        show_every = 50,
-        iterations = 10000,
-        allow_f_increases = false,
-        time_limit = 100,
-        x_tol = 0,
-        f_abstol = 0,
-        g_tol = 1e-12,
+        show_trace  = true,
+        show_every  = 50,
+        iterations  = 10000,
+        time_limit  = 100,
+        x_tol       = 0,
+        f_abstol    = 0,
+        g_tol       = 1e-12,
         f_calls_limit = 0,
         g_calls_limit = 0,
-        metric::F = abs2,
+        allow_f_increases = false,
     )
 
 A new implementation of the prediction-error method (PEM). Note that this is an experimental implementation and subject to breaking changes not respecting semver.
+This implementation uses a tridiagonal parametrization of the A-matrix that has been shown to be favourable from an optimization perspective.¹ The initial guess `sys0` is automatically transformed to a special tridiagonal modal form. 
+[1]: Mckelvey, Tomas & Helmersson, Anders. (1997). State-space parametrizations of multivariable linear systems using tridiagonal matrix forms.
+
+The prediction-error method is an iterative, gradient-based optimization problem, as such, it can be extra sensitive to signal scaling, and it's recommended to perform scaling to `d` before estimation, e.g., by pre and post-multiplying with diagonal matrices `d̃ = Dy*d*Du`, and apply the inverse scaling to the resulting system. In this case, we have
+```math
+D_y y = G̃ D_u u ↔ y = D_y^{-1} G̃ D_u u
+```
+hence `G = Dy \\ G̃ * Du` where \$ G̃ \$ is the plant estimated for the scaled iddata.
+
+The parameter vector used in the optimizaiton takes the following form
+```julia
+p = [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0)]
+```
+Where `ControlSystemIdentification.trivec` vectorizes the `-1,0,1` diagonals of `A`. If `focus = :simulation`, `K` is omitted, and if `zeroD = true`, `D` is omitted.
 
 # Arguments:
 - `d`: [`iddata`](@ref)
@@ -192,10 +204,9 @@ A new implementation of the prediction-error method (PEM). Note that this is an 
 - `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
 - `focus`: `prediction` or `:simulation`. If `:simulation`, hte `K` matrix will be zero.
 - `optimizer`: One of Optim's optimizers
-- `zerox0`: Force initial state to zero.
-- `initx0`: Estimate initial state once, otherwise at each iteration
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
+- `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
 """
 function newpem(
     d,
@@ -203,6 +214,8 @@ function newpem(
     zeroD = true,
     focus = :prediction,
     sys0 = subspaceid(d, nx; zeroD, focus),
+    metric::F = abs2,
+    regularizer::R = (p, P) -> 0,
     optimizer = BFGS(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.HagerZhang(),
@@ -220,8 +233,7 @@ function newpem(
     g_tol = 1e-12,
     f_calls_limit = 0,
     g_calls_limit = 0,
-    metric::F = abs2,
-) where F
+) where {F, R}
     T = promote_type(eltype(d.y), eltype(sys0.A))
     nu = d.nu
     ny = d.ny
@@ -235,31 +247,30 @@ function newpem(
     end
     pred = focus === :prediction
     pd = predictiondata(d)::typeof(d)
+    x0i::Vector{T} = T.(estimate_x0(sys0, d, min(length(pd), 10nx)))
     p0::Vector{T} = if pred
-        T.(zeroD ? [trivec(A); vec(B); vec(C); vec(K)] : [trivec(A); vec(B); vec(C); vec(D); vec(K)])
+        T.(zeroD ? [trivec(A); vec(B); vec(C); vec(K); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0i)])
     else
-        T.(zeroD ? [trivec(A); vec(B); vec(C)] : [trivec(A); vec(B); vec(C); vec(D)])
+        T.(zeroD ? [trivec(A); vec(B); vec(C); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(x0i)])
     end
     if zeroD
         D0 = zeros(T, ny, nu)
     end
-    if initx0
-        x0i = T.(estimate_x0(sys0, d, min(length(pd), 10nx)))
-    end
+    iteration::Int = 0
     function predloss(p)
-        sysi, Ki = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+        sysi, Ki, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
         Pe = prediction_error(syso)
-        x0::Vector{eltype(p)} = initx0 ? x0i : zerox0 ? zeros(eltype(p), Pe.nx) : estimate_x0(Pe, pd, min(length(pd), 10nx))
         e, _ = lsim(Pe, pd; x0)
-        sum(metric, e) #+ 1e-5*sum(abs2, p - p0)
+        unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
+        c1 = sum(metric, e)
+        c1 + 10*c1*unstab + regularizer(p, syso)
     end
     function simloss(p)
-        syssim, _ = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
-        x0sim = initx0 ? x0i : zerox0 ? zeros(T, syssim.nx) : estimate_x0(syssim, d, min(length(d), 10nx))
-        y, _ = lsim(syssim, d; x0=x0sim)
+        syssim, _, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+        y, _ = lsim(syssim, d; x0)
         y .= metric.(y .- d.y)
-        sum(y)
+        sum(y) + regularizer(p, syssim)
     end
     res = Optim.optimize(
         pred ? predloss : simloss,
@@ -270,31 +281,29 @@ function newpem(
             time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
         autodiff = :forward,
     )
-    sys_opt::StateSpace{Discrete{Int64}, T}, K_opt::Matrix{T} = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+    sys_opt::StateSpace{Discrete{Int64}, T}, K_opt::Matrix{T}, x0_opt = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
     sysp_opt = PredictionStateSpace(
         sys_opt,
         pred ? K_opt : zeros(T, nx, ny),
         zeros(T, nx, nx),
         zeros(T, ny, ny),
+        zeros(T, nx, ny),
     )
-    all(e -> abs(e) < 1, eigvals(sysp_opt.A - sysp_opt.K * sysp_opt.C)) ||
+    isstable(observer_predictor(sysp_opt)) ||
         @warn("Predictor A-KC unstable")
     Pe = prediction_error(sysp_opt)
     e = lsim(Pe, pd)[1]
     R = cov(e, dims = 2)
-    # @warn "K not updated after opt"
-    Q = Hermitian(K_opt * R * K_opt' + eps() * I)
-    # K = ((R+CXC')^(-1)(CXA'+S'))'
-    # solve for X
-    # solve for Q from  A'XA - X - (A'XB+S)(R+B'XB)^(-1)(B'XA+S') + Q = 0
-    # @warn "probaby some error in Q matrix"
+    mul!(sysp_opt.S, K_opt, R)
+    Q0 = sysp_opt.S * K_opt'
+    Q = Hermitian(Q0 + eps(maximum(abs, Q0)) * I)
+    # NOTE: to get the correct Q so that kalman(sys, Q, R) = K, one must solve an LMI problem to minimize the cross term S. If one tolerates S, we have kalman(sys, Q, R, S) = K, where S = K*R. Without S, Q can be *very* far from correct.
     sysp_opt.R .= R
     sysp_opt.Q .= Q
-    sysp_opt, res
+    sysp_opt, x0_opt, res
 end
 
 trivec(A) = [A[diagind(A, -1)]; A[diagind(A, 0)]; A[diagind(A, 1)]]
-
 
 function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
     if nx > 1
@@ -321,9 +330,12 @@ function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
         ki = (1:nx*ny) .+ di[end]
         K = reshape(p[ki], nx, ny)
     else
+        ki = (0:0) .+ di[end]
         K = K0
     end
-    ss(A, B, C, D, timeevol), K
+    x0i = (1:nx) .+ ki[end]
+    x0 = p[x0i]
+    ss(A, B, C, D, timeevol), K, x0
 end
 
 function modal2vec(sys)
