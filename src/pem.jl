@@ -166,7 +166,7 @@ using Optim, Optim.LineSearches
         metric = abs2,
         regularizer = (p, P) -> 0,
         optimizer = BFGS(
-            linesearch = LineSearches.HagerZhang(),
+            linesearch = LineSearches.BackTracking(),
         ),
         store_trace = true,
         show_trace  = true,
@@ -207,6 +207,34 @@ Where `ControlSystemIdentification.trivec` vectorizes the `-1,0,1` diagonals of 
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
 - `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
+
+# Example
+```
+using ControlSystemIdentification, ControlSystems, Plots
+G = DemoSystems.doylesat()
+T = 1000  # Number of time steps
+Ts = 0.01 # Sample time
+sys = c2d(G, Ts)
+nx = sys.nx
+nu = sys.nu
+ny = sys.ny
+x0 = zeros(nx) # actual initial state
+sim(sys, u, x0 = x0) = lsim(sys, u; x0)[1]
+
+σy = 1e-1 # Noise covariance
+
+u  = randn(nu, T)
+y  = sim(sys, u, x0)
+yn = y .+ σy .* randn.() # Add measurement noise
+d  = iddata(yn, u, Ts)
+
+sysh, x0h, opt = ControlSystemIdentification.newpem(d, nx, show_every=10)
+
+plot(
+    bodeplot([sys, sysh]),
+    predplot(sysh, d, x0h), # Include the estimated initial state in the prediction
+)
+```
 """
 function newpem(
     d,
@@ -218,7 +246,7 @@ function newpem(
     regularizer::RE = (p, P) -> 0,
     optimizer = BFGS(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
-        linesearch = LineSearches.HagerZhang(),
+        linesearch = LineSearches.BackTracking(),
     ),
     zerox0 = false,
     initx0 = false,
