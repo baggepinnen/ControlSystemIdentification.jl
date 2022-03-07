@@ -215,7 +215,7 @@ function newpem(
     focus = :prediction,
     sys0 = subspaceid(d, nx; zeroD, focus),
     metric::F = abs2,
-    regularizer::R = (p, P) -> 0,
+    regularizer::RE = (p, P) -> 0,
     optimizer = BFGS(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.HagerZhang(),
@@ -233,7 +233,7 @@ function newpem(
     g_tol = 1e-12,
     f_calls_limit = 0,
     g_calls_limit = 0,
-) where {F, R}
+) where {F, RE}
     T = promote_type(eltype(d.y), eltype(sys0.A))
     nu = d.nu
     ny = d.ny
@@ -253,9 +253,7 @@ function newpem(
     else
         T.(zeroD ? [trivec(A); vec(B); vec(C); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(x0i)])
     end
-    if zeroD
-        D0 = zeros(T, ny, nu)
-    end
+    D0 = zeros(T, ny, nu)
     iteration::Int = 0
     function predloss(p)
         sysi, Ki, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
@@ -264,7 +262,7 @@ function newpem(
         e, _ = lsim(Pe, pd; x0)
         unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
         c1 = sum(metric, e)
-        c1 + 10*c1*unstab + regularizer(p, syso)
+        c1 + min(10*ForwardDiff.value(c1)*unstab, 1e6) + regularizer(p, syso)
     end
     function simloss(p)
         syssim, _, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
@@ -272,16 +270,25 @@ function newpem(
         y .= metric.(y .- d.y)
         sum(y) + regularizer(p, syssim)
     end
-    res = Optim.optimize(
-        pred ? predloss : simloss,
-        p0,
-        optimizer,
-        Optim.Options(;
-            store_trace, show_trace, show_every, iterations, allow_f_increases,
-            time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
-        autodiff = :forward,
-    )
-    sys_opt::StateSpace{Discrete{Int64}, T}, K_opt::Matrix{T}, x0_opt = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+    local res, sys_opt, K_opt, x0_opt
+    try
+        res = Optim.optimize(
+            pred ? predloss : simloss,
+            p0,
+            optimizer,
+            Optim.Options(;
+                store_trace, show_trace, show_every, iterations, allow_f_increases,
+                time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
+            autodiff = :forward,
+        )
+        sys_opt::StateSpace{Discrete{T}, T}, K_opt::Matrix{T}, x0_opt = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+    catch err
+        @error "Optimization failed, returning initial estimate." err
+        sys_opt = sys0
+        K_opt = sys0.K
+        x0_opt = x0i
+        res = nothing
+    end
     sysp_opt = PredictionStateSpace(
         sys_opt,
         pred ? K_opt : zeros(T, nx, ny),
@@ -291,9 +298,9 @@ function newpem(
     )
     isstable(observer_predictor(sysp_opt)) ||
         @warn("Predictor A-KC unstable")
-    Pe = prediction_error(sysp_opt)
-    e = lsim(Pe, pd)[1]
-    R = cov(e, dims = 2)
+    Pe2 = prediction_error(sysp_opt)
+    e2, _ = lsim(Pe2, pd)
+    R = cov(e2, dims = 2)
     mul!(sysp_opt.S, K_opt, R)
     Q0 = sysp_opt.S * K_opt'
     Q = Hermitian(Q0 + eps(maximum(abs, Q0)) * I)
