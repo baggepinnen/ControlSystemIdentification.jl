@@ -5,7 +5,7 @@ A number of functions are made available to assist in validation of the estimate
 
 Generate some test data:
 ```@example validation
-using ControlSystemIdentification
+using ControlSystemIdentification, ControlSystems
 using ControlSystemIdentification: newpem
 Random.seed!(1)
 T          = 200
@@ -35,6 +35,7 @@ res = [newpem(dn, nx, focus=:prediction) for nx = [1,3,4]];
 ```
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
 ```@example validation
+using Plots
 ω   = exp10.(range(-2, stop=log10(pi), length=150))
 fig = plot(layout=4, size=(1000,600))
 for i in eachindex(res)
@@ -42,10 +43,10 @@ for i in eachindex(res)
     simplot!( sysh,dnv,x0h; subplot=1, ploty=i==1)
     predplot!(sysh,dnv,x0h; subplot=2, ploty=i==1)
 end
-bodeplot!((getindex.(res,1)),                   ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
-bodeplot!(innovation_form.(getindex.(res,1)),      ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
-bodeplot!(sys,                                     ω, plotphase=false, subplot=3, lab="True", linecolor=:blue, l=:dash, legend = :bottomleft, title="System model")
-bodeplot!(innovation_form(ss(sys),syse=ss(sysn)),  ω, plotphase=false, subplot=4, lab="True", linecolor=:blue, l=:dash, ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
+bodeplot!((getindex.(res,1)),                     ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
+bodeplot!(innovation_form.(getindex.(res,1)),     ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
+bodeplot!(sys,                                    ω, plotphase=false, subplot=3, lab="True", l=(:blue, :dash), legend = :bottomleft, title="System model")
+bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, plotphase=false, subplot=4, lab="True", l=(:blue, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 ```
 
 In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the gain of the noise dynamics.
