@@ -112,20 +112,19 @@ end
 
 @userplot Predplot
 """
-	predplot(sys, data, x0=nothing; ploty=true, plote=false)
+	predplot(sys, data, x0=nothing; ploty=true, plote=false, h=1)
 
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 `plote` determines whether or not to plot the residual
+`h` is the prediction horizon.
 """
 predplot
-@recipe function predplot(p::Predplot; ploty = true, plote = false)
+@recipe function predplot(p::Predplot; ploty = true, plote = false, h=1)
     sys, d = p.args[1:2]
-    y = oftype(randn(2, 2), output(d))
-    u = oftype(randn(2, 2), input(d))
-    x0 = length(p.args) > 2 ? p.args[3] : :estimate
-    x0 = get_x0(x0, sys, d)
-    yh = predict(sys, d, x0)
+    y = time2(output(d))
+    u = time2(input(d))
+    yh = predict(p.args...; h)
     xguide --> "Time [s]"
     yguide --> "Output"
     t = timevec(d)

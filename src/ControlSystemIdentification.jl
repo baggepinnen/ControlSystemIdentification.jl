@@ -142,7 +142,7 @@ y,t,x = lsim(sys, u; x0)
 d     = iddata(y, u, 1)
 x0h   = estimate_x0(sys, d, 8, fixed=[Inf, x0[2], Inf, Inf])
 x0h[2] == x0[2] # Should be exact equality
-norm(x0-x0h) # Should be small
+norm(x0-x0h)    # Should be small
 ```
 """
 function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
@@ -154,7 +154,7 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)); fi
     nx,p,N = sys.nx, sys.ny, length(d)
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
-    if sys isa AbstractPredictionStateSpace
+    if sys isa AbstractPredictionStateSpace && !iszero(sys.K)
         ε, _ = lsim(prediction_error(sys), predictiondata(d))
         y = y - ε # remove influence of innovations
     end 
@@ -256,19 +256,21 @@ end
 
 
 """
-    observer_predictor(sys::N4SIDStateSpace)
-    observer_predictor(sys::StateSpaceNoise)
+    observer_predictor(sys::N4SIDStateSpace; h=1)
+    observer_predictor(sys::StateSpaceNoise; h=1)
 
 Return the predictor system
 x' = (A - KC)x + (B-KD)u + Ky
 y  = Cx + Du
 with the input equation [B-KD K] * [u; y]
 
+`h ≥ 1` is the prediction horizon.
+
 See also `noise_model` and `prediction_error`.
 """
-function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace)
+function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace; kwargs...)
     K = sys.K
-    ControlSystems.observer_predictor(sys, K)
+    ControlSystems.observer_predictor(sys, K; kwargs...)
 end
 
 """
@@ -282,13 +284,14 @@ function predictiondata(d::AbstractIdData)
 end
 
 """
-    prediction_error(sys::AbstractPredictionStateSpace)
-    prediction_error(sys::AbstractStateSpace, R1, R2)
+    prediction_error(sys::AbstractPredictionStateSpace; h=1)
+    prediction_error(sys::AbstractStateSpace, R1, R2; h=1)
 
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
+`h ≥ 1` is the prediction horizon.
 """
-function prediction_error(sys::AbstractStateSpace, args...)
-    G = ControlSystems.observer_predictor(sys, args...)
+function prediction_error(sys::AbstractStateSpace, args...; kwargs...)
+    G = ControlSystems.observer_predictor(sys, args...; kwargs...)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
 
