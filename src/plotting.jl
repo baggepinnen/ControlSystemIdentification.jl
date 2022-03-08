@@ -141,7 +141,7 @@ predplot
         t, y'
     end
     @series begin
-        label --> ["pred fit $i :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
+        label --> [(h > 1 ? "Horizon $h " : "")*"pred fit $i :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
         t, yh'
     end
     plote && @series begin
