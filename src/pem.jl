@@ -162,7 +162,8 @@ using Optim, Optim.LineSearches
         nx;
         zeroD  = true,
         focus  = :prediction,
-        sys0   = subspaceid(d, nx; zeroD, focus),
+        stable = true,
+        sys0   = subspaceid(d, nx; zeroD, focus, stable),
         metric = abs2,
         regularizer = (p, P) -> 0,
         optimizer = BFGS(
@@ -201,6 +202,7 @@ Where `ControlSystemIdentification.trivec` vectorizes the `-1,0,1` diagonals of 
 - `d`: [`iddata`](@ref)
 - `nx`: Model order
 - `zeroD`: Force zero `D` matrix
+- `stable` if true, stability of the estimated system will be enforced by eigenvalue reflection using [`schur_stab`](@ref) with `ϵ=Ts/100` (default). If `stable` is a real value, the value is used instead of the default `ϵ`.
 - `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
 - `focus`: `prediction` or `:simulation`. If `:simulation`, hte `K` matrix will be zero.
 - `optimizer`: One of Optim's optimizers
@@ -241,15 +243,15 @@ function newpem(
     nx;
     zeroD = true,
     focus = :prediction,
-    sys0 = subspaceid(d, nx; zeroD, focus),
+    h = 1,
+    stable = true,
+    sys0 = subspaceid(d, nx; zeroD, focus, stable),
     metric::F = abs2,
     regularizer::RE = (p, P) -> 0,
     optimizer = BFGS(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.BackTracking(),
     ),
-    zerox0 = false,
-    initx0 = false,
     store_trace = true,
     show_trace = true,
     show_every = 50,
@@ -261,6 +263,7 @@ function newpem(
     g_tol = 1e-12,
     f_calls_limit = 0,
     g_calls_limit = 0,
+    safe = false,
 ) where {F, RE}
     T = promote_type(eltype(d.y), eltype(sys0.A))
     nu = d.nu
@@ -274,19 +277,22 @@ function newpem(
         zeros(T, nx, ny)
     end
     pred = focus === :prediction
-    pd = predictiondata(d)::typeof(d)
-    x0i::Vector{T} = T.(estimate_x0(sys0, d, min(length(pd), 10nx)))
+    pd = predictiondata(d)
+    x0i::Vector{T} = if h == 1 || focus === :simulation
+        T.(estimate_x0(sys0, d, min(length(d), 10nx)))
+    else
+        T.(estimate_x0(prediction_error(PredictionStateSpace(sys0, K, 0, 0); h), pd, min(length(pd), 10nx)))
+    end
     p0::Vector{T} = if pred
         T.(zeroD ? [trivec(A); vec(B); vec(C); vec(K); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0i)])
     else
         T.(zeroD ? [trivec(A); vec(B); vec(C); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(x0i)])
     end
     D0 = zeros(T, ny, nu)
-    iteration::Int = 0
     function predloss(p)
         sysi, Ki, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
-        Pe = prediction_error(syso)
+        Pe = prediction_error(syso; h)
         e, _ = lsim(Pe, pd; x0)
         unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
         c1 = sum(metric, e)
@@ -311,11 +317,21 @@ function newpem(
         )
         sys_opt::StateSpace{Discrete{T}, T}, K_opt::Matrix{T}, x0_opt = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
     catch err
-        @error "Optimization failed, returning initial estimate." err
+        if safe
+            @error "Optimization failed, returning initial estimate." err
+        else
+            @error "Optimization failed, call `newpem(...; safe=true) to exit gracefully returning the initial estimate."
+            rethrow()
+        end
         sys_opt = sys0
         K_opt = sys0.K
         x0_opt = x0i
         res = nothing
+    end
+    if stable > 0 && !isstable(sys_opt)
+        @warn("Estimated system dynamics A is unstable, stabilizing A using eigenvalue reflection")
+        Astab = schur_stab(sys_opt.A, stable === true ? sys0.Ts/100 : stable)
+        sys_opt.A .= Astab
     end
     sysp_opt = PredictionStateSpace(
         sys_opt,
@@ -324,10 +340,8 @@ function newpem(
         zeros(T, ny, ny),
         zeros(T, nx, ny),
     )
-    isstable(observer_predictor(sysp_opt)) ||
-        @warn("Predictor A-KC unstable")
-    Pe2 = prediction_error(sysp_opt)
-    e2, _ = lsim(Pe2, pd)
+    pred && !isstable(observer_predictor(sysp_opt)) && @warn("Estimated predictor dynamics A-KC is unstable")
+    e2, _ = pred ? lsim(prediction_error(sysp_opt), pd) : lsim(sys_opt, d)
     R = cov(e2, dims = 2)
     mul!(sysp_opt.S, K_opt, R)
     Q0 = sysp_opt.S * K_opt'
@@ -337,6 +351,9 @@ function newpem(
     sysp_opt.Q .= Q
     sysp_opt, x0_opt, res
 end
+
+# this method fails for duals so this is an overload to silence the warning and save some time
+ControlSystems.balance_statespace(A::AbstractMatrix{<:ForwardDiff.Dual}, B::AbstractMatrix, C::AbstractMatrix, perm::Bool=false) = A,B,C,I
 
 trivec(A) = [A[diagind(A, -1)]; A[diagind(A, 0)]; A[diagind(A, 1)]]
 
@@ -368,8 +385,7 @@ function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
         ki = (0:0) .+ di[end]
         K = K0
     end
-    x0i = (1:nx) .+ ki[end]
-    x0 = p[x0i]
+    x0 = p[ki[end]+1:end] # x0 may belong to an extended predictor state and can have any length
     ss(A, B, C, D, timeevol), K, x0
 end
 
