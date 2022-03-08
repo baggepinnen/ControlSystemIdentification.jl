@@ -106,7 +106,7 @@ end
 
 @testset "subspaceid" begin
     @info "Testing subspaceid"
-    N = 200
+    N = 500
     nx = 2
     m = 2
     l = 2
@@ -131,7 +131,7 @@ end
 
         yp = predict(res, d)
         # @show mean(abs2,y-yp') / mean(abs2,y)
-        @test mean(abs2, y - yp) / mean(abs2, y) < 0.1 # no enforcement of stability in this method
+        @test mean(abs2, y - yp) / mean(abs2, y) < 0.12 # no enforcement of stability in this method
 
         freqresptest(G, res.sys) < 0.2 * m * l
         w = exp10.(LinRange(-5, log10(pi), 600))
@@ -148,14 +148,17 @@ end
         yn = y + ϵ * randn(size(y))
         d = iddata(yn, u, 1)
 
-        res = subspaceid(d, nx)
-        @test res.sys.nx == nx
-        @test norm(res.S) < 2ϵ
-        @test freqresptest(G, res.sys) < 0.2 * m * l
+        for W in [:MOESP, :CVA, :N4SID, :IVM]
+            # @show W
+            res = subspaceid(d, nx; W)
+            @test res.sys.nx == nx
+            @test norm(res.S) < (W ∈ (:MOESP, :N4SID) ? 2ϵ : 5ϵ)
+            @test freqresptest(G, res.sys) < 0.2 * m * l
+        end
 
 
         res = ControlSystemIdentification.subspaceid(d)
-        @test res.sys.nx <= nx # test that auto rank selection don't choose too high rank when noise is low
+        @test res.sys.nx <= nx + 2 # test that auto rank selection don't choose too high rank when noise is low
         kf = KalmanFilter(res)
         @test kf isa KalmanFilter
         @test kf.A == res.A
