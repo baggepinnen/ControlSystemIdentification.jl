@@ -40,10 +40,10 @@ bodeplot!(sys3)
 ## PEM (Prediction-error method)
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
-x' = Ax + Bu + Ke
-```
-```math
-y  = Cx + e
+\begin{aligned}
+x' &= Ax + Bu + Ke \\
+y  &= Cx + e
+\end{aligned}
 ```
 is provided. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
