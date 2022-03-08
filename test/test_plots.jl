@@ -7,6 +7,10 @@ d = iddata(res)
 
 plot(d)
 
+predplot(ss(G), d)
+simplot(ss(G), d)
+simplot(d, ss(G))
+
 specplot(d)
 
 Gh,_ = tfest(d)

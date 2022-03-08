@@ -175,7 +175,8 @@ julia> predict(tf(1, [1, -1], 1), iddata(1:10, 1:10))
  18
 ```
 """
-function predict(ARX::TransferFunction, d::InputOutputData)
+function predict(ARX::TransferFunction, d::InputOutputData; h=1)
+    h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     size(ARX, 2) == ninputs(d) || throw(DomainError(d, "number of inputs $(ninputs(d)) does not match ARX model (expects $(size(ARX, 2)) inputs)"))
 
     w, a, b, inputdelay = params(ARX)

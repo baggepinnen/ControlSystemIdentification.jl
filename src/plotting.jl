@@ -74,6 +74,15 @@ specplot
 end
 
 
+_process_simplotargs(sys::LTISystem, d::AbstractIdData, x0 = :estimate) = sys, d, get_x0(x0, sys, d)
+
+_process_simplotargs(d::AbstractIdData, sys::LTISystem, x0 = :estimate) = _process_simplotargs(sys, d, x0) # sort arguments
+
+# function _process_simplotargs(d::AbstractIdData, systems::LTISystem...) 
+#     map(systems) do sys
+#         _process_simplotargs(sys, d, :estimate)
+#     end
+# end
 
 @userplot Simplot
 """
@@ -85,10 +94,8 @@ Plot system simulation and measured output to compare them.
 """
 simplot
 @recipe function simplot(p::Simplot; ploty = true, plote = false)
-    sys, d = p.args[1:2]
-    y = oftype(randn(2, 2), output(d))
-    x0 = length(p.args) > 2 ? p.args[3] : nothing
-    x0 = get_x0(x0, sys, d)
+    sys, d, x0 = _process_simplotargs(p.args...)
+    y = time2(output(d))
     yh = simulate(sys, d, x0)
     xguide --> "Time [s]"
     yguide --> "Output"

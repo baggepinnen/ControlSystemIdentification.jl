@@ -85,18 +85,19 @@ include("plotting.jl")
 
 See also [`predplot`](@ref)
 """
-predict(sys, d::AbstractIdData, args...) =
-    hasinput(sys) ? predict(sys, output(d), input(d), args...) :
-    predict(sys, output(d), args...)
+predict(sys, d::AbstractIdData, args...; kwargs...) =
+    hasinput(sys) ? predict(sys, output(d), input(d), args...; kwargs...) :
+    predict(sys, output(d), args...; kwargs...)
 
 
-function predict(sys, y, u, x0 = nothing)
+function predict(sys, y, u, x0 = nothing; h=1)
+    h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     x0 = get_x0(x0, sys, iddata(y, u, sys.Ts))
     model = SysFilter(sys, copy(x0))
     yh = [model(yt, ut) for (yt, ut) in observations(y, u)]
     oftype(y, yh)
 end
-predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args...)
+predict(sys::ControlSystems.TransferFunction, args...; kwargs...) = predict(ss(sys), args...; kwargs...)
 
 get_x0(::Nothing, sys, d::AbstractIdData) = estimate_x0(sys, d)
 get_x0(::Nothing, sys, u::AbstractArray) = zeros(sys.nx)
@@ -189,7 +190,8 @@ end
 
 Predict AR model
 """
-function predict(G::ControlSystems.TransferFunction, y)
+function predict(G::ControlSystems.TransferFunction, y; h=1)
+    h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     _, a, _, _ = params(G)
     yr, A = getARregressor(vec(output(y)), length(a))
     yh = A * a
