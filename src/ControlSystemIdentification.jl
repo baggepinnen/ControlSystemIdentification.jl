@@ -6,6 +6,7 @@ using BandedMatrices,
     DelimitedFiles,
     FFTW,
     FillArrays,
+    ForwardDiff,
     LinearAlgebra,
     LowLevelParticleFilters,
     MonteCarloMeasurements,
@@ -84,18 +85,19 @@ include("plotting.jl")
 
 See also [`predplot`](@ref)
 """
-predict(sys, d::AbstractIdData, args...) =
-    hasinput(sys) ? predict(sys, output(d), input(d), args...) :
-    predict(sys, output(d), args...)
+predict(sys, d::AbstractIdData, args...; kwargs...) =
+    hasinput(sys) ? predict(sys, output(d), input(d), args...; kwargs...) :
+    predict(sys, output(d), args...; kwargs...)
 
 
-function predict(sys, y, u, x0 = nothing)
+function predict(sys, y, u, x0 = nothing; h=1)
+    h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     x0 = get_x0(x0, sys, iddata(y, u, sys.Ts))
     model = SysFilter(sys, copy(x0))
     yh = [model(yt, ut) for (yt, ut) in observations(y, u)]
     oftype(y, yh)
 end
-predict(sys::ControlSystems.TransferFunction, args...) = predict(ss(sys), args...)
+predict(sys::ControlSystems.TransferFunction, args...; kwargs...) = predict(ss(sys), args...; kwargs...)
 
 get_x0(::Nothing, sys, d::AbstractIdData) = estimate_x0(sys, d)
 get_x0(::Nothing, sys, u::AbstractArray) = zeros(sys.nx)
@@ -111,6 +113,11 @@ function get_x0(s::Symbol, sys, d::AbstractIdData)
     end
 end
 
+"""
+    slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
+
+Return the slowest time constant of `sys` rounded to the nearest integer samples.
+"""
 function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
     Wn, zeta, ps = damp(sys)
     t_const = maximum(1 ./ (Wn.*zeta))
@@ -118,15 +125,28 @@ function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
 end
 
 """
-    estimate_x0(sys, d, n = min(length(d), 3 * slowest_time_constant(sys)))
+    estimate_x0(sys, d, n = min(length(d), 3 * slowest_time_constant(sys)); fixed = fill(NaN, sys.nx)
 
 Estimate the initial state of the system 
 
 # Arguments:
 - `d`: [`iddata`](@ref)
 - `n`: Number of samples to use.
+- `fixed`: If a vector of the same length as `x0` is provided, finite values indicate fixed values that are not to be estimated, while nonfinite values are free.
+
+# Example
+```julia
+sys   = ssrand(2,3,4, Ts=1)
+x0    = randn(sys.nx)
+u     = randn(sys.nu, 100)
+y,t,x = lsim(sys, u; x0)
+d     = iddata(y, u, 1)
+x0h   = estimate_x0(sys, d, 8, fixed=[Inf, x0[2], Inf, Inf])
+x0h[2] == x0[2] # Should be exact equality
+norm(x0-x0h)    # Should be small
+```
 """
-function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
+function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     T = ControlSystems.numeric_type(sys)
@@ -135,11 +155,7 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
     nx,p,N = sys.nx, sys.ny, length(d)
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
-    if sys isa AbstractPredictionStateSpace
-        # A,B,C,D = ssdata(sys)
-        # K = sys.K
-        # sys = ss(A-K*C, B - K*D, C, D, 1) 
-        # ε = lsim(ss(A-K*C, K, C, 0, 1), y)[1]
+    if sys isa AbstractPredictionStateSpace && !iszero(sys.K)
         ε, _ = lsim(prediction_error(sys), predictiondata(d))
         y = y - ε # remove influence of innovations
     end 
@@ -154,7 +170,19 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
         φx0[:, :, j] = y0 
     end
     φ = reshape(φx0, p*N, :)
-    (φ[1:n*p,:]) \ vec(y)[1:n*p]
+    A = φ[1:n*p,:] 
+    b = vec(y)[1:n*p]
+    if all(!isfinite, fixed)
+        return A \ b
+    else
+        fixvec = isfinite.(fixed)
+        b .-= A[:, fixvec] * fixed[fixvec] # Move fixed values over to rhs
+        x0free = A[:, .!fixvec] \ b # Solve with remaining free variables
+        x0 = zeros(T, sys.nx)
+        x0[fixvec] .= fixed[fixvec]
+        x0[.!fixvec] .= x0free
+        return x0
+    end
 end
 
 """
@@ -162,7 +190,8 @@ end
 
 Predict AR model
 """
-function predict(G::ControlSystems.TransferFunction, y)
+function predict(G::ControlSystems.TransferFunction, y; h=1)
+    h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     _, a, _, _ = params(G)
     yr, A = getARregressor(vec(output(y)), length(a))
     yh = A * a
@@ -229,19 +258,21 @@ end
 
 
 """
-    observer_predictor(sys::N4SIDStateSpace)
-    observer_predictor(sys::StateSpaceNoise)
+    observer_predictor(sys::N4SIDStateSpace; h=1)
+    observer_predictor(sys::StateSpaceNoise; h=1)
 
 Return the predictor system
 x' = (A - KC)x + (B-KD)u + Ky
 y  = Cx + Du
 with the input equation [B-KD K] * [u; y]
 
+`h ≥ 1` is the prediction horizon.
+
 See also `noise_model` and `prediction_error`.
 """
-function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace)
+function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace; kwargs...)
     K = sys.K
-    ControlSystems.observer_predictor(sys, K)
+    ControlSystems.observer_predictor(sys, K; kwargs...)
 end
 
 """
@@ -255,13 +286,14 @@ function predictiondata(d::AbstractIdData)
 end
 
 """
-    prediction_error(sys::AbstractPredictionStateSpace)
-    prediction_error(sys::AbstractStateSpace, R1, R2)
+    prediction_error(sys::AbstractPredictionStateSpace; h=1)
+    prediction_error(sys::AbstractStateSpace, R1, R2; h=1)
 
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
+`h ≥ 1` is the prediction horizon.
 """
-function prediction_error(sys::AbstractStateSpace, args...)
-    G = ControlSystems.observer_predictor(sys, args...)
+function prediction_error(sys::AbstractStateSpace, args...; kwargs...)
+    G = ControlSystems.observer_predictor(sys, args...; kwargs...)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
 

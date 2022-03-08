@@ -28,4 +28,15 @@ for sys in [sys, sys2]
 
     yh,_,xh = lsim(sys, u; x0=x0h)
     @test norm(y-yh)/norm(y) < 1e-10
+
+    x0h = ControlSystemIdentification.estimate_x0(sys, d, 8, fixed=[Inf, x0[2], Inf, Inf])
+    @test x0h[2] == x0[2] # Should be exact equality
+
+    @test y[:,1] ≈ sys.C*x0h + sys.D*u[:,1]
+    @test norm(x0-x0h)/norm(x0) < 1e-10
+
+    yh,_,xh = lsim(sys, u; x0=x0h)
+    @test norm(y-yh)/norm(y) < 1e-10
+
 end
+

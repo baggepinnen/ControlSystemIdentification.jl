@@ -337,7 +337,7 @@ function subspaceid(
     P, K, Qc, Rc, Sc = find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
 
     # 4. Estimate B, D, x0 by linear regression
-    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, u', y', m, zeroD, Bestimator, weights)
+    B,D,x0 = find_BD(A, (focus === :prediction)*K, C, transpose(u), transpose(y), m, zeroD, Bestimator, weights)
     # TODO: iterate find C/D and find B/D a couple of times
 
     if scaleU
@@ -367,7 +367,7 @@ function subspaceid(
     # A2 = AB[1:n, 1:n]
     # B2 = AB[1:n, n+1:end]
     
-    sys  = ControlSystemIdentification.N4SIDStateSpace(ss(A,  B,  C,  D, data.Ts), Qc,Rc,Sc,K,P,x0,sv,fve)
+    N4SIDStateSpace(ss(A,  B,  C,  D, data.Ts), Qc,Rc,Sc,K,P,x0,sv,fve)
 end
 
 """
