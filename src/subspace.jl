@@ -251,6 +251,7 @@ function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace,
     else
         P = Matrix(Q)
     end
+    iszero(res.S) || @warn "Cross-covariance sys.S is ignored when forming the Kalman filter. The infinite horizon Kalman gain will be $(kalman(sys, Q, R)) instead of $(kalman(sys, Q, R, res.S))"
     kf = KalmanFilter(A, B, C, D, Matrix(Q), Matrix(R), MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 
