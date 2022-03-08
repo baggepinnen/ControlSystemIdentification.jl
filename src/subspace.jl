@@ -11,7 +11,7 @@ Implements the simplified algorithm (alg 2) from
 "N4SID: Subspace Algorithms for the Identification of Combined Deterministic Stochastic Systems" PETER VAN OVERSCHEE and BART DE MOOR
 
 The frequency weighting is borrowing ideas from
-"Frequency Weighted Subspace Based System Identication in the Frequency Domain", Tomas McKelvey 1996. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
+"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 
 # Arguments:
 - `data`: Identification data `data = iddata(y,u)`
@@ -188,25 +188,6 @@ end
 
 SysFilter(res::AbstractPredictionStateSpace{<:Discrete}, x0 = res.x[:, 1]) = SysFilter(res, x0, res.C * x0)
 
-function simulate(
-    res::N4SIDStateSpace,
-    d::AbstractIdData,
-    x0 = res.x[:, 1];
-    stochastic = false,
-)
-    sys = res.sys
-    @unpack A, B, C, D, ny, K, Q, R, P, sys = res
-    kf = KalmanFilter(res, x0)
-    u = input(d)
-    yh = map(observations(u, u)) do (ut, _)
-        yh = vec(C * state(kf) + D * ut)
-        LowLevelParticleFilters.predict!(kf, ut)
-        stochastic ?
-        StaticParticles(MvNormal(yh, Symmetric(C * covariance(kf) * C' + kf.R2))) : yh
-    end
-    oftype(u, yh)
-end
-
 function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing; h=1)
     sys.Ts == d.Ts || throw(ArgumentError("Sample time mismatch between data $(d.Ts) and system $(sys.Ts)"))
     pd = predictiondata(d)
@@ -219,6 +200,23 @@ function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = noth
     end
     
     lsim(pred, pd.u; x0).y
+end
+
+function simulate(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing; stochastic=false)
+    sys.Ts == d.Ts || throw(ArgumentError("Sample time mismatch between data $(d.Ts) and system $(sys.Ts)"))    
+    if x0 === nothing
+        x0 = estimate_x0(sys, d)
+    end
+    if stochastic
+        uyw = rand(MvNormal([sys.Q sys.S; sys.S' sys.R]), length(d))
+        uw = uyw[1:sys.nx, :]
+        yw = uyw[sys.nx+1:end, :]
+        A,B,C,D = ssdata(sys)
+        noisesys = ss(A,[B I(sys.nx)], C, [D zeros(sys.ny, sys.nx)], sys.timeevol)
+        lsim(noisesys, [d.u; uw]; x0).y .+ yw
+    else
+        lsim(sys, d.u; x0).y
+    end
 end
 
 Base.promote_rule(::Type{StateSpace{TE}}, ::Type{<:AbstractPredictionStateSpace{TE}}) where TE<:Discrete = StateSpace{TE}
@@ -236,7 +234,7 @@ function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace,
     else
         P = Matrix(Q)
     end
-    iszero(res.S) || @warn "Cross-covariance sys.S is ignored when forming the Kalman filter. The infinite horizon Kalman gain will be $(kalman(sys, Q, R)) instead of $(kalman(sys, Q, R, res.S))"
+    iszero(res.S) || @warn "Cross-covariance sys.S is ignored when forming the Kalman filter. The infinite horizon Kalman gain will be $(kalman(sys, Q, R)) instead of $(kalman(sys, Q, R, res.S))" maxlog=5
     kf = KalmanFilter(A, B, C, D, Matrix(Q), Matrix(R), MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 

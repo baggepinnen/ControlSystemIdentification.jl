@@ -30,7 +30,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         @test maximum(abs, pole(res.sys)) <= 1.00001 * 0.99
 
         ys = simulate(res, d)
-        # @show mean(abs2,y-ys') / mean(abs2,y)
+        # @show mean(abs2,y-ys) / mean(abs2,y)
         ys = simulate(res, d, stochastic = true)
         # @show mean(abs2,y-ys') / mean(abs2,y)
 
