@@ -1,7 +1,6 @@
 module ControlSystemIdentification
 
-using BandedMatrices,
-    ComponentArrays,
+using ComponentArrays,
     ControlSystems,
     DelimitedFiles,
     FFTW,
