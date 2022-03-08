@@ -112,6 +112,11 @@ function get_x0(s::Symbol, sys, d::AbstractIdData)
     end
 end
 
+"""
+    slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
+
+Return the slowest time constant of `sys` rounded to the nearest integer samples.
+"""
 function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
     Wn, zeta, ps = damp(sys)
     t_const = maximum(1 ./ (Wn.*zeta))
@@ -119,15 +124,28 @@ function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
 end
 
 """
-    estimate_x0(sys, d, n = min(length(d), 3 * slowest_time_constant(sys)))
+    estimate_x0(sys, d, n = min(length(d), 3 * slowest_time_constant(sys)); fixed = fill(NaN, sys.nx)
 
 Estimate the initial state of the system 
 
 # Arguments:
 - `d`: [`iddata`](@ref)
 - `n`: Number of samples to use.
+- `fixed`: If a vector of the same length as `x0` is provided, finite values indicate fixed values that are not to be estimated, while nonfinite values are free.
+
+# Example
+```julia
+sys   = ssrand(2,3,4, Ts=1)
+x0    = randn(sys.nx)
+u     = randn(sys.nu, 100)
+y,t,x = lsim(sys, u; x0)
+d     = iddata(y, u, 1)
+x0h   = estimate_x0(sys, d, 8, fixed=[Inf, x0[2], Inf, Inf])
+x0h[2] == x0[2] # Should be exact equality
+norm(x0-x0h) # Should be small
+```
 """
-function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
+function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     T = ControlSystems.numeric_type(sys)
@@ -137,10 +155,6 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
     if sys isa AbstractPredictionStateSpace
-        # A,B,C,D = ssdata(sys)
-        # K = sys.K
-        # sys = ss(A-K*C, B - K*D, C, D, 1) 
-        # ε = lsim(ss(A-K*C, K, C, 0, 1), y)[1]
         ε, _ = lsim(prediction_error(sys), predictiondata(d))
         y = y - ε # remove influence of innovations
     end 
@@ -155,7 +169,19 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)))
         φx0[:, :, j] = y0 
     end
     φ = reshape(φx0, p*N, :)
-    (φ[1:n*p,:]) \ vec(y)[1:n*p]
+    A = φ[1:n*p,:] 
+    b = vec(y)[1:n*p]
+    if all(!isfinite, fixed)
+        return A \ b
+    else
+        fixvec = isfinite.(fixed)
+        b .-= A[:, fixvec] * fixed[fixvec] # Move fixed values over to rhs
+        x0free = A[:, .!fixvec] \ b # Solve with remaining free variables
+        x0 = zeros(T, sys.nx)
+        x0[fixvec] .= fixed[fixvec]
+        x0[.!fixvec] .= x0free
+        return x0
+    end
 end
 
 """
