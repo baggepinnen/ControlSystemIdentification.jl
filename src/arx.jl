@@ -98,12 +98,27 @@ function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0
         try
             Σ = parameter_covariance(y_train, A, w, λ)
         catch
-            return minreal(model)
+            return model |> cancel_z!
         end
-        return minreal(TransferFunction(Particles, model, Σ))
+        return TransferFunction(Particles, model, Σ) |> cancel_z!
     end
+    return model |> cancel_z!
+end
 
-    return minreal(model)
+"""
+Perform pole-zero cancellations for poles and zeros in the origin.
+"""
+function cancel_z!(G)
+    N,D = numpoly(G), denpoly(G)
+    for i in 1:noutputs(G), j in 1:ninputs(G)
+        n,d = N[i,j], D[i,j]
+        # The polynomials have the lowest order first and will have leading zeros if there are zeros in the origin.
+        while n.coeffs[1] == 0 && d.coeffs[1] == 0
+            deleteat!(n.coeffs, 1)
+            deleteat!(d.coeffs, 1)
+        end
+    end
+    G
 end
 
 """
