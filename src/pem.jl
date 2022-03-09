@@ -183,20 +183,12 @@ using Optim, Optim.LineSearches
     )
 
 A new implementation of the prediction-error method (PEM). Note that this is an experimental implementation and subject to breaking changes not respecting semver.
-This implementation uses a tridiagonal parametrization of the A-matrix that has been shown to be favourable from an optimization perspective.¹ The initial guess `sys0` is automatically transformed to a special tridiagonal modal form. 
-[1]: Mckelvey, Tomas & Helmersson, Anders. (1997). State-space parametrizations of multivariable linear systems using tridiagonal matrix forms.
 
 The prediction-error method is an iterative, gradient-based optimization problem, as such, it can be extra sensitive to signal scaling, and it's recommended to perform scaling to `d` before estimation, e.g., by pre and post-multiplying with diagonal matrices `d̃ = Dy*d*Du`, and apply the inverse scaling to the resulting system. In this case, we have
 ```math
 D_y y = G̃ D_u u ↔ y = D_y^{-1} G̃ D_u u
 ```
 hence `G = Dy \\ G̃ * Du` where \$ G̃ \$ is the plant estimated for the scaled iddata.
-
-The parameter vector used in the optimizaiton takes the following form
-```julia
-p = [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0)]
-```
-Where `ControlSystemIdentification.trivec` vectorizes the `-1,0,1` diagonals of `A`. If `focus = :simulation`, `K` is omitted, and if `zeroD = true`, `D` is omitted.
 
 # Arguments:
 - `d`: [`iddata`](@ref)
@@ -237,6 +229,16 @@ plot(
     predplot(sysh, d, x0h), # Include the estimated initial state in the prediction
 )
 ```
+
+# Extended help
+This implementation uses a tridiagonal parametrization of the A-matrix that has been shown to be favourable from an optimization perspective.¹ The initial guess `sys0` is automatically transformed to a special tridiagonal modal form. 
+[1]: Mckelvey, Tomas & Helmersson, Anders. (1997). State-space parametrizations of multivariable linear systems using tridiagonal matrix forms.
+
+The parameter vector used in the optimizaiton takes the following form
+```julia
+p = [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0)]
+```
+Where `ControlSystemIdentification.trivec` vectorizes the `-1,0,1` diagonals of `A`. If `focus = :simulation`, `K` is omitted, and if `zeroD = true`, `D` is omitted.
 """
 function newpem(
     d,

@@ -195,6 +195,9 @@ Ref: Ljung, Theory for the user.
 - `Aestimator`: Estimator function used to estimate `A,C`.
 - `Bestimator`: Estimator function used to estimate `B,D`.
 - `weights`: A vector of weights can be provided if the `Bestimator` is `wls`. 
+
+# Extended help
+A more accurate prediciton model can sometimes be obtained using [`newpem`](@ref), which is also unbiased for closed-loop data (`subspaceid` is biased for closed-loop data, see example in the docs). The prediction-error method is iterative and generally more expensive than `subspaceid`, and uses this function (by default) to form the initial guess for the optimization.
 """
 function subspaceid(
     data::InputOutputData,

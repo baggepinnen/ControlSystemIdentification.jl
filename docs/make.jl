@@ -1,5 +1,5 @@
 ENV["GKSwstype"] = 322 # workaround for gr segfault on GH actions
-using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles
+using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles, LowLevelParticleFilters
 
 using Plots
 
