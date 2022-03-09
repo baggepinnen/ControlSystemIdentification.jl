@@ -41,13 +41,13 @@ function generate_data(u; T)
     d
 end
 
-function estimate_and_plot(d; title)
+function estimate_and_plot(d, nx=1; title)
     Gh1 = arx(d, 1, 1)
 
-    sys0 = subspaceid(d, 1)
+    sys0 = subspaceid(d, nx)
     tf(sys0)
 
-    Gh2, _ = ControlSystemIdentification.newpem(d, 1; sys0)
+    Gh2, _ = ControlSystemIdentification.newpem(d, nx; sys0)
     tf(Gh2)
 
     bodeplot(
@@ -111,9 +111,12 @@ u = (x, t) -> -L * x .+ 0.1randn()
 title = "-Lx + 0.1randn()"
 estimate_and_plot(generate_data(u, T=80), title=title*",  T=80")
 ```
+
+In this case, we can try to increase the model order of the PEM and subspace-based methods to see if they are able to learn the noise model (which has two poles)
 ```@example closedloop
-estimate_and_plot(generate_data(u, T=8000), title=title*",  T=8000")
+estimate_and_plot(generate_data(u, T=8000), 3, title=title*",  T=8000")
 ```
+learning the noise model can sometimes work reasonably well, but requires more data. You may extract the learned noise model using [`noise_model`](@ref).
 
 
 [^Ljung, Ch 13]: Ljung, Lennart. "System identification---Theory for the user".

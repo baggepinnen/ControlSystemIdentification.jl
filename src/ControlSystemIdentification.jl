@@ -247,12 +247,12 @@ The model neglects u and is given by
 x' = Ax + Kv
 y = Cx + v
 ```
-Also called the "innovation form"
+Also called the "innovation form". This function calls `ControlSystems.innovation_form`.
 """
-function noise_model(sys::AbstractPredictionStateSpace)
-    A,B,C,D = ssdata(sys)
-    K = sys.K
-    G = ss(A, K, C, zeros(size(D,1), size(K, 2)), sys.timeevol)
+noise_model(sys::AbstractPredictionStateSpace) = innovation_form(sys)
+
+function ControlSystems.innovation_form(sys::AbstractPredictionStateSpace)
+    innovation_form(sys, sys.K)
 end
 
 
