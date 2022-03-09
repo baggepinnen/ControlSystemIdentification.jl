@@ -256,7 +256,7 @@ function subspaceid(
     l = lq!(UΦY)
     L = l.L
     Q = Matrix(l.Q) # (pr+mr+s × N) but we have adjusted effective N
-    @assert size(Q) == (p*r+m*r+s, N) "size(Q) == $(size(Q))"
+    @assert size(Q) == (p*r+m*r+s, N) "size(Q) == $(size(Q)), if this fails, you may need to lower the prediction horizon r which is currently set to $r"
     Uinds = 1:size(U,1)
     Φinds = (1:size(Φ,1)) .+ Uinds[end]
     Yinds = (1:size(Y,1)) .+ (Uinds[end]+s)

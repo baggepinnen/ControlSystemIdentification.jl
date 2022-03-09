@@ -320,7 +320,7 @@ end
 
 
 function ControlSystems.gangoffour(P::FRD, C::FRD, ω = nothing)
-    ω === nothing || ω == P.ω || error("Incosistent frequency vectors")
+    ω === nothing || ω == P.ω || error("Inconsistent frequency vectors")
     S = sensitivity(P, C)
     D = (P * S)
     N = (C * S)

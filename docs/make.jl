@@ -20,6 +20,7 @@ makedocs(
             "Validation" => "validation.md",
             "Examples" => [
                   "Temperature control" => "examples/temp.md",
+                  "Identification in closed loop" => "examples/closed_loop_id.md",
             ],
             "API" => "api.md",
       ],
