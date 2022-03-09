@@ -1,8 +1,8 @@
 # LTI state-space models
 
-There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`pem`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas `n4sid` is an older implementation. [`pem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
+There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`newpem`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas `n4sid` is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
 
-## Subspace-based identification using n4sid
+## Subspace-based identification using `n4sid` and `subspaceid`
 ```@example ss
 using ControlSystemIdentification, ControlSystems
 Ts = 1
@@ -38,19 +38,22 @@ bodeplot!(sys3)
 
 
 ## PEM (Prediction-error method)
+!!! note "Note"
+    The old function [`pem`](@ref) is "soft deprecated" in favor of [`newpem`](@ref) which is more general and much more performant.
+
 A simple algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
 \begin{aligned}
 x' &= Ax + Bu + Ke \\
-y  &= Cx + e
+y  &= Cx + Du + e
 \end{aligned}
 ```
 is provided. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
-The result of the identification with [`pem`](@ref) is a custom type `StateSpaceNoise <: ControlSystems.LTISystem`, with fields `A,B,K`, representing the dynamics matrix, input matrix and Kalman gain matrix, respectively. The observation matrix `C` is not stored, as this is always given by `[I 0]` (you can still access it through `sys.C` thanks to `getproperty`).
+The result of the identification with [`newpem`](@ref) is a custom type with extra fields for the identified Kalman gain and noise covariance matrices.
 
 ### Usage example
-Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences.
+Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences using the function [`newpem`](@ref).
 ```@example ss
 using ControlSystemIdentification, ControlSystems, Random, LinearAlgebra
 using ControlSystemIdentification: newpem
@@ -77,7 +80,7 @@ https://github.com/JuliaControl/ControlExamples.jl/blob/master/identification_st
 
 
 ### Internals
-Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to `pem`, and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
+Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to [`newpem`](@ref), and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
 
 
 
@@ -98,7 +101,6 @@ Furthermore, we have the utility functions below
 ControlSystemIdentification.subspaceid
 ControlSystemIdentification.n4sid
 ControlSystemIdentification.newpem
-ControlSystemIdentification.pem
 ControlSystemIdentification.era
 ControlSystemIdentification.okid
 ```

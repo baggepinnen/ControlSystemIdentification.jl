@@ -21,6 +21,8 @@ The frequency weighting is borrowing ideas from
 - `i`: Algorithm parameter, generally no need to tune this
 - `γ`: Set this to a value between (0,1) to stabilize unstable models such that the largest eigenvalue has magnitude γ.
 - `zeroD`: defaults to false
+
+See also the newer implementation [`subspaceid`](@ref) which allows you to choose between different weightings (n4sid being one of them). A more accurate prediciton model can sometimes be obtained using [`newpem`](@ref), which is also unbiased for closed-loop data.
 """
 function n4sid(
     data::InputOutputData,

@@ -1,5 +1,5 @@
 ENV["GKSwstype"] = 322 # workaround for gr segfault on GH actions
-using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles
+using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles, LowLevelParticleFilters
 
 using Plots
 
@@ -20,6 +20,7 @@ makedocs(
             "Validation" => "validation.md",
             "Examples" => [
                   "Temperature control" => "examples/temp.md",
+                  "Identification in closed loop" => "examples/closed_loop_id.md",
             ],
             "API" => "api.md",
       ],

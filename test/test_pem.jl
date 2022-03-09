@@ -146,6 +146,34 @@ end
 # @error("Add tests for ny,nu > 1, also for all different keyword arguments")
 
 
+@testset "Innovation model" begin
+    @info "Testing Innovation model"
+    ## Simulate data from an innovation model ans see if estimation recovers the true Kalman gain up to a similarity transform
+    G = ssrand(2,2,3, Ts=1)
+    K = kalman(G, I(G.nx), I(G.ny))
+    sys = add_input(G, K, I(G.ny))
+
+    T = 10000
+    u = randn(2, T)
+    e = 0.1randn(2, T)
+    y = lsim(sys, [u; e]).y
+    d = iddata(y, u, G.Ts)
+    Gh = subspaceid(d, G.nx)
+    Tr = find_similarity_transform(Gh, G)
+    Gh2 = similarity_transform(Gh, Tr) # This should transform the model to the same coordinates as the true system
+
+    @test Gh2.A ≈ G.A atol=0.2 rtol=0.2
+    @test Gh2.K ≈ K atol=0.2 rtol=0.2
+
+    Gh3,_ = ControlSystemIdentification.newpem(d, G.nx; sys0=Gh2, zeroD=false)
+    Tr = find_similarity_transform(Gh3, G)
+    Gh4 = similarity_transform(Gh3, Tr)
+
+    @test Gh4.A ≈ G.A atol=0.2 rtol=0.2
+    @test Gh4.K ≈ K atol=0.2 rtol=0.2
+    @test_skip norm(Gh4.K-K) < norm(Gh2.K-K) # This works about 4/5
+end
+
 ##
 @testset "old PEM" begin
     @info "Testing old PEM"
