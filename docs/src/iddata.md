@@ -7,8 +7,4 @@ ControlSystemIdentification.iddata
 ControlSystemIdentification.predictiondata
 ```
 
-
-Some frequency-domain methods accept or return objects of type [`FRD`](@ref), representing frequency-response data
-```@docs
-ControlSystemIdentification.FRD
-```
+Some frequency-domain methods accept or return objects of type [`FRD`](@ref), representing frequency-response data.

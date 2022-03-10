@@ -31,7 +31,7 @@ dnv        = iddata(ynv, uv, 1)
 ```
 We then fit a couple of models
 ```@example validation
-res = [newpem(dn, nx, focus=:prediction) for nx = [1,3,4]];
+res = [newpem(dn, nx, focus=:prediction) for nx = [2,3,4]];
 nothing # hide
 ```
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
@@ -50,8 +50,8 @@ bodeplot!(sys,                                    ω, plotphase=false, subplot=3
 bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, plotphase=false, subplot=4, lab="True", l=(:blue, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 ```
 
-In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. Both high-order models capture the system dynamics well, but struggle slightly with capturing the gain of the noise dynamics.
-The figure also indicates that a model with 4 poles performs best on both prediction and simulation data. The true system has 4 poles (two in the process and two in the noise process) so this is expected. However, the third order model performs almost equally well and may be a better choice.
+In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. All models capture the system dynamics reasonably well, but struggle slightly with capturing the gain of the noise dynamics.
+The true system has 4 poles (two in the process and two in the noise process) but a simpler model may sometimes work better.
 
 
 Prediction models may also be evaluated using a `h`-step prediction, here `h` is short for "horizon".
@@ -63,6 +63,7 @@ for i in eachindex(res)
 end
 figh
 ```
+It's generally a good idea to validate estimated model with a prediction horizon larger than one, in particular, it may be valuable to verify the performance for a prediction horizon that corresponds roughly to the dominant time constant of the process.
 
 
 See also [`simulate`](@ref), [`predplot`](@ref), [`simplot`](@ref), [`coherenceplot`](@ref)

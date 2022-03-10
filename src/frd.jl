@@ -106,7 +106,11 @@ feedback(P::FRD, K::FRD) = feedback(P, vec(K))
 feedback(P::FRD, K::LTISystem) = feedback(P, freqresp(K, P.w)[:, 1, 1])
 feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
 
+"""
+    freqvec(h, k)
 
+Return a frequency vector of length `k` for systems with sample time `h`.
+"""
 freqvec(h, k) = LinRange(0, π / h, length(k))
 
 ControlSystems.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(frd.r, 2) == 1)

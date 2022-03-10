@@ -1,5 +1,5 @@
 ENV["GKSwstype"] = 322 # workaround for gr segfault on GH actions
-using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles, LowLevelParticleFilters
+using Documenter, ControlSystemIdentification, ControlSystems, DelimitedFiles
 
 using Plots
 
@@ -24,10 +24,11 @@ makedocs(
             ],
             "API" => "api.md",
       ],
+      strict = [:example_block],
       format = Documenter.HTML(prettyurls = haskey(ENV, "CI")),
 ) # Due to lots of plots, this will just have to be run on my local machine
 
 deploydocs(
-      deps = Deps.pip("pygments", "mkdocs", "python-markdown-math", "mkdocs-cinder"),
+      # deps = Deps.pip("pygments", "mkdocs", "python-markdown-math", "mkdocs-cinder"),
       repo = "github.com/baggepinnen/ControlSystemIdentification.jl.git",
 )
