@@ -72,8 +72,9 @@ See also [`simulate`](@ref), [`predplot`](@ref), [`simplot`](@ref), [`coherencep
 ## Different length predictors
 When the prediction horizon gets longer, the mapping from $u -> ŷ$ approaches that of the simulation system, while the mapping $y -> ŷ$ gets smaller and smaller.
 ```@example validation
-G = c2d(DemoSystems.resonant(), 0.1)
-K = kalman(G, I(G.nx), I(G.ny))
+using LinearAlgebra
+G   = c2d(DemoSystems.resonant(), 0.1)
+K   = kalman(G, I(G.nx), I(G.ny))
 sys = add_input(G, K, I(G.ny)) # Form an innovation model with inputs u and e
 
 T = 10000
@@ -84,9 +85,9 @@ d = iddata(y, u, G.Ts)
 Gh,_ = newpem(d, G.nx, zeroD=true)
 
 # Create predictors with different horizons
-p1 = observer_predictor(Gh)
-p2 = observer_predictor(Gh, h=2)
-p10 = observer_predictor(Gh, h=10)
+p1   = observer_predictor(Gh)
+p2   = observer_predictor(Gh, h=2)
+p10  = observer_predictor(Gh, h=10)
 p100 = observer_predictor(Gh, h=100)
 
 bodeplot([p1, p2, p10, p100], plotphase=false, lab=["1" "" "2" "" "10" "" "100" ""])
