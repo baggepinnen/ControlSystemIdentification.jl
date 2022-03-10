@@ -25,6 +25,7 @@ import Optim: minimizer, Options
 import ControlSystems: ninputs, noutputs, nstates
 import StatsBase.residuals
 import MatrixEquations
+import LowLevelParticleFilters: simulate
 
 export iddata,
     noutputs,
@@ -37,10 +38,15 @@ export iddata,
     apply_fun,
     resample,
     ramp_in,
-    timevec
+    ramp_out,
+    timevec,
+    freqvec,
+    InputOutputData,
+    InputOutputFreqData
+
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace, StateSpaceNoise,
-    pem, simulation_errors, prediction_errors, predict, simulate, noise_model, estimate_x0
-export n4sid, subspaceid, era, okid, find_similarity_transform
+    pem, newpem, simulation_errors, prediction_errors, predict, simulate, noise_model, estimate_x0
+export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
 export getARXregressor,
     getARregressor,
     find_na,
@@ -201,7 +207,7 @@ end
     simulate(sys, u, x0 = nothing)
     simulate(sys, d, x0 = nothing)
 
-See also [`simplot`](@ref)
+See also [`simplot`](@ref), [`predict`](@ref)
 """
 function simulate(sys, u, x0 = nothing)
     x0 = get_x0(x0, sys, u)

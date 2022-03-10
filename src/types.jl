@@ -17,6 +17,9 @@ struct InputOutputData{Y,U,T} <: AbstractIdData
     Ts::T
 end
 
+"""
+See [`iddata`](@ref)
+"""
 struct InputOutputFreqData{Y,U,W} <: AbstractIdData
     y::Y
     u::U
