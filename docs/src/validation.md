@@ -32,6 +32,7 @@ dnv        = iddata(ynv, uv, 1)
 We then fit a couple of models
 ```@example validation
 res = [newpem(dn, nx, focus=:prediction) for nx = [1,3,4]];
+nothing # hide
 ```
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
 ```@example validation
@@ -65,3 +66,44 @@ figh
 
 
 See also [`simulate`](@ref), [`predplot`](@ref), [`simplot`](@ref), [`coherenceplot`](@ref)
+
+
+
+## Different length predictors
+When the prediction horizon gets longer, the mapping from $u -> ŷ$ approaches that of the simulation system, while the mapping $y -> ŷ$ gets smaller and smaller.
+```@example validation
+G = c2d(DemoSystems.resonant(), 0.1)
+K = kalman(G, I(G.nx), I(G.ny))
+sys = add_input(G, K, I(G.ny)) # Form an innovation model with inputs u and e
+
+T = 10000
+u = randn(G.nu, T)
+e = 0.1randn(G.ny, T)
+y = lsim(sys, [u; e]).y
+d = iddata(y, u, G.Ts)
+Gh,_ = newpem(d, G.nx, zeroD=true)
+
+# Create predictors with different horizons
+p1 = observer_predictor(Gh)
+p2 = observer_predictor(Gh, h=2)
+p10 = observer_predictor(Gh, h=10)
+p100 = observer_predictor(Gh, h=100)
+
+bodeplot([p1, p2, p10, p100], plotphase=false, lab=["1" "" "2" "" "10" "" "100" ""])
+bodeplot!(sys, ticks=:default, plotphase=false, l=(:black, :dash), lab=["sim" ""], title=["From u" "From y"])
+```
+
+The prediction error as a function of prediction horizon approaches the simulation error.
+```@example validation
+using Statistics
+hs = [1:40; 45:5:80]
+perrs = map(hs) do h
+    yh = predict(Gh, d; h)
+    ControlSystemIdentification.rms(d.y - yh) |> mean
+end
+serr = ControlSystemIdentification.rms(d.y - simulate(Gh, d)) |> mean
+
+plot(hs, perrs, lab="Prediction errors", xlabel="Horizon", ylabel="RMS error")
+hline!([serr], lab="Simulation error", l=:dash, legend=:bottomright, ylims=(0, Inf))
+```
+

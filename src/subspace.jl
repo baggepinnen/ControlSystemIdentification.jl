@@ -195,18 +195,22 @@ function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = noth
     pd = predictiondata(d)
     pred = observer_predictor(sys; h)
     
-    if x0 === nothing
+    if x0 === :zero
+        x0 = zeros(pred.nx)
+    elseif x0 === nothing || x0 === :estimate
         x0 = estimate_x0(pred, pd)
     else
         x0 = estimate_x0(pred, pd, fixed=[fill(Inf, pred.nx-length(x0)); x0])
     end
-    
+
     lsim(pred, pd.u; x0).y
 end
 
 function simulate(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing; stochastic=false)
     sys.Ts == d.Ts || throw(ArgumentError("Sample time mismatch between data $(d.Ts) and system $(sys.Ts)"))    
-    if x0 === nothing
+    if x0 === :zero
+        x0 = zeros(sys.nx)
+    elseif x0 === nothing || x0 === :estimate
         x0 = estimate_x0(sys, d)
     end
     if stochastic
