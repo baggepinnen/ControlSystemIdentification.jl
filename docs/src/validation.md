@@ -41,13 +41,14 @@ using Plots
 fig = plot(layout=4, size=(1000,600))
 for i in eachindex(res)
     sysh, x0h, opt = res[i]
-    simplot!( sysh,dnv,x0h; subplot=1, ploty=i==1)
-    predplot!(sysh,dnv,x0h; subplot=2, ploty=i==1)
+    simplot!( sysh, dnv, x0h; sp=1, ploty=false)
+    predplot!(sysh, dnv, x0h; sp=2, ploty=false)
 end
+plot!(dnv.y', lab="y", l=(:dash, :black))
 bodeplot!((getindex.(res,1)),                     ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
 bodeplot!(innovation_form.(getindex.(res,1)),     ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
-bodeplot!(sys,                                    ω, plotphase=false, subplot=3, lab="True", l=(:blue, :dash), legend = :bottomleft, title="System model")
-bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, plotphase=false, subplot=4, lab="True", l=(:blue, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
+bodeplot!(sys,                                    ω, plotphase=false, subplot=3, lab="True", l=(:black, :dash), legend = :bottomleft, title="System model")
+bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, plotphase=false, subplot=4, lab="True", l=(:black, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 ```
 
 In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. All models capture the system dynamics reasonably well, but struggle slightly with capturing the gain of the noise dynamics.
@@ -59,8 +60,9 @@ Prediction models may also be evaluated using a `h`-step prediction, here `h` is
 figh = plot()
 for i in eachindex(res)
     sysh, x0h, opt = res[i]
-    predplot!(sysh, dnv, x0h, ploty=i==1, h=5)
+    predplot!(sysh, dnv, x0h, ploty=false, h=5)
 end
+plot!(dnv.y', lab="y", l=(:dash, :black))
 figh
 ```
 It's generally a good idea to validate estimated model with a prediction horizon larger than one, in particular, it may be valuable to verify the performance for a prediction horizon that corresponds roughly to the dominant time constant of the process.
@@ -71,7 +73,7 @@ See also [`simulate`](@ref), [`predplot`](@ref), [`simplot`](@ref), [`coherencep
 
 
 ## Different length predictors
-When the prediction horizon gets longer, the mapping from $u -> ŷ$ approaches that of the simulation system, while the mapping $y -> ŷ$ gets smaller and smaller.
+When the prediction horizon gets longer, the mapping from $u \rightarrow ŷ$ approaches that of the simulation system, while the mapping $y \rightarrow ŷ$ gets smaller and smaller.
 ```@example validation
 using LinearAlgebra
 G   = c2d(DemoSystems.resonant(), 0.1)
