@@ -44,7 +44,7 @@ for i in eachindex(res)
     simplot!( sysh, dnv, x0h; sp=1, ploty=false)
     predplot!(sysh, dnv, x0h; sp=2, ploty=false)
 end
-plot!(dnv.y', lab="y", l=(:dash, :black))
+plot!(dnv.y' .* [1 1], lab="y", l=(:dash, :black), sp=[1 2])
 bodeplot!((getindex.(res,1)),                     ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
 bodeplot!(innovation_form.(getindex.(res,1)),     ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
 bodeplot!(sys,                                    ω, plotphase=false, subplot=3, lab="True", l=(:black, :dash), legend = :bottomleft, title="System model")

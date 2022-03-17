@@ -133,13 +133,13 @@ ControlSystems.c2d(f::FRD, Ts::Real; kwargs...) = FRD(c2d(f.w, Ts; kwargs...), f
     H, N = tfest(data, σ = 0.05)
 
 Estimate a transfer function model using the Correlogram approach.
-    Both `H` and `N` are of type `FRD` (frequency-response data).
+Both `H` and `N` are of type `FRD` (frequency-response data).
 
-`σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT. A larger `σ` implies less smoothing.
+- `σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT. A larger `σ` implies less smoothing.
 - `H` = Syu/Suu             Process transfer function
 - `N` = Sy - |Syu|²/Suu     Noise PSD
 """
-function tfest(d, σ::Real = 0.05)
+function tfest(d::AbstractIdData, σ::Real = 0.05)
     d.nu == 1 || error("Cannot perform tfest on multiple-input data. Consider using time-domain estimation or statespace estimation.")
     if d.ny > 1
         HNs = [tfest(d[i,1], σ) for i in 1:d.ny]
@@ -174,7 +174,7 @@ Calculates the magnitude-squared coherence Function. κ close to 1 indicates a g
 κ: Coherence function (not squared)
 N: Noise model
 """
-function coherence(d; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
+function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
     noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     ninputs(d) == 1 || throw(ArgumentError("coherence only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
