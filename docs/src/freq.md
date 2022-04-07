@@ -54,6 +54,9 @@ basis = laguerre_oo(1, 50) # Use 50 basis functions, the final model order may b
 Gest,p = tfest(d::FRD, basis)
 ```
 
+!!! note
+    Most methods for frequency-domain estimation of transfer functions handle SISO or SIMO systems only. For estimation of MIMO systems, consider using state-space based methods and convert the result to a transfer function using `tf` after estimation if required. 
+
 ### Statespace
 The function [`subspaceid`](@ref) handles frequency-domain data (as well as time-domain data). If an [`InputOutputFreqData`](@ref) is passed (may be created with function [`iddata`](@ref)), a frequency-domain method is automatically used. Further, a frequency-response object, [`FRD`](@ref), may also be passed, in which case it is transformed to an `InputOutputFreqData` automatically. If the frequency-response data stems from a frequency-response analysis, you may need to perform a bilinear transform on the frequency axis of the data object to convert the continuous-time frequency axis to discrete time, example:
 ```julia

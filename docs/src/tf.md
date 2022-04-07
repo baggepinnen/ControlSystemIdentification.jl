@@ -1,4 +1,5 @@
 # Transfer function estimation
+
 Basic support for ARX/ARMAX model estimation, i.e. a model on any of the forms
 ```math
 Ay = Bu + w
@@ -91,6 +92,9 @@ Time-series modeling can be seen as special cases of transfer-function modeling 
 - [`arxar`](@ref): Transfer-function estimation using generalized least squares method
 - [`getARXregressor`](@ref)/[`getARregressor`](@ref): For low-level control over the estimation
 See docstrings for further help.
+
+!!! note
+    Most methods for estimation of transfer functions handle SISO, SIMO or MISO systems only. For estimation of MIMO systems, consider using state-space based methods and convert the result to a transfer function using `tf` after estimation if required. 
 
 
 ```@docs
