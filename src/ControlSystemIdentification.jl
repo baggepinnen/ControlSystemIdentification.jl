@@ -13,7 +13,6 @@ using ComponentArrays,
     Parameters,
     Random,
     RecipesBase,
-    Roots,
     Statistics,
     StatsBase,
     TotalLeastSquares
@@ -44,7 +43,7 @@ export iddata,
     InputOutputData,
     InputOutputFreqData
 
-export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace, StateSpaceNoise,
+export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace,
     pem, newpem, simulation_errors, prediction_errors, predict, simulate, noise_model, estimate_x0
 export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
 export getARXregressor,
@@ -220,13 +219,6 @@ function simulate(sys, u, x0 = nothing)
 end
 simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args...)
 
-
-
-function ControlSystems.lsim(sys::StateSpaceNoise, u; x0 = nothing)
-    x0 = get_x0(x0, sys, u)
-    simulate(sys, input(u), x0)
-end
-
 function ControlSystems.lsim(sys::AbstractStateSpace, d::AbstractIdData; x0 = nothing)
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     
@@ -264,7 +256,6 @@ end
 
 """
     observer_predictor(sys::N4SIDStateSpace; h=1)
-    observer_predictor(sys::StateSpaceNoise; h=1)
 
 Return the predictor system
 x' = (A - KC)x + (B-KD)u + Ky
