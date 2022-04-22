@@ -27,7 +27,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         yn = y + 0.1randn(size(y))
         d = iddata(yn, u, 1)
         res = n4sid(d, r, γ = 0.99)
-        @test maximum(abs, pole(res.sys)) <= 1.00001 * 0.99
+        @test maximum(abs, poles(res.sys)) <= 1.00001 * 0.99
 
         ys = simulate(res, d)
         # @show mean(abs2,y-ys) / mean(abs2,y)
