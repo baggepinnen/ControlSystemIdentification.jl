@@ -1,4 +1,7 @@
 # Transfer-function estimation using spectral techniques
+
+Frequency-domain estimation refers to estimation of linear systems using frequency-domain data. We distinguish between nonparametric and parametric models, where parametric models have a fixed number of parameters (such as transfer functions with polynomials or statespace models), whereas nonparametric models are typically given as vectors of frequency-response values over a grid of frequencies, i.e., the number of parameters is not fixed and grows with the number of data points.
+
 ## Nonparametric estimation
 Non-parametric estimation is provided through spectral estimation. To illustrate, we once again simulate some data:
 ```julia
