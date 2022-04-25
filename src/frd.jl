@@ -1,7 +1,7 @@
 import ControlSystems: feedback
 
 """
-    FRD(w,r)
+    FRD(w, r)
 
 Represents frequency-response data. `w` holds the frequency vector and `r` the response. Methods defined on this type include
 - `+-*`
@@ -32,6 +32,12 @@ Base.:*(i, ::Type{rad}) = rad(i)
 (::Colon)(start::Union{Hz,rad}, stop::Union{Hz,rad}) = (start, stop)
 
 import Base: +, -, *, /, length, sqrt, getindex
+
+"""
+    FRD(w, sys::LTISystem)
+
+Generate a frequency-response data object by evaluating the frequency response of `sys` at frequencies `w`.
+"""
 function FRD(w, s::LTISystem)
     if ControlSystems.issiso(s)
         FRD(w, freqresp(s, w)[:])
