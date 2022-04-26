@@ -74,6 +74,17 @@ function Base.getproperty(f::FRD, s::Symbol)
     getfield(f, s)
 end
 Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts)
+
+function Base.show(io::IO, frd::FRD)
+    write(io, "Frequency(rad/s)\n")
+    write(io, "----------------\n")
+    show(io, MIME("text/plain"), frd.w)
+    write(io, "\n\n")
+    write(io, "Response\n")
+    write(io, "--------\n")
+    show(io, MIME("text/plain"), frd.r)
+end
+
 ControlSystems.noutputs(f::FRD) = 1
 ControlSystems.ninputs(f::FRD) = 1
 
