@@ -128,3 +128,7 @@ w = range(0, stop=pi/Ts-1/N, length=N)  # Frequency vector
 frd = FRD(w, G);                        # Build a frequency-response data object
 @test frd.r == freqresp(G, w).parent
 @test frd.w == w
+
+# Tests for FRD printing
+littlefrd = FRD([1, 2], [im, 2*im])
+@test_nowarn show(littlefrd)
