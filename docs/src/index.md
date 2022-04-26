@@ -4,8 +4,11 @@
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
 System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
-https://github.com/JuliaControl/ControlExamples.jl).
+https://github.com/JuliaControl/ControlExamples.jl) and an introductory video is available below (system identification example starts around 55 minutes)
 
+```@raw html
+<iframe width="560" height="315" src="https://www.youtube.com/embed/Fdz2Fsm1aTY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+```
 
 
 
