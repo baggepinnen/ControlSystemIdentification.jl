@@ -76,7 +76,7 @@ end
 Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts)
 
 function Base.show(io::IO, frd::FRD)
-    write(io, "Frequency(rad/s)\n")
+    write(io, "Frequency (rad/s)\n")
     write(io, "----------------\n")
     show(io, MIME("text/plain"), frd.w)
     write(io, "\n\n")
