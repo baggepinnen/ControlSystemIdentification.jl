@@ -7,4 +7,4 @@ ControlSystemIdentification.iddata
 ControlSystemIdentification.predictiondata
 ```
 
-Some frequency-domain methods accept or return objects of type [`FRD`](@ref), representing frequency-response data.
+Some frequency-domain methods accept or return objects of type [`FRD`](@ref), representing frequency-response data. An `FRD` object can be created directly using the constructor, or using the appropriate [`iddata`](@ref) method above.

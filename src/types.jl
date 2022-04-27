@@ -67,24 +67,17 @@ function Base.show(io::IO, d::InputOutputData)
     )
 end
 
-iddata(res::ControlSystems.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
+
 iddata(y::AbstractArray, Ts::Union{Real,Nothing} = nothing) = OutputData(autodim(y), Ts)
 iddata(y::AbstractArray, u::AbstractArray, Ts::Union{Real,Nothing} = nothing) =
     InputOutputData(autodim(y), autodim(u), Ts)
-
-"""
-    iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector)
-
-Create a frequency-domain input-output data object. `w` is expected to be in rad/s.
-"""
-iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector) = InputOutputFreqData(autodim(y), autodim(u), w)
 
 """
     iddata(y,       Ts = nothing)
     iddata(y, u,    Ts = nothing)
     iddata(y, u, x, Ts = nothing)
 
-Returns the appropriate identification-data object, depending on the input.
+Create a *time-domain** identification data object. 
 
 # Arguments
 - `y::AbstractArray`: output data (required)
@@ -140,6 +133,20 @@ iddata(
     x::AbstractArray,
     Ts::Union{Real,Nothing} = nothing,
 ) = InputOutputStateData(autodim(y), autodim(u), x, Ts)
+
+"""
+    iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector)
+
+Create a **frequency-domain** input-output data object. `w` is expected to be in rad/s.
+"""
+iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector) = InputOutputFreqData(autodim(y), autodim(u), w)
+
+"""
+    iddata(res::ControlSystems.SimResult)
+
+Create an identification data directly from a simulation result.
+"""
+iddata(res::ControlSystems.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
 
 
 output(d::AbstractIdData)                        = d.y

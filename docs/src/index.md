@@ -3,7 +3,8 @@
 [![CI](https://github.com/baggepinnen/ControlSystemIdentification.jl/workflows/CI/badge.svg)](https://github.com/baggepinnen/ControlSystemIdentification.jl/actions)
 [![codecov](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl)
 
-System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
+System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). 
+If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples in the form of jupyter notebooks are provided [here](
 https://github.com/JuliaControl/ControlExamples.jl) and an introductory video is available below (system identification example starts around 55 minutes)
 
 ```@raw html
