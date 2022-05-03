@@ -5,7 +5,7 @@ We will consider a very simple system $G(z) = \dfrac{1}{z - 0.9}$ with colored o
 
 It is well known that in the absence of $r$ and with a simple regulator, identifiability is poor, indeed, if
 ```math
-y_{k+1} = a y_k + b u_k, \quad u_k = L*y_k
+y_{k+1} = a y_k + b u_k, \quad u_k = L y_k
 ```
 we get the closed-loop system
 ```math
@@ -15,7 +15,7 @@ where we can not distinguish $a$ and $b$. The introduction of $r$ resolves this
 ```math
 \begin{aligned}
 y_{k+1} &= a y_k + b u_k \\
-u_k &= L*y_k + r \\
+u_k &= L y_k + r \\
 y_{k+1} &= (a + bL)y_k + b r_k
 \end{aligned}
 ```
