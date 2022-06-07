@@ -236,13 +236,13 @@ end
 
 Return a model of the noise driving the system, `v`, in
 ```math
-x' = Ax + Bu + Kv
+x' = Ax + Bu + Kv\\\\
 y = Cx + Du + v
 ```
 
 The model neglects u and is given by
 ```math
-x' = Ax + Kv
+x' = Ax + Kv\\\\
 y = Cx + v
 ```
 Also called the "innovation form". This function calls `ControlSystems.innovation_form`.
@@ -258,8 +258,10 @@ end
     observer_predictor(sys::N4SIDStateSpace; h=1)
 
 Return the predictor system
-x' = (A - KC)x + (B-KD)u + Ky
+```math
+x' = (A - KC)x + (B-KD)u + Ky \\\\
 y  = Cx + Du
+```
 with the input equation [B-KD K] * [u; y]
 
 `h ≥ 1` is the prediction horizon.
