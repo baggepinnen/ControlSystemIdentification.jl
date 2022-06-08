@@ -4,7 +4,7 @@ We will get the data from [STADIUS's Identification Database](https://homes.esat
 
 ```@example ballbeam
 using DelimitedFiles, Plots
-using ControlSystemIdentification, ControlSystems, RobustAndOptimalControl
+using ControlSystemIdentification, ControlSystems
 
 
 ## Ball and beam

@@ -21,11 +21,11 @@ makedocs(
             "Examples" => [
                   "Temperature control" => "examples/temp.md"
                   "Identification in closed loop" => "examples/closed_loop_id.md"
-                  "Ball and beam" => "exaples/ballandbeam.md"
-                  "Flexible robot arm" => "exaples/flexible_robot.md"
-                  "Glass furnace" => "exaples/glass_furnace.md"
-                  "Evaporator" => "exaples/evaporator.md"
-                  "Hair dryer" => "exaples/hair_dryer.md"
+                  "Ball and beam" => "examples/ballandbeam.md"
+                  "Flexible robot arm" => "examples/flexible_robot.md"
+                  "Glass furnace" => "examples/glass_furnace.md"
+                  "Evaporator" => "examples/evaporator.md"
+                  "Hair dryer" => "examples/hair_dryer.md"
             ],
             "API" => "api.md",
       ],

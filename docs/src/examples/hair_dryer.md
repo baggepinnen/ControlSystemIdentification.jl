@@ -6,7 +6,7 @@ The example comes from [STADIUS's Identification Database](https://homes.esat.ku
 
 ```@example dryer
 using DelimitedFiles, Plots
-using ControlSystemIdentification, ControlSystems, RobustAndOptimalControl
+using ControlSystemIdentification, ControlSystems
 
 url = "https://ftp.esat.kuleuven.be/pub/SISTA/data/mechanical/dryer.dat.gz"
 zipfilename = "/tmp/dryer.dat.gz"
