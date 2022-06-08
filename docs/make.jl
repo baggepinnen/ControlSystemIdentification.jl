@@ -19,8 +19,13 @@ makedocs(
             "Frequency-domain estimation" => "freq.md",
             "Validation" => "validation.md",
             "Examples" => [
-                  "Temperature control" => "examples/temp.md",
-                  "Identification in closed loop" => "examples/closed_loop_id.md",
+                  "Temperature control" => "examples/temp.md"
+                  "Identification in closed loop" => "examples/closed_loop_id.md"
+                  "Ball and beam" => "exaples/ballandbeam.md"
+                  "Flexible robot arm" => "exaples/flexible_robot.md"
+                  "Glass furnace" => "exaples/glass_furnace.md"
+                  "Evaporator" => "exaples/evaporator.md"
+                  "Hair dryer" => "exaples/hair_dryer.md"
             ],
             "API" => "api.md",
       ],
