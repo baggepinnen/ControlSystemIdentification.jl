@@ -25,7 +25,7 @@ plot(d, layout=9)
 We split the data in two, and use the first part for estimation and the second for validation. This system requires `zeroD=false` to be able to capture a direct feedthrough to output 4, otherwise the fit for output 4 will always be rather poor.
 ```@example furnace
 dtrain = d[1:2end÷3]
-dval = d[3end÷3:end]
+dval = d[2end÷3:end]
 
 model = subspaceid(dtrain, 7, zeroD=false)
 ```
