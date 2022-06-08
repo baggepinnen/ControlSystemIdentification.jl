@@ -88,6 +88,7 @@ Create a *time-domain** identification data object.
 If the time-series are multivariate, time is in the *last* dimension.
 
 # Operations on iddata
+- [`detrend`](@ref)
 - [`prefilter`](@ref)
 - [`resample`](@ref)
 - append two along the time dimension `[d1 d2]`
@@ -305,6 +306,16 @@ function DSP.resample(M::AbstractMatrix, f)
         DSP.resample(y, f)
     end
 end
+
+"""
+    detrend(d::AbstractArray)
+    detrend(d::AbstractIdData)
+
+Remove the mean from `d`.
+"""
+detrend(x::AbstractVector) = x .- mean(x)
+detrend(x::AbstractMatrix) = x .- mean(x, dims=2)
+detrend(d::AbstractIdData) = apply_fun(detrend, d)
 
 function AbstractFFTs.fft(d::InputOutputData)
     y,u = time2(output(d)), time2(input(d))
