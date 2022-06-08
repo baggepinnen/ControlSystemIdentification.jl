@@ -248,19 +248,20 @@ end
 @userplot Impulseestplot
 
 """
-    impulseestplot(data,n)
+    impulseestplot(data,n; σ = 2)
 
-Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% confidence band.
-See also `impulseestplot`
+Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% (2σ) confidence band.
+See also [`impulseest`](@ref).
 """
 impulseestplot
-@recipe function impulseestplot(p::Impulseestplot; λ = 0)
+@recipe function impulseestplot(p::Impulseestplot; λ = 0, σ = 2)
     d = p.args[1]
     n = length(p.args) >= 2 ? p.args[2] : 25
     ir, t, Σ = impulseest(d, n; λ = λ)
     title --> "Estimated Impulse Response"
     xguide --> "Time [s]"
 
+    seriestype --> :sticks
     @series begin
         label --> ""
         t, ir
@@ -268,12 +269,16 @@ impulseestplot
     linestyle := :dash
     seriescolor := :black
     label := ""
-    seriestype := :hline
-    @series begin
-        t, 2 .* sqrt.(diag(Σ))
+    seriestype := :line
+    S = σ .* sqrt.(diag(Σ))
+    if d.nu > 1
+        S = reshape(S, :, d.nu)
     end
     @series begin
-        t, -2 .* sqrt.(diag(Σ))
+        t, S
+    end
+    @series begin
+        t, -S
     end
 end
 
