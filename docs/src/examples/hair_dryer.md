@@ -55,5 +55,5 @@ bodeplot(model_pem.sys, w, lab="PEM", plotphase=false)
 bodeplot!(model_arx, w, lab="ARX", plotphase=false)
 plot!(tfest(d))
 ```
-THe two parametric models are quite similar and agree well with the nonparametric estimate. We also see that the nonparametric estimate becomes rather noisy above 10 rad/s, something we could predict based on the coherence function.
+The two parametric models are quite similar and agree well with the nonparametric estimate. We also see that the nonparametric estimate becomes rather noisy above 10 rad/s, something we could predict based on the coherence function.
 
