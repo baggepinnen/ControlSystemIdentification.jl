@@ -35,8 +35,8 @@ plot(d, layout=6)
 
 We split the data in two, and use the first part for estimation and the second for validation. A model of order around 8 is reasonable (the paper uses 6-13). This system requires the option `zeroD=false` to be able to capture a direct feedthrough, otherwise the fit will always be rather poor.
 ```@example evaporator
-dtrain = d[1:end÷2]
-dval = d[end÷2:end]
+dtrain = d[1:3300] # first experiment ends after 3300 seconds
+dval = d[3301:end]
 
 model,_ = newpem(dtrain, 8, zeroD=false)
 nothing # hide

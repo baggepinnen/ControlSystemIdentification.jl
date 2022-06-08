@@ -46,7 +46,7 @@ predplot!(model_arx, dval, ploty=false, sysname="ARX")
 simplot!(model_pem, dval, ploty=false, sysname="PEM")
 simplot!(model_arx, dval, ploty=false, sysname="ARX")
 ```
-The models are roughly comparable, where the PEM model is slightly better at prediction while the ARX model is slightly better at simulation. Note, [`newpem`](@ref) takes a keyword argument `focus` that can be et to `focus = :simulation` in order to improve simulation performance.
+The models are roughly comparable, where the PEM model is slightly better at prediction while the ARX model is slightly better at simulation. Note, [`newpem`](@ref) takes a keyword argument `focus` that can be set to `focus = :simulation` in order to improve simulation performance.
 
 To finalize, we compare the models in the frequency domain to a nonparametric estimate of the transfer function made with Fourier-based methods ([`tfest`](@ref)):
 ```@example dryer
