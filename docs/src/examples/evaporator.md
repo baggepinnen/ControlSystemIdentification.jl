@@ -33,19 +33,20 @@ Before we estimate any model, we inspect the data
 plot(d, layout=6)
 ```
 
-We split the data in two, and use the first part for estimation and the second for validation. A model of order around 8 is reasonable (the paper uses 6-13). This system requires zeroD=false to be able to capture a direct feedthrough, otherwise the fit will always be rather poor.
+We split the data in two, and use the first part for estimation and the second for validation. A model of order around 8 is reasonable (the paper uses 6-13). This system requires the option `zeroD=false` to be able to capture a direct feedthrough, otherwise the fit will always be rather poor.
 ```@example evaporator
 dtrain = d[1:end÷2]
 dval = d[end÷2:end]
 
 model,_ = newpem(dtrain, 8, zeroD=false)
+nothing # hide
 ```
 
 ```@example evaporator
 predplot(model, dval, h=1, layout=d.ny)
 predplot!(model, dval, h=5, ploty=false)
 ```
-The figures above show the result of predicting $h=\left{1, 5\right}$ steps into the future.
+The figures above show the result of predicting $h={1, 5}$ steps into the future.
 
 We can visualize the estimated model in the frequency domain as well. 
 ```@example evaporator

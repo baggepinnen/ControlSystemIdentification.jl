@@ -57,3 +57,10 @@ plot!(tfest(d))
 ```
 The two parametric models are quite similar and agree well with the nonparametric estimate. We also see that the nonparametric estimate becomes rather noisy above 10 rad/s, something we could predict based on the coherence function.
 
+We can compare the impulse responses of the estimated model to the impulse response that was estimated directly from data above:
+```@example dryer
+impulseestplot(d, 40, σ=3, lab="Data", seriestype=:steppost)
+plot!(impulse(model_pem, 3), lab="PEM")
+plot!(impulse(model_arx, 3), lab="ARX")
+```
+The ARX model has an impulse response that is exactly zero for the first three samples since we indicated `inputdelay=3` when estimating this model. The PEM model did not know this, but figured it out from the data nevertheless.

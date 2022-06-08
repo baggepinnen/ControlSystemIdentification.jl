@@ -39,13 +39,13 @@ predplot(model, dval, h=1)
 predplot!(model, dval, h=10, ploty=false)
 simplot!(model, dval, ploty=false)
 ```
-The figures above show the result of predicting $h=\left{1, 10, \infty\right}$ steps into the future.
+The figures above show the result of predicting $h={1, 10, \infty}$ steps into the future.
 
 We can visualize the estimated models in the frequency domain as well. We show both the model estimated using PEM and a nonparametric estimate using a Fourier-based method ([`tfest`](@ref)), this method estimates a noise model as well.
 
 ```@example robot
 w = exp10.(LinRange(-1, log10(pi/d.Ts), 200))
 bodeplot(model.sys, w, lab="PEM", plotphase=false)
-plot!(tfest(d))
+plot!(tfest(d), legend=:bottomleft)
 ```
 It looks like the model fails to capture the notches accurately. Estimating zeros is known to be hard, both in practice and in theory.

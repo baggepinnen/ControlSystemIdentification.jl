@@ -43,7 +43,7 @@ predplot(model, dval, h=1)
 predplot!(model, dval, h=10, ploty=false)
 predplot!(model, dval, h=20, ploty=false)
 ```
-The figures above show the result of predicting $h=\left{1, 10, 20\right}$ steps into the future. Since the process is unstable, simulation is not feasible, and already 20 steps prediction shows tendencies towards being unstable.
+The figures above show the result of predicting $h={1, 10, 20}$ steps into the future. Since the process is unstable, simulation is not feasible, and already 20 steps prediction shows tendencies towards being unstable.
 
 We can visualize the estimated models in the frequency domain as well. We show both the model estimated using PEM and a nonparametric estimate using a Fourier-based method ([`tfest`](@ref)), this method estimates a noise model as well.
 

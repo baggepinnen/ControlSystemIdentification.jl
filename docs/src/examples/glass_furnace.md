@@ -28,6 +28,7 @@ dtrain = d[1:2end÷3]
 dval = d[2end÷3:end]
 
 model = subspaceid(dtrain, 7, zeroD=false)
+nothing # hide
 ```
 We can have a look at the $D$ matrix in the estimated model
 ```@example furnace
@@ -40,7 +41,7 @@ We validate the model by prediction on the validation data:
 predplot(model, dval, h=1, layout=6)
 predplot!(model, dval, h=10, ploty=false)
 ```
-The figures above show the result of predicting $h=\left{1, 10\right}$ steps into the future.
+The figures above show the result of predicting $h={1, 10}$ steps into the future.
 
 We can visualize the estimated model in the frequency domain as well. 
 ```@example furnace
