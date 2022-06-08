@@ -65,7 +65,7 @@ end
 rms(x::AbstractVector) = sqrt(mean(abs2, x))
 sse(x::AbstractVector) = x ⋅ x
 mse(x::AbstractVector) = sse(x) / length(x)
-
+mse(x::AbstractMatrix) = sum(abs2, x, dims=2) ./ size(x, 2)
 
 rms(x::AbstractMatrix) = sqrt.(mean(abs2.(x), dims = 2))[:]
 sse(x::AbstractMatrix) = sum(abs2, x, dims = 2)[:]
