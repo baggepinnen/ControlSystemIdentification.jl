@@ -48,6 +48,11 @@ Gh = arx(d, na, nb)
 # bodeplot(G,ω)
 # bodeconfidence!(Gh, Σ, ω=ω, color=:blue, lab="Est")
 
+yh1 = predict(Gh, d)
+yh2 = simulate(ss(Gh), d)
+@test yh1 ≈ yh2
+
+
 # Test MISO estimation
 u2 = randn(1,N)
 G2 = [G tf(0.5, [1, -0.9], 1)]

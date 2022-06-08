@@ -227,11 +227,16 @@ Estimates the system impulse response by fitting an `n`:th order FIR model. Retu
 See also `impulseestplot`
 """
 function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls)
+    d.ny == 1 || error("impulseest only supports single-output data")
     h, y, u = d.Ts, time1(output(d)), time1(input(d))
-    N = min(length(u), length(y))
-    @views yt, A = getARXregressor(y[1:N], u[1:N], 0, n)
+    N = min(size(u, 1), size(y, 1))
+    @views yt, A = getARXregressor(y[1:N], u[1:N,:], 0, d.nu == 1 ? n : fill(n, d.nu); inputdelay = d.nu == 1 ? 0 : zeros(Int, d.nu))
+    A .*= h # We adjust for the sample time here in order to get both ir and Σ adjusted correctly
     ir = estimator(A, yt, λ)
-    t = range(h, length = n, step = h)
+    t = range(0, length = n, step = h)
     Σ = parameter_covariance(yt, A, ir, λ)
-    ir ./ h, t, Σ
+    if d.nu > 1
+        ir = reshape(ir, :, d.nu)
+    end
+    ir, t, Σ
 end

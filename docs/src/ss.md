@@ -1,28 +1,37 @@
 # LTI state-space models
 
-There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`newpem`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas `n4sid` is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first.
+This page documents the facilities available for estimating statespace models on the form
+```math
+\begin{aligned}
+x^+ &= Ax + Bu + Ke\\
+y &= Cx + Du + e
+\end{aligned}
+```
+
+There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref) and [`newpem`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas `n4sid` is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl). If unsure which method to use, try [`subspaceid`](@ref) first (unless the data comes from closed-loop operation, use [`newpem`](@ref) in this case).
 
 ## Subspace-based identification using `n4sid` and `subspaceid`
+Estimate a statespace model using the [`n4sid`](@ref) method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `sys.sys`. The frequency-weighting functionality is borrowing ideas from
+*"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 ```@example ss
 using ControlSystemIdentification, ControlSystems
-Ts = 1
-G  = ssrand(1,1,3; Ts, proper=true)
+Ts = 0.1
+G  = c2d(DemoSystems.resonant(), Ts)
 u  = randn(1,1000)
 y  = lsim(G,u).y
+y .+= 0.01 .* randn.() # add measurement noise
 d  = iddata(y,u,Ts)
 sys = n4sid(d, :auto; verbose=false, zeroD=true)
 # or use a robust version of svd if y has outliers or missing values
 # using TotalLeastSquares
 # sys = n4sid(d, :auto; verbose=false, svd=x->rpca(x)[3])
-bodeplot([G, sys.sys])
+bodeplot([G, sys.sys], lab=["True" "" "n4sid" ""])
 ```
-Estimate a statespace model using the [`n4sid`](@ref) method. Returns an object of type [`N4SIDResult`](@ref) where the model is accessed as `sys.sys`. The frequency-weighting functionality is borrowing ideas from
-*"Frequency Weighted Subspace Based System Identification in the Frequency Domain", Tomas McKelvey 1996*. In particular, we apply the output frequency weight matrix (Fy) as it appears in eqs. (16)-(18).
 
 Using the function [`subspaceid`](@ref) instead, we have
 ```@example ss
 sys2 = subspaceid(d, :auto; verbose=false, zeroD=true)
-bodeplot!(sys2.sys)
+bodeplot!(sys2.sys, lab=["subspace" ""])
 ```
 [`subspaceid`](@ref) allows you to choose the weighting between `:MOESP, :CVA, :N4SID, :IVM` and is generally preferred over [`n4sid`](@ref).
 
@@ -31,8 +40,8 @@ Both functions allow you to choose which functions are used for least-squares es
 ## ERA and OKID
 The "Eigenvalue realization algorithm" and "Observer Kalman identification" algorithms are available as [`era`](@ref) and [`okid`](@ref).
 ```@example ss
-sys3 = era(d, 3)
-bodeplot!(sys3)
+sys3 = era(d, 2)
+bodeplot!(sys3, lab=["ERA" ""])
 ```
 
 

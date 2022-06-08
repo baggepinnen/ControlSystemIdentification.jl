@@ -86,14 +86,14 @@ _process_simplotargs(d::AbstractIdData, sys::LTISystem, x0 = :estimate) = _proce
 
 @userplot Simplot
 """
-	simplot(sys, data, x0=nothing; ploty=true, plote=false)
+	simplot(sys, data, x0=nothing; ploty=true, plote=false, sysname="")
 
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
 `plote` determines whether or not to plot the residual
 """
 simplot
-@recipe function simplot(p::Simplot; ploty = true, plote = false)
+@recipe function simplot(p::Simplot; ploty = true, plote = false, sysname="")
     sys, d, x0 = _process_simplotargs(p.args...)
     y = time2(output(d))
     yh = simulate(sys, d, x0)
@@ -106,7 +106,7 @@ simplot
         t, y'
     end
     @series begin
-        label --> ["sim fit $i :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
+        label --> [sysname*" "*"sim fit $(d.ny == 1 ? "" : i) :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
         t, yh'
     end
     plote && @series begin
@@ -119,7 +119,7 @@ end
 
 @userplot Predplot
 """
-	predplot(sys, data, x0=nothing; ploty=true, plote=false, h=1)
+	predplot(sys, data, x0=nothing; ploty=true, plote=false, h=1, sysname="")
 
 Plot system simulation and measured output to compare them.
 `ploty` determines whether or not to plot the measured signal
@@ -127,7 +127,7 @@ Plot system simulation and measured output to compare them.
 `h` is the prediction horizon.
 """
 predplot
-@recipe function predplot(p::Predplot; ploty = true, plote = false, h=1)
+@recipe function predplot(p::Predplot; ploty = true, plote = false, h=1, sysname="")
     sys, d = p.args[1:2]
     y = time2(output(d))
     u = time2(input(d))
@@ -141,7 +141,7 @@ predplot
         t, y'
     end
     @series begin
-        label --> [(h > 1 ? "Horizon $h " : "")*"pred fit $i :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
+        label --> [sysname*" "*(h > 1 ? "Horizon $h " : "")*"pred fit $(d.ny == 1 ? "" : i) :$(round(err, digits=2))%" for (i,err) in enumerate(err')]
         t, yh'
     end
     plote && @series begin
@@ -192,7 +192,7 @@ end
 # tfest returns a tuple and it's convenient to call plot(tfest(d)) directly
 @recipe function plot_tfestres(frd::Tuple{<:FRD,<:FRD})
     @series begin
-        label --> "System"
+        label --> "Estimated TF"
         frd[1]
     end
     @series begin
@@ -248,19 +248,20 @@ end
 @userplot Impulseestplot
 
 """
-    impulseestplot(data,n)
+    impulseestplot(data,n; σ = 2)
 
-Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% confidence band.
-See also `impulseestplot`
+Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% (2σ) confidence band.
+See also [`impulseest`](@ref).
 """
 impulseestplot
-@recipe function impulseestplot(p::Impulseestplot; λ = 0)
+@recipe function impulseestplot(p::Impulseestplot; λ = 0, σ = 2)
     d = p.args[1]
     n = length(p.args) >= 2 ? p.args[2] : 25
     ir, t, Σ = impulseest(d, n; λ = λ)
     title --> "Estimated Impulse Response"
     xguide --> "Time [s]"
 
+    seriestype --> :sticks
     @series begin
         label --> ""
         t, ir
@@ -268,12 +269,16 @@ impulseestplot
     linestyle := :dash
     seriescolor := :black
     label := ""
-    seriestype := :hline
-    @series begin
-        t, 2 .* sqrt.(diag(Σ))
+    seriestype := :line
+    S = σ .* sqrt.(diag(Σ))
+    if d.nu > 1
+        S = reshape(S, :, d.nu)
     end
     @series begin
-        t, -2 .* sqrt.(diag(Σ))
+        t, S
+    end
+    @series begin
+        t, -S
     end
 end
 

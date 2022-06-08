@@ -200,8 +200,10 @@ function predict(ARX::TransferFunction, d::InputOutputData; h=1)
     nb = map(length, vec(b))
     
     y, A = getARXregressor(d, na, nb, inputdelay = inputdelay)
+    A = [zeros(length(d)-size(A, 1), size(A, 2)); A]
     ypred = A * w
-    return ypred
+    return ypred'
+    # predict(ss(ARX), d)
 end
 
 """

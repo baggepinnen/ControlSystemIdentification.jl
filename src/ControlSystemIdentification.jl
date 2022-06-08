@@ -36,6 +36,7 @@ export iddata,
     hasinput,
     apply_fun,
     resample,
+    detrend,
     ramp_in,
     ramp_out,
     timevec,
@@ -128,6 +129,8 @@ function slowest_time_constant(sys::AbstractStateSpace{<:Discrete})
     round(Int, t_const / sys.Ts)
 end
 
+slowest_time_constant(sys::TransferFunction{<:Discrete}) = slowest_time_constant(ss(sys))
+
 """
     estimate_x0(sys, d, n = min(length(d), 3 * slowest_time_constant(sys)); fixed = fill(NaN, sys.nx)
 
@@ -150,7 +153,7 @@ x0h[2] == x0[2] # Should be exact equality
 norm(x0-x0h)    # Should be small
 ```
 """
-function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
+function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     T = ControlSystems.numeric_type(sys)
@@ -188,6 +191,8 @@ function estimate_x0(sys, d, n = min(length(d), 3slowest_time_constant(sys)); fi
         return x0
     end
 end
+
+estimate_x0(G::TransferFunction, args...; kwargs...) = estimate_x0(ss(G), args...; kwargs...)
 
 """
 	yh = predict(ar::TransferFunction, y)

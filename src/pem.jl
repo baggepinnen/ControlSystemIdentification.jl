@@ -150,7 +150,6 @@ function newpem(
     T = promote_type(eltype(d.y), eltype(sys0.A))
     nu = d.nu
     ny = d.ny
-    ny <= nx || throw(ArgumentError("ny > nx not supported by this method."))
     sys0, Tmodal = modal_form(sys0)
     A, B, C, D = ssdata(sys0)
     K = if hasfield(typeof(sys0), :K)
