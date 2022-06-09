@@ -70,4 +70,4 @@ As a last step of validation, we perform residual analysis. If a model has extra
 residualplot(model_pem, dval, lab="PEM")
 residualplot!(model_arx, dval, lab="ARX")
 ```
-As we can see, there is some slight correlation left in the residuals, the dashed black lines show 95% significance levels. This small amount of correlation is usually nothing to worry about, and we'll consider ourselves done.
+As we can see, there is some slight correlation left in the residuals, the dashed black lines show 95% significance levels. This small amount of correlation is usually nothing to worry about if the model fit is high, i.e., the residuals are small, and we'll thus consider ourselves done at this point.
