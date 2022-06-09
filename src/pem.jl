@@ -162,7 +162,7 @@ function newpem(
     x0i::Vector{T} = if h == 1 || focus === :simulation
         T.(estimate_x0(sys0, d, min(length(d), 10nx)))
     else
-        T.(estimate_x0(prediction_error(PredictionStateSpace(sys0, K, 0, 0); h), pd, min(length(pd), 10nx)))
+        T.(estimate_x0(prediction_error_filter(PredictionStateSpace(sys0, K, 0, 0); h), pd, min(length(pd), 10nx)))
     end
     p0::Vector{T} = if pred
         T.(zeroD ? [trivec(A); vec(B); vec(C); vec(K); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0i)])
@@ -173,7 +173,7 @@ function newpem(
     function predloss(p)
         sysi, Ki, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
-        Pe = prediction_error(syso; h)
+        Pe = prediction_error_filter(syso; h)
         e, _ = lsim(Pe, pd; x0)
         unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
         c1 = sum(metric, e)

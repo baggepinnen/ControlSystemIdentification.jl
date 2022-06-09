@@ -102,6 +102,7 @@ Furthermore, we have the utility functions below
 - [`observer_predictor`](@ref): Extract the predictor model from the estimated system (`ss(A-KC,[B K],C,D)`).
 - [`observer_controller`](@ref)
 - [`prediction_error`](@ref)
+- [`prediction_error_filter`](@ref)
 - [`predictiondata`](@ref)
 - [`noise_model`](@ref)
 

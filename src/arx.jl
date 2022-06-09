@@ -469,7 +469,7 @@ Convert the models obtained from `arxar` into a `PredictionStateSpace`. Note tha
 # Examples:
 ```julia
 Gp = ControlSystemIdentification.arxar_predictor(Gest, Hest) 
-pe = ControlSystemIdentification.prediction_error(Gp)
+pe = ControlSystemIdentification.prediction_error_filter(Gp)
 pd = ControlSystemIdentification.predictiondata(d)
 ε = lsim(pe, pd)[1] # estimate innovation sequence
 

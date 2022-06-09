@@ -45,7 +45,7 @@ export iddata,
     InputOutputFreqData
 
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace,
-    pem, newpem, simulation_errors, prediction_errors, predict, simulate, noise_model, estimate_x0
+    pem, newpem, prediction_error, predict, simulate, noise_model, estimate_x0
 export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
 export getARXregressor,
     getARregressor,
@@ -96,6 +96,7 @@ predict(sys, d::AbstractIdData, args...; kwargs...) =
 
 
 function predict(sys, y, u, x0 = nothing; h=1)
+    h == Inf && return simulate(sys, u, x0)
     h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     x0 = get_x0(x0, sys, iddata(y, u, sys.Ts))
     model = SysFilter(sys, copy(x0))
@@ -163,7 +164,7 @@ function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_tim
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
     if sys isa AbstractPredictionStateSpace && !iszero(sys.K)
-        ε, _ = lsim(prediction_error(sys), predictiondata(d))
+        ε, _ = lsim(prediction_error_filter(sys), predictiondata(d))
         y = y - ε # remove influence of innovations
     end 
 
@@ -271,7 +272,7 @@ with the input equation [B-KD K] * [u; y]
 
 `h ≥ 1` is the prediction horizon.
 
-See also `noise_model` and `prediction_error`.
+See also `noise_model` and `prediction_error_filter`.
 """
 function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace; kwargs...)
     K = sys.K
@@ -289,15 +290,27 @@ function predictiondata(d::AbstractIdData)
 end
 
 """
-    prediction_error(sys::AbstractPredictionStateSpace; h=1)
-    prediction_error(sys::AbstractStateSpace, R1, R2; h=1)
+    prediction_error_filter(sys::AbstractPredictionStateSpace; h=1)
+    prediction_error_filter(sys::AbstractStateSpace, R1, R2; h=1)
 
 Return a filter that takes `[u; y]` as input and outputs the prediction error `e = y - ŷ`. See also `innovation_form` and `noise_model`.
-`h ≥ 1` is the prediction horizon.
+`h ≥ 1` is the prediction horizon. See function [`predictiondata`](@ref) to generate an `iddata` that has `[u; y]` as inputs.
 """
-function prediction_error(sys::AbstractStateSpace, args...; kwargs...)
+function prediction_error_filter(sys::AbstractStateSpace, args...; kwargs...)
     G = ControlSystems.observer_predictor(sys, args...; kwargs...)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
+end
+
+Base.@deprecate prediction_error(sys::AbstractStateSpace, args...; kwargs...) prediction_error_filter(sys::AbstractStateSpace, args...; kwargs...)
+
+"""
+    e = prediction_error(sys::AbstractStateSpace, d::AbstractIdData, args...; kwargs...)
+
+Return the prediction errors `d.y - predict(sys, d, ...)
+"""
+function prediction_error(sys::AbstractStateSpace, d::AbstractIdData, args...; kwargs...)
+    yh = predict(sys, d, args...; kwargs...)
+    d.y .- yh
 end
 
 """

@@ -30,7 +30,7 @@ Gest, Hest, res = arxar(d, na, nb, nd, iterations = 10, verbose = true, δmin = 
 
 
 Gp = ControlSystemIdentification.arxar_predictor(Gest, Hest) 
-pe = ControlSystemIdentification.prediction_error(Gp)
+pe = ControlSystemIdentification.prediction_error_filter(Gp)
 pd = ControlSystemIdentification.predictiondata(d)
 ε = lsim(pe, pd)[1]
 Hn = noise_model(Gp)
