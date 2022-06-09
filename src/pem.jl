@@ -74,7 +74,7 @@ hence `G = Dy \\ G̃ * Du` where \$ G̃ \$ is the plant estimated for the scaled
 - `d`: [`iddata`](@ref)
 - `nx`: Model order
 - `zeroD`: Force zero `D` matrix
-- `stable` if true, stability of the estimated system will be enforced by eigenvalue reflection using [`schur_stab`](@ref) with `ϵ=Ts/100` (default). If `stable` is a real value, the value is used instead of the default `ϵ`.
+- `stable` if true, stability of the estimated system will be enforced by eigenvalue reflection using [`schur_stab`](@ref) with `ϵ=1/100` (default). If `stable` is a real value, the value is used instead of the default `ϵ`.
 - `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
 - `focus`: `prediction` or `:simulation`. If `:simulation`, hte `K` matrix will be zero.
 - `optimizer`: One of Optim's optimizers
@@ -211,7 +211,7 @@ function newpem(
     end
     if stable > 0 && !isstable(sys_opt)
         @warn("Estimated system dynamics A is unstable, stabilizing A using eigenvalue reflection")
-        Astab = schur_stab(sys_opt.A, stable === true ? sys0.Ts/100 : stable)
+        Astab = schur_stab(sys_opt.A, stable === true ? 0.01 : stable)
         sys_opt.A .= Astab
     end
     sysp_opt = PredictionStateSpace(
