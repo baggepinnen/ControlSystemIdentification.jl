@@ -64,3 +64,10 @@ plot!(impulse(model_pem, 3), lab="PEM")
 plot!(impulse(model_arx, 3), lab="ARX")
 ```
 The ARX model has an impulse response that is exactly zero for the first three samples since we indicated `inputdelay=3` when estimating this model. The PEM model did not know this, but figured it out from the data nevertheless.
+
+As a last step of validation, we perform residual analysis. If a model has extracted all available useful information from the data, the residuals should form a white-noise sequence, and there should be no correlation between the input and the residuals. To this end, we have the function [`residualplot`](@ref):
+```@example dryer
+residualplot(model_pem, dval, lab="PEM")
+residualplot!(model_arx, dval, lab="ARX")
+```
+As we can see, there is some slight correlation left in the residuals, the dashed black lines show 95% significance levels. This small amount of correlation is usually nothing to worry about, and we'll consider ourselves done.

@@ -24,3 +24,5 @@ e2 = predict(pesys, pd)
 @test mean(abs2, e2 .- e) < 0.01
 @test mean(abs2, (e2 .- e)[:, 4:end]) < 1e-5
 
+residualplot(model, d)
+
