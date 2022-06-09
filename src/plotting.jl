@@ -282,44 +282,126 @@ impulseestplot
     end
 end
 
+function _process_crosscor_args(d::AbstractIdData, lags = -min(length(d) ÷ 10, 100):min(length(d) ÷ 2, 100))
+    time1(d.u), time1(d.y), lags, d.Ts
+end
+
+function _process_crosscor_args(u::AbstractArray, y::AbstractArray, Ts::Real, lags = -min(size(u,2) ÷ 10, 100):min(size(u,2) ÷ 2, 100))
+    time1(u), time1(y), lags, Ts
+end
+
+function _process_autocor_args(y::AbstractArray, Ts::Real, lags = 1:min(size(y,2) ÷ 2, 100))
+    time1(y), lags, Ts
+end
 
 @userplot Crosscorplot
+@userplot Autocorplot
 
 """
     crosscorplot(data, [lags])
+    crosscorplot(u, y, Ts, [lags])
 
-Plot the cross correlation betweein input and output for `lags` that default to 10% of the length of the dataset on the negative side and 50% on the positive side but no more than 100 on each side.
+Plot the cross correlation between input and output for `lags` that default to 10% of the length of the dataset on the negative side and 50% on the positive side but no more than 100 on each side.
 """
 crosscorplot
 
+"""
+    autocorplot(y, Ts, [lags])
+
+Plot the auto correlation of `y` for `lags` that default to `1:size(y, 2)÷2.
+"""
+autocorplot
+
 @recipe function crosscorplot(p::Crosscorplot)
-    d = p.args[1]
-    N = length(d)
-    lags = length(p.args) >= 2 ? p.args[2] : -max(N ÷ 10, 100):max(N ÷ 2, 100)
-    xc = crosscor(time1(d.u), time1(d.y), lags, demean = true)
-    title --> "Input-Output cross correlation"
-    xguide --> "Lag [s]"
+    u,y,lags,Ts = _process_crosscor_args(p.args...)
 
-    @series begin
-        seriestype --> :sticks
-        label --> ""
-        lags .* d.Ts, xc
+    if size(u,2) == 1 && u isa AbstractMatrix
+        u = vec(u)
     end
-    linestyle := :dash
+    if size(y,2) == 1 && y isa AbstractMatrix
+        y = vec(y)
+    end
+    plotattributes[:N] = size(u, 1)
+    xc = crosscor(u, y, lags, demean = true)
+    title --> "Input-Output cross correlation"
+    seriestype := :corrplot
+    @series begin
+        label --> ""
+        lags .* Ts, xc
+    end
+end
 
-    seriescolor := :black
-    label := ""
+@recipe function autocorplot(p::Autocorplot)
+    y,lags,Ts = _process_autocor_args(p.args...)
+    @show lags
+    if size(y,2) == 1 && y isa AbstractMatrix
+        y = vec(y)
+    end
+    plotattributes[:N] = size(y, 1)
+    xc = autocor(y, lags, demean = true)
+    title --> "Auto correlation"
+    seriestype := :corrplot
+    @series begin
+        label --> ""
+        lags .* Ts, xc
+    end
+end
+
+@recipe function f(::Type{Val{:corrplot}}, plt::AbstractPlot)
+    x, y = plotattributes[:x], plotattributes[:y]
+    N = plotattributes[:N]
+    seriestype := :sticks
+    xguide --> "Lag [s]"
+    @series begin
+        x, y
+    end
+    
+    # label := ""
     primary := false
     # Ni = N .- abs.(lags)
+    linestyle := :dash
+    seriescolor := :black
     @series begin
         seriestype := :hline
         # lags.*d.Ts, 2 .*sqrt.(1 ./ Ni) # The denominator in crosscorr already takes care of this
-        [2 .* sqrt.(1 ./ N)]
+        y := [2 .* sqrt.(1 ./ N)]
     end
     @series begin
         seriestype := :hline
         # lags.*d.Ts, -2 .*sqrt.(1 ./ Ni)
-        [-2 .* sqrt.(1 ./ N)]
+        y := [-2 .* sqrt.(1 ./ N)]
+    end
+end
+
+@userplot Residualplot
+
+function _process_res_args(sys, d::AbstractIdData, lags = -min(length(d) ÷ 10, 100):min(length(d) ÷ 2, 100))
+    sys, d, lags
+end
+
+@recipe function residualplot(p::Residualplot; h::Real=1)
+    sys, d, lags = _process_res_args(p.args...)
+    lagsac = 1:maximum(lags)
+    yh = isfinite(h) ? predict(sys, d; h) : simulate(sys, d)
+    e = d.y - yh
+    plotattributes[:N] = size(e, 2)
+    xc = crosscor(time1(d.u), e', lags, demean = true)
+    ac = autocor(e', lagsac, demean = true)
+    xc = reshape(xc, size(xc, 1), :)
+    layout := (2, 1)
+    seriestype := :corrplot
+    subplot := 1
+    link --> :x
+    @series begin
+        title --> "Residual auto correlation"
+        label --> ""
+        lagsac .* d.Ts, ac
+    end
+    subplot := 2
+    @series begin
+        title --> "Input-residual cross correlation"
+        label --> ""
+        lags .* d.Ts, xc
     end
 end
 

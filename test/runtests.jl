@@ -54,6 +54,11 @@ end
         include("test_estimatex0.jl")
     end
 
+    @testset "prediction" begin
+        @info "Testing prediction"
+        include("test_prediction.jl")
+    end
+
     @testset "basis functions" begin
         @info "Testing basis functions"
         include("test_basis_functions.jl")

@@ -192,6 +192,7 @@ SysFilter(res::AbstractPredictionStateSpace{<:Discrete}, x0 = res.x[:, 1]) = Sys
 
 function predict(sys::AbstractPredictionStateSpace, d::AbstractIdData, x0 = nothing; h=1)
     sys.Ts == d.Ts || throw(ArgumentError("Sample time mismatch between data $(d.Ts) and system $(sys.Ts)"))
+    h == Inf && return simulate(sys, d, x0)
     pd = predictiondata(d)
     pred = observer_predictor(sys; h)
     
