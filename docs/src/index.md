@@ -17,7 +17,7 @@ or in the form of transfer functions
 Y(z) = \dfrac{B(z)}{A(z)}U(z)
 ```
 
-If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the [Examples](@ref) section and in the form of jupyter notebooks [here](
+If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](
 https://github.com/JuliaControl/ControlExamples.jl). An introductory video is available below (system identification example starts around 55 minutes)
 
 ```@raw html

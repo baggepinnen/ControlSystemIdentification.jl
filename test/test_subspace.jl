@@ -320,8 +320,6 @@ end
         @test B ≈ G.B
         @test D ≈ G.D
 
-        Y = ControlSystemIdentification.fft(y, 2)
-        U = ControlSystemIdentification.fft(u, 2)
 
         frd = FRD(w, F)
         df = ControlSystemIdentification.ifreqresp(frd)

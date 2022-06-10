@@ -77,7 +77,7 @@ iddata(y::AbstractArray, u::AbstractArray, Ts::Union{Real,Nothing} = nothing) =
     iddata(y, u,    Ts = nothing)
     iddata(y, u, x, Ts = nothing)
 
-Create a *time-domain** identification data object. 
+Create a **time-domain** identification data object. 
 
 # Arguments
 - `y::AbstractArray`: output data (required)
@@ -103,6 +103,7 @@ If the time-series are multivariate, time is in the *last* dimension.
 - [`ramp_in`](@ref), [`ramp_out`](@ref)
 - `plot`
 - [`specplot`](@ref)
+- [`crosscorplot`](@ref)
 
 # Examples
 ```jldoctest

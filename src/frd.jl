@@ -128,7 +128,8 @@ feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
 
 Return a frequency vector of length `k` for systems with sample time `h`.
 """
-freqvec(h, k) = LinRange(0, π / h, length(k))
+freqvec(h, k::AbstractVector) = freqvec(h, length(k))
+freqvec(h, k::Integer) = LinRange(0, π / h, k)
 
 ControlSystems.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(frd.r, 2) == 1)
 
