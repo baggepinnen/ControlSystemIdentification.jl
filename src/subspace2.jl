@@ -407,6 +407,8 @@ end
 
 Estimate a state-space model using subspace-based identification in the frequency domain.
 
+See the [docs](https://baggepinnen.github.io/ControlSystemIdentification.jl/dev/freq/#Statespace) for an example.
+
 # Arguments:
 - `data`: A frequency-domain identification data object.
 - `Ts`: Sample time at which the data was collected
@@ -632,7 +634,6 @@ julia> T = randn(3,3);
 julia> sys1 = ssrand(1,1,3);
 
 julia> sys2 = ControlSystems.similarity_transform(sys1, T);
-
 
 julia> T2 = find_similarity_transform(sys1, sys2);
 

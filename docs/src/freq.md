@@ -4,7 +4,8 @@ Frequency-domain estimation refers to estimation of linear systems using frequen
 
 ## Nonparametric estimation
 Non-parametric estimation is provided through spectral estimation. To illustrate, we once again simulate some data:
-```julia
+```@example npfreq
+using ControlSystemIdentification, ControlSystems, Plots
 T          = 100000
 h          = 1
 sim(sys,u) = lsim(sys, u, 1:T)[1][:]
@@ -13,9 +14,9 @@ sys        = tf(1,[1,2*0.1,0.1])
 ωn         = sqrt(0.3)
 sysn       = tf(σy*ωn,[1,2*0.1*ωn,ωn^2])
 
-u  = randn(T)
+u  = randn(1, T)
 y  = sim(sys, u)
-yn = y + sim(sysn, randn(size(u)))
+yn = y + sim(sysn, randn(size(u))) # Add noise filtered through sysn
 d  = iddata(y,u,h)
 dn = iddata(yn,u,h)
 ```
@@ -25,7 +26,7 @@ k = coherence(d)  # Should be close to 1 if the system is linear and noise free
 k = coherence(dn) # Slightly lower values are obtained if the system is subject to measurement noise
 ```
 We can also estimate a transfer function using spectral techniques, the main entry point to this is the function [`tfest`](@ref), which returns a transfer-function estimate and an estimate of the power-spectral density of the noise (note, the unit of the PSD is squared compared to a transfer function, hence the `√N` when plotting it in the code below):
-```julia
+```@example npfreq
 G,N = tfest(dn)
 bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
 
@@ -66,6 +67,21 @@ The function [`subspaceid`](@ref) handles frequency-domain data (as well as time
 Ts    = 0.01 # Sample time
 frd_d = c2d(frd_c::FRD, Ts) # Perform a bilinear transformation to discrete-time frequency vector
 Ph, _ = subspaceid(frd_d, Ts, nx)
+```
+
+The following example generates simulated frequency-response data `frd` from a random system, this data could in practice have come from a frequency-response analysis. We then use the data to fit a model using subspace-based identification in the frequency domain using [`subspaceid`](@ref).
+```@example subspacefreq
+using ControlSystemIdentification, ControlSystems, Plots
+ny,nu,nx = 2,3,5                        # number of outputs, inputs and states
+Ts = 1                                  # Sample time
+G = ssrand(ny,nu,nx; Ts, proper=true)   # Generate a random system
+
+N = 200             # Number of frequency points
+w = freqvec(Ts, N)
+frd = FRD(w, G)     # Build a frequency-response data object (this should in practice come from an experiment) 
+
+Gh, x0 = subspaceid(frd, G.Ts, nx; zeroD=true) # Fit frequency response
+sigmaplot([G, Gh], w[2:end], lab=["True system" "Estimated model"])
 ```
 
 ## Model-based spectral estimation
