@@ -374,18 +374,21 @@ function subspaceid(
 end
 
 """
-    subspaceid(frd::FRD, args...; estimate_x0 = false, kwargs...)
+    subspaceid(frd::FRD, args...; estimate_x0 = false, bilinear_transform = false, kwargs...)
 
 If a frequency-reponse data object is supplied
 - The FRD will be automatically converted to an [`InputOutputFreqData`](@ref)
 - `estimate_x0` is by default set to 0.
+- `bilinear_transform` transform the frequency vector to discrete time, see note below.
+
+Note: if the frequency-response data comes from a frequency-response analysis, a bilinear transform of the data is required before estimation. This transform will be applied if `bilinear_transform = true`.
 """
-function subspaceid(frd::FRD, Ts::Real, args...; estimate_x0 = false, weights = nothing, kwargs...)
+function subspaceid(frd::FRD, Ts::Real, args...; estimate_x0 = false, weights = nothing, bilinear_transform = false, kwargs...)
     if weights !== nothing && ndims(frd.r) > 1
         nu = size(frd.r, 2)
         weights = repeat(weights, nu)
     end
-    data = ifreqresp(frd)
+    data = bilinear_transform ? ifreqresp(frd, Ts) : ifreqresp(frd)
     subspaceid(data, Ts, args...; weights, estimate_x0, kwargs...)
 end
 
