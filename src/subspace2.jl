@@ -488,7 +488,7 @@ function subspaceid(
     
     S = svd(L22)
     if nx === :auto
-        nx = sum(sv.S .> sqrt(sv.S[1] * sv.S[end]))
+        nx = sum(S.S .> sqrt(S.S[1] * S.S[end]))
         verbose && @info "Choosing order $nx"
     end
 
