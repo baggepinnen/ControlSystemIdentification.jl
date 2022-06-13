@@ -28,7 +28,7 @@ k = coherence(dn) # Slightly lower values are obtained if the system is subject 
 We can also estimate a transfer function using spectral techniques, the main entry point to this is the function [`tfest`](@ref), which returns a transfer-function estimate and an estimate of the power-spectral density of the noise (note, the unit of the PSD is squared compared to a transfer function, hence the `√N` when plotting it in the code below):
 ```@example npfreq
 G,N = tfest(dn)
-bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], size=(3*800, 600), ylims=(0.1,300), linecolor=:blue)
+bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3), plotphase=false, subplot=[1,2,2], ylims=(0.1,300), linecolor=:blue)
 
 coherenceplot!(dn, subplot=3)
 plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
