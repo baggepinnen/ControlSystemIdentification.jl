@@ -17,7 +17,7 @@ using ComponentArrays,
     StatsBase,
     TotalLeastSquares
 import DSP
-using DSP: filt, filtfilt, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients, hamming, hanning, gaussian, xcorr
+using DSP: filt, filtfilt, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients, hamming, hanning, gaussian, xcorr, resample
 import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
