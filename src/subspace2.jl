@@ -716,7 +716,6 @@ Given a frequency response array `F: ny × nu × nω`, return input-output frequ
 If `Ts > 0` is provided, a bilinear transform from continuous to discrete domain is performed on the frequency vector. This is required for subspace-based identification if the data is obtained by, e.g., frequency-response analysis.
 """
 function ifreqresp(F, ω, Ts=0)
-    F isa PermutedDimsArray && (F = F.parent)
     if ndims(F) == 3
         ny,nu,nw = size(F)
     else

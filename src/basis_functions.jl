@@ -193,9 +193,9 @@ function basis_responses(basis::AbstractStateSpace, ω; inverse=false)
     inverse && (basis = inv(basis))
     Gs = freqresp(basis, ω)
     if ninputs(basis) > 1
-        vec.(eachslice(Gs, dims=3))
-    else
         vec.(eachslice(Gs, dims=2))
+    else
+        vec.(eachslice(Gs, dims=1))
     end
 end
 

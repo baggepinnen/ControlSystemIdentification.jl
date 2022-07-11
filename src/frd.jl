@@ -12,7 +12,7 @@ Represents frequency-response data. `w` holds the frequency vector and `r` the r
 - [`tfest`](@ref) to estimate a rational model
 - Indexing in the frequency domain using, e.g., `G[1Hz : 5Hz]`, `G[1rad : 5rad]`
 
-If `r` represents a MIMO frequency response, the dimensions are `ny × nu × nω`. `freqresp` returns a `PermutedDimsArray` whose `.parent` field follows this convention.
+If `r` represents a MIMO frequency response, the dimensions are `ny × nu × nω`.
 """
 struct FRD{WT<:AbstractVector,RT<:AbstractArray} <: LTISystem{Continuous}
     w::WT
@@ -40,13 +40,9 @@ Generate a frequency-response data object by evaluating the frequency response o
 """
 function FRD(w, s::LTISystem)
     if ControlSystems.issiso(s)
-        FRD(w, freqresp(s, w)[:])
+        FRD(w, freqrespv(s, w))
     else
-        if s isa AbstractStateSpace
-            FRD(w, freqresp(s, w).parent)
-        else
-            FRD(w, permutedims(freqresp(s, w), (2,3,1)))
-        end
+        FRD(w, freqresp(s, w))
     end
 end
 Base.vec(f::FRD) = f.r
@@ -120,8 +116,8 @@ feedback(P::Number, K::FRD) = FRD(K.w, P ./ (1.0 .+ P .* vec(K)))
 feedback(P, K::FRD) = FRD(K.w, vec(P) ./ (1.0 .+ vec(P) .* vec(K)))
 feedback(P::FRD, K::FRD) = feedback(P, vec(K))
 
-feedback(P::FRD, K::LTISystem) = feedback(P, freqresp(K, P.w)[:, 1, 1])
-feedback(P::LTISystem, K::FRD) = feedback(freqresp(P, K.w)[:, 1, 1], K)
+feedback(P::FRD, K::LTISystem) = feedback(P, freqrespv(K, P.w))
+feedback(P::LTISystem, K::FRD) = feedback(freqrespv(P, K.w), K)
 
 """
     freqvec(h, k)
