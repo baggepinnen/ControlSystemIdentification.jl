@@ -379,7 +379,7 @@ function _process_res_args(sys, d::AbstractIdData, lags = -min(length(d) ÷ 10, 
     sys, d, lags
 end
 
-@recipe function residualplot(p::Residualplot; h::Real=1)
+@recipe function residualplot(p::Residualplot; h=1)
     sys, d, lags = _process_res_args(p.args...)
     lagsac = 1:maximum(lags)
     yh = isfinite(h) ? predict(sys, d; h) : simulate(sys, d)

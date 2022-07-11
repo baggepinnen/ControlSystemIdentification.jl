@@ -342,7 +342,7 @@ end
 #         else
 #             sys = vec2sys(p, p0.ny, p0.nu)
 #         end
-#         F = freqresp(sys, data.w).parent
+#         F = freqresp(sys, data.w)
 #         F .-= data.r
 #         mean(abs2, F)
 #     end
@@ -364,7 +364,7 @@ end
 # using ControlSystems, ControlSystemIdentification, Optim
 # G = modal_form(ssrand(2,3,4))[1]
 # w = exp10.(LinRange(-2, 2, 30))
-# r = freqresp(G, w).parent
+# r = freqresp(G, w)
 # data = FRD(w, r)
 
 

@@ -126,7 +126,7 @@ N = 200                                 # Number of frequency points
 w = range(0, stop=pi/Ts-1/N, length=N)  # Frequency vector
 
 frd = FRD(w, G);                        # Build a frequency-response data object
-@test frd.r == freqresp(G, w).parent
+@test frd.r == freqresp(G, w)
 @test frd.w == w
 
 # Tests for FRD printing

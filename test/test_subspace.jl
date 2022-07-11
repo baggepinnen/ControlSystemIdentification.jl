@@ -296,7 +296,7 @@ end
         y, t, x = ControlSystems.lsim(G, u)
 
         w = exp10.(LinRange(-4, log10(2pi*0.5), 200))
-        F = freqresp(G, w).parent
+        F = freqresp(G, w)
         Y, U, Ω = ControlSystemIdentification.ifreqresp(F, w)
 
         for j = 1:N
@@ -345,7 +345,7 @@ end
     y, t, x = ControlSystems.lsim(G, u)
     
     w = exp10.(LinRange(-4, log10(2pi*0.5), 200))
-    F = freqresp(G, w).parent
+    F = freqresp(G, w)
     F = F .+ 1 .* randn.(ComplexF64)
     
     frd = FRD(w, F)
