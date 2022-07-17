@@ -1,3 +1,16 @@
+```@raw html
+<p style="text-align:center">
+
+<img src="https://avatars.githubusercontent.com/u/10605979?s=400&u=7b2efdd404c4db3b3f067f04c305d40c025a8961&v=4" alt="JuliaControl logo">
+
+<br> 
+
+<a class="github-button" href="https://github.com/baggepinnen/ControlSystemIdentification.jl" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-show-count="true" aria-label="Star baggepinnen/ControlSystemIdentification.jl on GitHub">Star</a>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+</p> 
+```
+
 # ControlSystemIdentification
 
 [![CI](https://github.com/baggepinnen/ControlSystemIdentification.jl/workflows/CI/badge.svg)](https://github.com/baggepinnen/ControlSystemIdentification.jl/actions)
