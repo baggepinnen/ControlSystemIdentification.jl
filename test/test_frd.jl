@@ -54,7 +54,7 @@ end
 
 
 ω = exp10.(LinRange(-2, 2, 100))
-P, C = tf(1.0, [1, 1]), pid(kp = 1, ki = 1)
+P, C = tf(1.0, [1, 1]), pid(1, 1)
 S, D, N, T = gangoffour(P, C)
 S2, D2, N2, T2 = gangoffour(FRD(ω, P), FRD(ω, C))
 

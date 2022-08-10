@@ -222,7 +222,7 @@ function newpem(
         zeros(T, nx, ny),
     )
     pred && !isstable(observer_predictor(sysp_opt)) && @warn("Estimated predictor dynamics A-KC is unstable")
-    e2, _ = pred ? lsim(prediction_error(sysp_opt), pd) : lsim(sys_opt, d)
+    e2, _ = pred ? lsim(prediction_error_filter(sysp_opt), pd) : lsim(sys_opt, d)
     R = cov(e2, dims = 2)
     mul!(sysp_opt.S, K_opt, R)
     Q0 = sysp_opt.S * K_opt'
