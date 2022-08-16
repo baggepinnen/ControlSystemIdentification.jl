@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "2.4.0"
+version = "2.4.1"
 
 [deps]
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
@@ -26,7 +26,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 
 [compat]
-ComponentArrays = "0.8, 0.9, 0.10, 0.11, 0.12"
+ComponentArrays = "0.8, 0.9, 0.10, 0.11, 0.12, 0.13"
 ControlSystems = "1"
 DSP = "0.6.1, 0.7"
 FFTW = "1.1"
