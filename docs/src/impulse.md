@@ -37,8 +37,3 @@ plot!(reshape(H, sys.nu+sys.ny, :)', lab="OKID Estiamte", seriestype=:steppre, l
 
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl) for more details.
-
-```@docs
-ControlSystemIdentification.impulseest
-ControlSystemIdentification.impulseestplot
-```

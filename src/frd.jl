@@ -133,7 +133,7 @@ ControlSystems.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(f
     c2d(w::AbstractVector{<:Real}, Ts; w_prewarp = 0)
     c2d(frd::FRD, Ts; w_prewarp = 0)
 
-Transform continuous-time frequency vector `w` or frequency-response data `frd` from continuous to discrete time using a bilinear (Tustin) transform. This is useful in cases where a frequency response is obtained through frequency-response analysis, and the function [`subspaceidf`](@ref) is to be used.
+Transform continuous-time frequency vector `w` or frequency-response data `frd` from continuous to discrete time using a bilinear (Tustin) transform. This is useful in cases where a frequency response is obtained through frequency-response analysis, and the function [`subspaceid`](@ref) is to be used.
 """
 function ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp=0)
     a = w_prewarp == 0 ? Ts/2 : tan(w_prewarp*Ts/2)/w_prewarp
