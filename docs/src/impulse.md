@@ -1,5 +1,5 @@
 # Impulse-response estimation
-The functions `impulseest(h,y,u,order)` and [`impulseestplot`](@ref) perform impulse-response estimation by fitting a high-order FIR model. The function [`okid`](@ref) estimates Markov parameters and is applicable to MIMO systems.
+The functions [`impulseest`](@ref)`(data, order; λ=0, estimator=ls)` and [`impulseestplot`](@ref) perform impulse-response estimation by fitting a high-order FIR model. The function [`okid`](@ref) estimates Markov parameters and is applicable to MIMO systems.
 
 SISO example
 ```julia
