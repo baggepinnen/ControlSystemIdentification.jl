@@ -1,5 +1,5 @@
-using ControlSystemIdentification, Optim, ControlSystems
-using ControlSystems.DemoSystems: resonant
+using ControlSystemIdentification, Optim, ControlSystemsBase
+using ControlSystemsBase.DemoSystems: resonant
 Random.seed!(1)
 T = 1000
 sys = c2d(resonant(ω0 = 0.1) * tf(1, [0.1, 1]), 1)# generate_system(nx, nu, ny)
@@ -181,7 +181,7 @@ end
 
 
 using ControlSystemIdentification, Optim
-using ControlSystems.DemoSystems: resonant
+using ControlSystemsBase.DemoSystems: resonant
 Random.seed!(1)
 T = 1000
 sys = c2d(resonant(ω0 = 0.1) * tf(1, [0.1, 1]), 1)# generate_system(nx, nu, ny)

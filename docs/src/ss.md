@@ -64,7 +64,7 @@ The result of the identification with [`newpem`](@ref) is a custom type with ext
 ### Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences using the function [`newpem`](@ref).
 ```@example ss
-using ControlSystemIdentification, ControlSystems, Random, LinearAlgebra
+using ControlSystemIdentification, ControlSystemsBase Random, LinearAlgebra
 using ControlSystemIdentification: newpem
 sys = c2d(tf(1, [1, 0.5, 1]) * tf(1, [1, 1]), 0.1)
 
@@ -95,7 +95,7 @@ Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to op
 
 
 ## Filtering, prediction and simulation
-Models can be simulated using `lsim` from ControlSystems.jl and using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
+Models can be simulated using `lsim` from ControlSystemsBase.jl and using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
 
 Furthermore, we have the utility functions below
 - [`predict`](@ref)`(sys, d, x0=zeros; h=1)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter. `h` denotes the prediction horizon.

@@ -1,7 +1,7 @@
 module ControlSystemIdentification
 
 using ComponentArrays,
-    ControlSystems,
+    ControlSystemsBase,
     DelimitedFiles,
     FFTW,
     FillArrays,
@@ -21,7 +21,7 @@ using DSP: filt, filtfilt, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterwo
 import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
-import ControlSystems: ninputs, noutputs, nstates
+import ControlSystemsBase: ninputs, noutputs, nstates
 import StatsBase.residuals
 import MatrixEquations
 import LowLevelParticleFilters: simulate
@@ -103,7 +103,7 @@ function predict(sys, y, u, x0 = nothing; h=1)
     yh = [model(yt, ut) for (yt, ut) in observations(y, u)]
     oftype(y, yh)
 end
-predict(sys::ControlSystems.TransferFunction, args...; kwargs...) = predict(ss(sys), args...; kwargs...)
+predict(sys::ControlSystemsBase.TransferFunction, args...; kwargs...) = predict(ss(sys), args...; kwargs...)
 
 get_x0(::Nothing, sys, d::AbstractIdData) = estimate_x0(sys, d)
 get_x0(::Nothing, sys, u::AbstractArray) = zeros(sys.nx)
@@ -157,7 +157,7 @@ norm(x0-x0h)    # Should be small
 function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
-    T = ControlSystems.numeric_type(sys)
+    T = ControlSystemsBase.numeric_type(sys)
     y = output(d)
     u = input(d)
     nx,p,N = sys.nx, sys.ny, length(d)
@@ -200,7 +200,7 @@ estimate_x0(G::TransferFunction, args...; kwargs...) = estimate_x0(ss(G), args..
 
 Predict AR model
 """
-function predict(G::ControlSystems.TransferFunction, y; h=1)
+function predict(G::ControlSystemsBase.TransferFunction, y; h=1)
     h == 1 || throw(ArgumentError("prediction horizon h > 1 not supported for sys"))
     _, a, _, _ = params(G)
     yr, A = getARregressor(vec(output(y)), length(a))
@@ -223,9 +223,9 @@ function simulate(sys, u, x0 = nothing)
     end
     oftype(u, yh)
 end
-simulate(sys::ControlSystems.TransferFunction, args...) = simulate(ss(sys), args...)
+simulate(sys::ControlSystemsBase.TransferFunction, args...) = simulate(ss(sys), args...)
 
-function ControlSystems.lsim(sys::AbstractStateSpace, d::AbstractIdData; x0 = nothing)
+function ControlSystemsBase.lsim(sys::AbstractStateSpace, d::AbstractIdData; x0 = nothing)
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     
     if d.ny == sys.ny
@@ -251,11 +251,11 @@ The model neglects u and is given by
 x' = Ax + Kv\\\\
 y = Cx + v
 ```
-Also called the "innovation form". This function calls `ControlSystems.innovation_form`.
+Also called the "innovation form". This function calls `ControlSystemsBase.innovation_form`.
 """
 noise_model(sys::AbstractPredictionStateSpace) = innovation_form(sys)
 
-function ControlSystems.innovation_form(sys::AbstractPredictionStateSpace)
+function ControlSystemsBase.innovation_form(sys::AbstractPredictionStateSpace)
     innovation_form(sys, sys.K)
 end
 
@@ -274,9 +274,9 @@ with the input equation [B-KD K] * [u; y]
 
 See also `noise_model` and `prediction_error_filter`.
 """
-function ControlSystems.observer_predictor(sys::AbstractPredictionStateSpace; kwargs...)
+function ControlSystemsBase.observer_predictor(sys::AbstractPredictionStateSpace; kwargs...)
     K = sys.K
-    ControlSystems.observer_predictor(sys, K; kwargs...)
+    ControlSystemsBase.observer_predictor(sys, K; kwargs...)
 end
 
 """
@@ -297,7 +297,7 @@ Return a filter that takes `[u; y]` as input and outputs the prediction error `e
 `h ≥ 1` is the prediction horizon. See function [`predictiondata`](@ref) to generate an `iddata` that has `[u; y]` as inputs.
 """
 function prediction_error_filter(sys::AbstractStateSpace, args...; kwargs...)
-    G = ControlSystems.observer_predictor(sys, args...; kwargs...)
+    G = ControlSystemsBase.observer_predictor(sys, args...; kwargs...)
     ss([zeros(sys.ny, sys.nu) I(sys.ny)], sys.Ts) - G
 end
 
@@ -318,9 +318,9 @@ end
 
 Returns the measurement-feedback controller that takes in `y` and forms the control signal `u = -Lx̂`. See also `ff_controller`. 
 """
-function ControlSystems.observer_controller(sys::AbstractPredictionStateSpace, L)
+function ControlSystemsBase.observer_controller(sys::AbstractPredictionStateSpace, L)
     K = sys.K
-    ControlSystems.observer_controller(sys.sys, L, K)
+    ControlSystemsBase.observer_controller(sys.sys, L, K)
 end
 
 """
@@ -339,8 +339,8 @@ function ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_co
 end
 
 """
-    Qd = ControlSystems.c2d(sys::StateSpace{Discrete}, Q::Matrix)
-    Qd, Rd = ControlSystems.c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix)
+    Qd = ControlSystemsBase.c2d(sys::StateSpace{Discrete}, Q::Matrix)
+    Qd, Rd = ControlSystemsBase.c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix)
 
 Sample a continuous-time covariance matrix to fit the provided discrete-time system.
 The measurement covariance `R` may also be provided
@@ -353,7 +353,7 @@ Patrik Axelsson and Fredrik Gustafsson
 
 On singular covariance matrices: The traditional double integrator with covariance matrix `Q = diagm([0,σ²])` can not be sampled with this method. Instead, the input matrix ("Cholesky factor") of `Q` must be manually kept track of, e.g., the noise of variance `σ²` enters like `N = [0, 1]` which is sampled using ZoH and becomes `Nd = [1/2 Ts^2; Ts]` which results in the covariance matrix `σ² * Nd * Nd'`. 
 """
-function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qc::AbstractMatrix, R=nothing)
+function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qc::AbstractMatrix, R=nothing)
     Ad  = sys.A
     Ac  = real(log(Ad)./sys.Ts)
     h   = sys.Ts
@@ -372,7 +372,7 @@ function ControlSystems.c2d(sys::AbstractStateSpace{<:ControlSystems.Discrete}, 
     end
 end
 
-function ControlSystems.c2d(sys::AbstractPredictionStateSpace{ControlSystems.Continuous}, Ts::Real; kwargs...)
+function ControlSystemsBase.c2d(sys::AbstractPredictionStateSpace{ControlSystemsBase.Continuous}, Ts::Real; kwargs...)
     sys.S === nothing || iszero(sys.S) || @warn "c2d does not handle a non-zero cross covariance S, S will be set to zero"
     nx, nu, ny = sys.nx, sys.nu, sys.ny
     sysd = c2d(sys.sys, Ts)
@@ -387,7 +387,7 @@ function ControlSystems.c2d(sys::AbstractPredictionStateSpace{ControlSystems.Con
 end
 
 
-function ControlSystems.d2c(sys::AbstractPredictionStateSpace{<:ControlSystems.Discrete})
+function ControlSystemsBase.d2c(sys::AbstractPredictionStateSpace{<:ControlSystemsBase.Discrete})
     sys.S === nothing || iszero(sys.S) || @warn "d2c does not handle a non-zero cross covariance S, S will be set to zero"
     nx, nu, ny = sys.nx, sys.nu, sys.ny
     Qc = d2c(sys, sys.Q)
@@ -402,7 +402,7 @@ function ControlSystems.d2c(sys::AbstractPredictionStateSpace{<:ControlSystems.D
 end
 
 """
-    d2c(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qd::AbstractMatrix)
+    d2c(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qd::AbstractMatrix)
 
 Resample discrete-time covariance matrix belonging to `sys` to the equivalent continuous-time matrix.
 
@@ -413,7 +413,7 @@ Differential Lyapunov Equation With
 Applications to Kalman Filtering
 Patrik Axelsson and Fredrik Gustafsson
 """
-function ControlSystems.d2c(sys::AbstractStateSpace{<:ControlSystems.Discrete}, Qd::AbstractMatrix)
+function ControlSystemsBase.d2c(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qd::AbstractMatrix)
     Ad = sys.A
     Ac = real(log(Ad)./sys.Ts)
     C = Symmetric(Ac*Qd + Qd*Ac')

@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 n = 5
 w = exp10.(LinRange(-2, 3, 1000))
 av = exp10.(LinRange(-2, 3, n))

@@ -1,5 +1,5 @@
-using ControlSystemIdentification, ControlSystems
-using ControlSystems: isdiscrete
+using ControlSystemIdentification, ControlSystemsBase
+using ControlSystemsBase: isdiscrete
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =
     maximum(abs, log10.(abs2.(freqresp(model, wtest))) - log10.(abs2.(freqresp(G, wtest))))
@@ -261,7 +261,7 @@ end
     @info "Testing similarity transform"
     T = randn(3,3)
     sys1 = ssrand(1,1,3)
-    sys2 = ControlSystems.similarity_transform(sys1, T)
+    sys2 = ControlSystemsBase.similarity_transform(sys1, T)
     T2 = ControlSystemIdentification.find_similarity_transform(sys1, sys2)
     @test T2 ≈ T atol=1e-8
 
@@ -293,7 +293,7 @@ end
     for zeroD = (true, false)
         @show zeroD
         G = ssrand(ny,nu,nx, Ts=1, proper=zeroD)
-        y, t, x = ControlSystems.lsim(G, u)
+        y, t, x = ControlSystemsBase.lsim(G, u)
 
         w = exp10.(LinRange(-4, log10(2pi*0.5), 200))
         F = freqresp(G, w)
@@ -342,7 +342,7 @@ end
     ny,nu,nx = 3,2,3
     u = randn(nu, N)
     G = ssrand(ny,nu,nx, Ts=1, proper=zeroD)
-    y, t, x = ControlSystems.lsim(G, u)
+    y, t, x = ControlSystemsBase.lsim(G, u)
     
     w = exp10.(LinRange(-4, log10(2pi*0.5), 200))
     F = freqresp(G, w)

@@ -29,7 +29,7 @@ We start by defining a model of the true system, a function that simulates some 
 The ARX and PEM methods are theoretically unbiased in the presence of output feedback, see [^Ljung, Ch 13], while the subspace-based method is not. (Note: the subspace-based method is used to form the initial guess for the iterative PEM algorithm)
 
 ```@example closedloop
-using ControlSystems, ControlSystemIdentification, Plots
+using ControlSystemsBase ControlSystemIdentification, Plots
 G = tf(1, [1, -0.9], 1) # True system
 
 function generate_data(u; T)

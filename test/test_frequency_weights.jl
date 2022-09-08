@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems, Statistics, Random
+using ControlSystemIdentification, ControlSystemsBase, Statistics, Random
 Random.seed!(0)
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) = quantile(

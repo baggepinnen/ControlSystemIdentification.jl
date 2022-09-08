@@ -1,4 +1,4 @@
-import ControlSystems: feedback
+import ControlSystemsBase: feedback
 
 """
     FRD(w, r)
@@ -39,7 +39,7 @@ import Base: +, -, *, /, length, sqrt, getindex
 Generate a frequency-response data object by evaluating the frequency response of `sys` at frequencies `w`.
 """
 function FRD(w, s::LTISystem)
-    if ControlSystems.issiso(s)
+    if ControlSystemsBase.issiso(s)
         FRD(w, freqrespv(s, w))
     else
         FRD(w, freqresp(s, w))
@@ -63,7 +63,7 @@ Base.vec(f::FRD) = f.r
 
 -(f::FRD) = FRD(f.w, -f.r)
 length(f::FRD) = length(f.w)
-Base.size(f::FRD) = (1, 1) # Size in the ControlSystems sense
+Base.size(f::FRD) = (1, 1) # Size in the ControlSystemsBasesense
 Base.lastindex(f::FRD) = length(f)
 function Base.getproperty(f::FRD, s::Symbol)
     s === :Ts && return π / maximum(f.w)
@@ -81,12 +81,12 @@ function Base.show(io::IO, frd::FRD)
     show(io, MIME("text/plain"), frd.r)
 end
 
-ControlSystems.noutputs(f::FRD) = 1
-ControlSystems.ninputs(f::FRD) = 1
+ControlSystemsBase.noutputs(f::FRD) = 1
+ControlSystemsBase.ninputs(f::FRD) = 1
 
 sqrt(f::FRD) = FRD(f.w, sqrt.(f.r))
 function getindex(f::FRD, i)
-    if ControlSystems.issiso(f)
+    if ControlSystemsBase.issiso(f)
         FRD(f.w[i], f.r[i])
     else
         FRD(f.w[i], f.r[:,:,i])
@@ -127,7 +127,7 @@ Return a frequency vector of length `k` for systems with sample time `h`.
 freqvec(h, k::AbstractVector) = freqvec(h, length(k))
 freqvec(h, k::Integer) = LinRange(0, π / h, k)
 
-ControlSystems.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(frd.r, 2) == 1)
+ControlSystemsBase.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(frd.r, 2) == 1)
 
 """
     c2d(w::AbstractVector{<:Real}, Ts; w_prewarp = 0)
@@ -135,12 +135,12 @@ ControlSystems.issiso(frd::FRD) = ndims(frd.r) == 1 || (size(frd.r, 1) == size(f
 
 Transform continuous-time frequency vector `w` or frequency-response data `frd` from continuous to discrete time using a bilinear (Tustin) transform. This is useful in cases where a frequency response is obtained through frequency-response analysis, and the function [`subspaceid`](@ref) is to be used.
 """
-function ControlSystems.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp=0)
+function ControlSystemsBase.c2d(w::AbstractVector{<:Real}, Ts; w_prewarp=0)
     a = w_prewarp == 0 ? Ts/2 : tan(w_prewarp*Ts/2)/w_prewarp
     @. 2*atan(w*a)
 end
 
-ControlSystems.c2d(f::FRD, Ts::Real; kwargs...) = FRD(c2d(f.w, Ts; kwargs...), f.r)
+ControlSystemsBase.c2d(f::FRD, Ts::Real; kwargs...) = FRD(c2d(f.w, Ts; kwargs...), f.r)
 
 
 """

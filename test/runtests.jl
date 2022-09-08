@@ -3,7 +3,7 @@ if haskey(ENV, "CI")
     ENV["GKSwstype"] = "100" # gr segfault workaround
 end
 
-using ControlSystemIdentification, ControlSystems, Optim, Plots, TotalLeastSquares
+using ControlSystemIdentification, ControlSystemsBase, Optim, Plots, TotalLeastSquares
 import DSP
 using DSP: spectrogram, hanning
 using Test, Random, LinearAlgebra, Statistics

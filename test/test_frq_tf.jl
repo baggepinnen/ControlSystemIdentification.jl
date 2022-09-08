@@ -1,4 +1,4 @@
-using Optim, ControlSystems, ControlSystemIdentification
+using Optim, ControlSystemsBase, ControlSystemIdentification
 
 
 ## Generate fake data

@@ -8,7 +8,7 @@ where $T$ is the temperature, $u$ the control signal and $c$ a constant offset, 
 ```
 This is a simple first-order transfer function which can be estimated with, e.g., the functions [`arx`](@ref) or [`plr`](@ref). To illustrate this, we create such a system and simulate some data from it.
 ```@example temp
-using ControlSystems, ControlSystemIdentification, Plots
+using ControlSystemsBase ControlSystemIdentification, Plots
 w = 2pi .* exp10.(LinRange(-3, log10(0.5), 500))
 G0 = tf(1, [10, 1]) # The true system, 10ẋ = -x + u
 G = c2d(G0, 1)      # discretize with a sample time of 1s

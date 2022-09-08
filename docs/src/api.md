@@ -9,5 +9,5 @@ Private = false
 ```
 ```@docs
 DelimitedFiles.writedlm
-ControlSystems.c2d
+ControlSystemsBase.c2d
 ```

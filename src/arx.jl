@@ -129,7 +129,7 @@ Calculates the residuals `v = Ay - Bu` of an ARX process and InputOutputData d. 
 # Example:
 ```jldoctest
 julia> ARX = tf(1, [1, -1], 1)
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Int64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Int64}}
   1
 -----
 z - 1
@@ -231,7 +231,7 @@ julia> e = [-0.2; zeros(N-1)] # noise e
 [...]
 
 julia> G = tf([1, 0], [1, -0.9], 1) # AR transfer function
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
    1.0z
 ----------
 1.0z - 0.9
@@ -244,7 +244,7 @@ julia> y = lsim(G, e, 1:N)[1][:] # Get output of AR transfer function from input
 [...]
 
 julia> Gest = ar(iddata(y), 1) # Estimate AR transfer function from output y
-TransferFunction{Discrete{Float64}, ControlSystems.SisoRational{Float64}}
+TransferFunction{Discrete{Float64}, ControlSystemsBase.SisoRational{Float64}}
           1.0z
 -------------------------
 1.0z - 0.8999999999999998
@@ -310,7 +310,7 @@ julia> sim(G, u) = lsim(G, u, 1:N)[1][:]
 sim (generic function with 1 method)
 
 julia> A = tf([1, -0.8], [1, 0], 1)
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
 1.0z - 0.8
 ----------
    1.0z
@@ -319,7 +319,7 @@ Sample Time: 1 (seconds)
 Discrete-time transfer function model
 
 julia> B = tf([0, 1], [1, 0], 1)
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Int64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Int64}}
 1
 -
 z
@@ -328,7 +328,7 @@ Sample Time: 1 (seconds)
 Discrete-time transfer function model
 
 julia> G = minreal(B / A)
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
    1.0
 ----------
 1.0z - 0.8
@@ -337,7 +337,7 @@ Sample Time: 1 (seconds)
 Discrete-time transfer function model
 
 julia> D = tf([1, 0.7], [1, 0], 1)
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
 1.0z + 0.7
 ----------
    1.0z
@@ -346,7 +346,7 @@ Sample Time: 1 (seconds)
 Discrete-time transfer function model
 
 julia> H = 1 / D
-TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
    1.0z
 ----------
 1.0z + 0.7
@@ -367,13 +367,13 @@ julia> na, nb , nd = 1, 1, 1
 (1, 1, 1)
 
 julia> Gest, Hest, res = arxar(d, na, nb, nd)
-(G = TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+(G = TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
    0.9987917259291642
 -------------------------
 1.0z - 0.7937837464682017
 
 Sample Time: 1 (seconds)
-Discrete-time transfer function model, H = TransferFunction{Discrete{Int64}, ControlSystems.SisoRational{Float64}}
+Discrete-time transfer function model, H = TransferFunction{Discrete{Int64}, ControlSystemsBase.SisoRational{Float64}}
           1.0z
 -------------------------
 1.0z + 0.7019519225937721
@@ -487,7 +487,7 @@ function arxar_predictor(G, H)
     # Hs = ss(tf(1, A, Ts)*H2) # not good idea
     A,B,C,D = ssdata(Ge)
     Ad,Bd,Cd,Dd = ssdata(Hs)
-    Ae = ControlSystems.blockdiag(A, Ad)
+    Ae = ControlSystemsBase.blockdiag(A, Ad)
     Ae[1:Hs.ny, Ge.nx+1:end] .= Cd
     Be = [B; 0Bd]
     Ce = [C 0Cd]
@@ -724,8 +724,8 @@ end
 tfest(data, G::LTISystem, args...; kwargs...) = tfest(tfest(data)[1], G, args...; kwargs...)
 
 function tfest(data::FRD, G::LTISystem, args...; kwargs...)
-    ControlSystems.issiso(G) || throw(ArgumentError("Can only fit SISO model to FRD"))
-    ControlSystems.isdiscrete(G) && throw(DomainError("Continuous-time model expected"))
+    ControlSystemsBase.issiso(G) || throw(ArgumentError("Can only fit SISO model to FRD"))
+    ControlSystemsBase.isdiscrete(G) && throw(DomainError("Continuous-time model expected"))
     b, a = numvec(G)[], denvec(G)[]
     tfest(data, (; b = b, a = a), args...; kwargs...)
 end
@@ -872,7 +872,7 @@ end
 
 
 # Helper constructor to make a MISO system after MISO arx estimation
-function ControlSystems.tf(
+function ControlSystemsBase.tf(
     b::AbstractVector{<:AbstractVector{<:Number}},
     a::AbstractVector{<:Number},
     h,
@@ -1016,10 +1016,10 @@ w       = exp10.(LinRange(-3,log10(π/Δt),100))
 mag     = bode(Glsp,w)[1][:]
 errorbarplot(w,mag,0.01; yscale=:log10, xscale=:log10, layout=3, subplot=1, lab="ls")
 
-See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl)
+See full example [here](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/ControlSystemsBase.jl)
 ```
 """
-function ControlSystems.TransferFunction(
+function ControlSystemsBase.TransferFunction(
     T::Type{<:MonteCarloMeasurements.AbstractParticles},
     G::TransferFunction,
     Σ::AbstractMatrix,
@@ -1045,7 +1045,7 @@ function ControlSystems.TransferFunction(
     arxtf = tf(b, a, G.Ts)
 end
 
-# function ControlSystems.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, p::AbstractMatrix)
+# function ControlSystemsBase.TransferFunction(T::Type{<:MonteCarloMeasurements.AbstractParticles}, G::TransferFunction, p::AbstractMatrix)
 #       wm, am, bm = params(G)
 #       na,nb      = length(am), length(bm)
 #       p          = T(p .+ wm')
@@ -1053,7 +1053,7 @@ end
 #       arxtf      = tf(b,a,G.Ts)
 # end
 
-function DSP.filt(tf::ControlSystems.TransferFunction, y)
+function DSP.filt(tf::ControlSystemsBase.TransferFunction, y)
     b, a = numvec(tf)[], denvec(tf)[]
     filt(b, a, y)
 end
