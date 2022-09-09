@@ -4,7 +4,7 @@ We will get the data from [STADIUS's Identification Database](https://homes.esat
 
 ```@example robot
 using DelimitedFiles, Plots
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 
 url = "https://ftp.esat.kuleuven.be/pub/SISTA/data/mechanical/robot_arm.dat.gz"
 zipfilename = "/tmp/flex.dat.gz"

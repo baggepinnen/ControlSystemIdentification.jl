@@ -13,7 +13,7 @@ There exist several methods for identification of statespace models, [`subspacei
 ## Subspace-based identification using `n4sid` and `subspaceid`
 In this example we will estimate a statespace model using the [`n4sid`](@ref) method. This function returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `sys.sys`.
 ```@example ss
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 Ts = 0.1
 G  = c2d(DemoSystems.resonant(), Ts)
 u  = randn(1,1000)
@@ -64,7 +64,7 @@ The result of the identification with [`newpem`](@ref) is a custom type with ext
 ### Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences using the function [`newpem`](@ref).
 ```@example ss
-using ControlSystemIdentification, ControlSystemsBase Random, LinearAlgebra
+using ControlSystemIdentification, ControlSystemsBase, Random, LinearAlgebra
 using ControlSystemIdentification: newpem
 sys = c2d(tf(1, [1, 0.5, 1]) * tf(1, [1, 1]), 0.1)
 

@@ -20,7 +20,7 @@ plot!(impulse(sys,50), lab="True system", l=:dash)
 
 MIMO example
 ```@example
-using ControlSystemIdentification, ControlSystemsBase Plots
+using ControlSystemIdentification, ControlSystemsBase, Plots
 T = 200
 h = 1
 t = 0:h:T-h
