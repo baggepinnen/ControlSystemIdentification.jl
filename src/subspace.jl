@@ -270,7 +270,7 @@ function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilt
     LowLevelParticleFilters.smooth(kf, M, U, Y)
 end
 
-function ControlSystems.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
+function ControlSystemsBase.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
     sysr, G, T = balreal(sys.sys, args...; kwargs...)
     nx = sysr.nx
     K = T*sys.K # similarity transform is reversed here compared to below
@@ -278,7 +278,7 @@ function ControlSystems.balreal(sys::AbstractPredictionStateSpace, args...; kwar
     PredictionStateSpace(sysr, K, Q, sys.R), G, T
 end
 
-function ControlSystems.baltrunc(sys::AbstractPredictionStateSpace, args...; kwargs...)
+function ControlSystemsBase.baltrunc(sys::AbstractPredictionStateSpace, args...; kwargs...)
     sysr, G, T = baltrunc(sys.sys, args...; kwargs...)
     nx = sysr.nx
     K = (T*sys.K)[1:nx, :] # similarity transform is reversed here compared to below
@@ -286,7 +286,7 @@ function ControlSystems.baltrunc(sys::AbstractPredictionStateSpace, args...; kwa
     PredictionStateSpace(sysr, K, Q, sys.R), G, T
 end
 
-function ControlSystems.similarity_transform(sys::AbstractPredictionStateSpace, T; kwargs...)
+function ControlSystemsBase.similarity_transform(sys::AbstractPredictionStateSpace, T; kwargs...)
     syss = similarity_transform(sys.sys, T; kwargs...)
     nx = syss.nx
     K = T\sys.K

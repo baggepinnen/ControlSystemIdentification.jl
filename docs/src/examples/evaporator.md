@@ -7,7 +7,7 @@ The example comes from [STADIUS's Identification Database](https://homes.esat.ku
 
 ```@example evaporator
 using DelimitedFiles, Plots
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 
 url = "https://ftp.esat.kuleuven.be/pub/SISTA/data/process_industry/evaporator.dat.gz"
 zipfilename = "/tmp/evaporator.dat.gz"

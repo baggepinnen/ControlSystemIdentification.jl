@@ -156,7 +156,7 @@ end
     xscale --> :log10
     xguide --> (hz ? "Frequency [Hz]" : "Frequency [rad/s]")
     label --> ""
-    if ControlSystems.issiso(frd)
+    if ControlSystemsBase.issiso(frd)
         r = reshape(frd.r, 1, 1, :)
     else
         r = frd.r
@@ -181,7 +181,7 @@ end
                     subplot   --> s2i(2i,j)
                     inds = findall(x -> x == 0, frd.w)
                     useinds = setdiff(1:length(frd.w), inds)
-                    (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* ControlSystems.unwrap(angle.(r[i,j,useinds]))
+                    (hz ? 1 / (2π) : 1) .* frd.w[useinds], 180/pi .* ControlSystemsBase.unwrap(angle.(r[i,j,useinds]))
                 end
             end
         end
@@ -406,7 +406,7 @@ end
 end
 
 
-function ControlSystems.gangoffour(P::FRD, C::FRD, ω = nothing)
+function ControlSystemsBase.gangoffour(P::FRD, C::FRD, ω = nothing)
     ω === nothing || ω == P.ω || error("Inconsistent frequency vectors")
     S = sensitivity(P, C)
     D = (P * S)

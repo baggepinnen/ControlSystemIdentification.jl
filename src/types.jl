@@ -144,11 +144,11 @@ Create a **frequency-domain** input-output data object. `w` is expected to be in
 iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector) = InputOutputFreqData(autodim(y), autodim(u), w)
 
 """
-    iddata(res::ControlSystems.SimResult)
+    iddata(res::ControlSystemsBase.SimResult)
 
 Create an identification data directly from a simulation result.
 """
-iddata(res::ControlSystems.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
+iddata(res::ControlSystemsBase.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
 
 
 output(d::AbstractIdData)                        = d.y
@@ -160,12 +160,12 @@ LowLevelParticleFilters.state(d::AbstractArray)  = d
 hasinput(::OutputData)                           = false
 hasinput(::AbstractIdData)                       = true
 hasinput(::AbstractArray)                        = true
-hasinput(::ControlSystems.LTISystem)             = true
-ControlSystems.noutputs(d::AbstractIdData)       = obslength(getfield(d, :y))
-ControlSystems.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(getfield(d, :u)) : 0
-ControlSystems.nstates(d::AbstractIdData)        = 0
-ControlSystems.nstates(d::InputOutputStateData)  = obslength(getfield(d, :x))
-obslength(d::AbstractIdData)                     = ControlSystems.noutputs(d)
+hasinput(::ControlSystemsBase.LTISystem)             = true
+ControlSystemsBase.noutputs(d::AbstractIdData)       = obslength(getfield(d, :y))
+ControlSystemsBase.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(getfield(d, :u)) : 0
+ControlSystemsBase.nstates(d::AbstractIdData)        = 0
+ControlSystemsBase.nstates(d::InputOutputStateData)  = obslength(getfield(d, :x))
+obslength(d::AbstractIdData)                     = ControlSystemsBase.noutputs(d)
 sampletime(d::AbstractIdData)                    = d.Ts === nothing ? 1.0 : d.Ts
 function Base.length(d::AbstractIdData)
     y = output(d)
@@ -404,13 +404,13 @@ A statespace type that contains an additional Kalman-filter model for prediction
 """
 PredictionStateSpace
 
-Base.promote_rule(::Type{AbstractStateSpace{T}}, ::Type{<:AbstractPredictionStateSpace{T}}) where T<:ControlSystems.TimeEvolution  = StateSpace{T<:ControlSystems.TimeEvolution}
+Base.promote_rule(::Type{AbstractStateSpace{T}}, ::Type{<:AbstractPredictionStateSpace{T}}) where T<:ControlSystemsBase.TimeEvolution  = StateSpace{T<:ControlSystemsBase.TimeEvolution}
 
-Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{<:AbstractPredictionStateSpace{T}}) where {T<:ControlSystems.TimeEvolution, F} = StateSpace{T, F}
+Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{<:AbstractPredictionStateSpace{T}}) where {T<:ControlSystemsBase.TimeEvolution, F} = StateSpace{T, F}
 
-Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{PredictionStateSpace{T}}) where {T<:ControlSystems.TimeEvolution, F} = StateSpace{T, F}
+Base.promote_rule(::Type{StateSpace{T,F}}, ::Type{PredictionStateSpace{T}}) where {T<:ControlSystemsBase.TimeEvolution, F} = StateSpace{T, F}
 
-Base.convert(::Type{<:StateSpace{T}}, s::AbstractPredictionStateSpace{T}) where T<:ControlSystems.TimeEvolution = deepcopy(s.sys)
+Base.convert(::Type{<:StateSpace{T}}, s::AbstractPredictionStateSpace{T}) where T<:ControlSystemsBase.TimeEvolution = deepcopy(s.sys)
 
 function Base.:(-)(sys0::ST) where ST <: AbstractPredictionStateSpace
     otherfields = ntuple(i->getfield(sys0, i+1), fieldcount(ST)-1)
@@ -457,11 +457,11 @@ function Base.getindex(sys::AbstractPredictionStateSpace, inds...)
     if size(inds, 1) != 2
         error("Must specify 2 indices to index statespace model")
     end
-    rows, cols = ControlSystems.index2range(inds...) 
+    rows, cols = ControlSystemsBase.index2range(inds...) 
     return PredictionStateSpace(ss(copy(sys.A), sys.B[:, cols], sys.C[rows, :], sys.D[rows, cols], sys.timeevol), sys.K[:, rows], sys.Q, sys.R[rows, rows])
 end
 
-ControlSystems.numeric_type(s::AbstractPredictionStateSpace) = ControlSystems.numeric_type(s.sys) 
+ControlSystemsBase.numeric_type(s::AbstractPredictionStateSpace) = ControlSystemsBase.numeric_type(s.sys) 
 
 
 struct SysFilter{T<:AbstractStateSpace{<:Discrete},FT}

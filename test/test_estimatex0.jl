@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 sys = ssrand(2,3,4, Ts=1)
 sys = balreal(sys)[1]
 

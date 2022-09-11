@@ -84,7 +84,7 @@ The rest of the arguments are related to `Optim.Options`.
 
 # Example
 ```
-using ControlSystemIdentification, ControlSystems, Plots
+using ControlSystemIdentification, ControlSystemsBase Plots
 G = DemoSystems.doylesat()
 T = 1000  # Number of time steps
 Ts = 0.01 # Sample time
@@ -234,7 +234,7 @@ function newpem(
 end
 
 # this method fails for duals so this is an overload to silence the warning and save some time
-ControlSystems.balance_statespace(A::AbstractMatrix{<:ForwardDiff.Dual}, B::AbstractMatrix, C::AbstractMatrix, perm::Bool=false) = A,B,C,I
+ControlSystemsBase.balance_statespace(A::AbstractMatrix{<:ForwardDiff.Dual}, B::AbstractMatrix, C::AbstractMatrix, perm::Bool=false) = A,B,C,I
 
 trivec(A) = [A[diagind(A, -1)]; A[diagind(A, 0)]; A[diagind(A, 1)]]
 
@@ -361,7 +361,7 @@ end
 
 
 
-# using ControlSystems, ControlSystemIdentification, Optim
+# using ControlSystemsBase ControlSystemIdentification, Optim
 # G = modal_form(ssrand(2,3,4))[1]
 # w = exp10.(LinRange(-2, 2, 30))
 # r = freqresp(G, w)
@@ -469,7 +469,7 @@ function modal_form(sys; C1 = false)
     # Calling similarity_transform looks like a detour, but this implementation allows modal_form to work with any AbstractStateSpace which implements a custom method for similarity transform
     sysm = similarity_transform(sys, T)
     sysm.A .= Ab # sysm.A should already be Ab after similarity_transform, but Ab has less numerical noise
-    if ControlSystems.issiso(sysm)
+    if ControlSystemsBase.issiso(sysm)
         # This enforces a convention: the C matrix entry for the first component in each mode is positive. This allows SISO systems on modal form to be interpolated in a meaningful way by interpolating their coefficients. 
         # Ref: "New Metrics Between Rational Spectra and their Connection to Optimal Transport" , Bagge Carlson,  Chitre
         ci = complex_indices(sysm.A)

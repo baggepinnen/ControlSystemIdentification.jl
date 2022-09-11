@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 # Test examples are taken from Söderstöms paper and compared against it (this is also where the (high) tolerances come from)
 Random.seed!(0)
 N = 500 # Number of samples used for simulation by Söderström

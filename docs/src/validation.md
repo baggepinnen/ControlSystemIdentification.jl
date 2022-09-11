@@ -5,7 +5,7 @@ A number of functions are made available to assist in validation of the estimate
 
 Generate some test data:
 ```@example validation
-using ControlSystemIdentification, ControlSystems, Random
+using ControlSystemIdentification, ControlSystemsBase, Random
 using ControlSystemIdentification: newpem
 Random.seed!(1)
 T          = 200

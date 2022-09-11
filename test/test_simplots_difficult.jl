@@ -72,7 +72,7 @@ bodeplot!(
     title = "System model",
 )
 bodeplot!(
-    ControlSystems.innovation_form(ss(sys), syse = ss(sysn), R2 = σy^2 * I),
+    ControlSystemsBase.innovation_form(ss(sys), syse = ss(sysn), R2 = σy^2 * I),
     ω,
     plotphase = false,
     subplot = 4,

@@ -28,7 +28,7 @@ k = coherence(dn)
 i = findfirst(k.w .> ωn)
 @test mean(k.r[i .+ (-2:5)]) < 0.6
 G, N = tfest(dn, 0.02)
-@test ControlSystems.issiso(G) 
+@test ControlSystemsBase.issiso(G) 
 noisemodel = innovation_form(ss(sys), syse = ss(sysn))
 noisemodel.D .*= 0
 bodeplot(
@@ -108,7 +108,7 @@ H,N = tfest(d)
 @test size(H.r,2) == 1
 @test size(H.r,3) == T
 
-@test !ControlSystems.issiso(H)
+@test !ControlSystemsBase.issiso(H)
 plot(H, plotphase=true)
 
 @test H.Ts == G.Ts

@@ -4,7 +4,7 @@ We will get the data from [STADIUS's Identification Database](https://homes.esat
 
 ```@example robot
 using DelimitedFiles, Plots
-using ControlSystemIdentification, ControlSystems
+using ControlSystemIdentification, ControlSystemsBase
 
 url = "https://ftp.esat.kuleuven.be/pub/SISTA/data/mechanical/robot_arm.dat.gz"
 zipfilename = "/tmp/flex.dat.gz"
@@ -32,12 +32,13 @@ We also split the data in half, and use the first half for estimation and the se
 dtrain = d[1:end÷2]
 dval = d[end÷2:end]
 
-# A model of order 4 is reasonable. Double-mass model.
-model = subspaceid(dtrain, 4)
+# A model of order 4 is reasonable, a double-mass model. We estimate two models, one using subspace-based identification and one using the prediction-error method
+model_ss = subspaceid(dtrain, 4, focus=:prediction)
+model_pem, _ = newpem(dtrain, 4; sys0 = model_ss, focus=:prediction)
 
-predplot(model, dval, h=1)
-predplot!(model, dval, h=10, ploty=false)
-simplot!(model, dval, ploty=false)
+predplot(model_ss, dval, h=1)
+predplot!(model_ss, dval, h=5, ploty=false)
+simplot!(model_ss, dval, ploty=false)
 ```
 The figures above show the result of predicting $h={1, 10, \infty}$ steps into the future.
 
@@ -45,7 +46,31 @@ We can visualize the estimated models in the frequency domain as well. We show b
 
 ```@example robot
 w = exp10.(LinRange(-1, log10(pi/d.Ts), 200))
-bodeplot(model.sys, w, lab="PEM", plotphase=false)
+bodeplot(model_pem.sys, w, lab="PEM", plotphase=false)
+bodeplot!(model_ss.sys, w, lab="Subspace", plotphase=false)
 plot!(tfest(d), legend=:bottomleft)
 ```
 It looks like the model fails to capture the notches accurately. Estimating zeros is known to be hard, both in practice and in theory.
+
+We can also investigate how well the models predict for various prediction horizons, and compare that to how well the model does in open loop (simulation)
+```@example robot
+using Statistics
+hs = [1:40; 45:5:80]
+perrs_pem = map(hs) do h
+    yh = predict(model_pem, d; h)
+    ControlSystemIdentification.rms(d.y - yh) |> mean
+end
+perrs_ss = map(hs) do h
+    yh = predict(model_ss, d; h)
+    ControlSystemIdentification.rms(d.y - yh) |> mean
+end
+serr_pem = ControlSystemIdentification.rms(d.y - simulate(model_pem, d)) |> mean
+serr_ss = ControlSystemIdentification.rms(d.y - simulate(model_ss, d)) |> mean
+
+plot(hs, perrs_pem, lab="Prediction errors PEM", xlabel="Prediction Horizon", ylabel="RMS error")
+plot!(hs, perrs_ss, lab="Prediction errors Subspace")
+hline!([serr_pem], lab="Simulation error PEM", l=:dash, c=1, ylims=(0, Inf))
+hline!([serr_ss], lab="Simulation error Subspace", l=:dash, c=2, legend=:bottomright, ylims=(0, Inf))
+```
+We see that the prediction-error model does slightly better at prediction few-step predictions (indeed, this is what PEM optimizes), while the model identified using `subspaceid` does better in open loop.
+The simulation performance can be improved upon further by asking for `focus=:prediction` when the models are estimated.

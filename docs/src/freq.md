@@ -5,7 +5,7 @@ Frequency-domain estimation refers to estimation of linear systems using frequen
 ## Nonparametric estimation
 Non-parametric estimation is provided through spectral estimation. To illustrate, we once again simulate some data:
 ```@example npfreq
-using ControlSystemIdentification, ControlSystems, Plots
+using ControlSystemIdentification, ControlSystemsBase, Plots
 T          = 100000
 h          = 1
 sim(sys,u) = lsim(sys, u, 1:T)[1][:]
@@ -71,7 +71,7 @@ Ph, _ = subspaceid(frd_d, Ts, nx)
 
 The following example generates simulated frequency-response data `frd` from a random system, this data could in practice have come from a frequency-response analysis. We then use the data to fit a model using subspace-based identification in the frequency domain using [`subspaceid`](@ref).
 ```@example subspacefreq
-using ControlSystemIdentification, ControlSystems, Plots
+using ControlSystemIdentification, ControlSystemsBase, Plots
 ny,nu,nx = 2,3,5                        # number of outputs, inputs and states
 Ts = 1                                  # Sample time
 G = ssrand(ny,nu,nx; Ts, proper=true)   # Generate a random system

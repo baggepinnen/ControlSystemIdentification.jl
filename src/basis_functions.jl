@@ -1,5 +1,5 @@
-using ControlSystems
-using ControlSystems: AbstractStateSpace, ssdata, ninputs, noutputs
+using ControlSystemsBase
+using ControlSystemsBase: AbstractStateSpace, ssdata, ninputs, noutputs
 
 
 function basis_factor(p::Number)
@@ -150,7 +150,7 @@ function add_poles(basis::AbstractStateSpace, Ad)
 end
 
 
-function ControlSystems.freqresp(P::LTISystem, basis::SomeBasis, ω::AbstractVector, p)
+function ControlSystemsBase.freqresp(P::LTISystem, basis::SomeBasis, ω::AbstractVector, p)
     @assert ninputs(P) == noutputs(P) == 1 "Only supports SISO"
     resp_P = freqresp(P, ω) |> vec
     basis_resp = basis_responses(basis, ω, inverse=false)
@@ -222,7 +222,7 @@ function ωζ2complex(ω, ζ)
 end
 
 
-Base.one(::TransferFunction{Continuous, ControlSystems.SisoRational{Float64}}) = tf(1)
+Base.one(::TransferFunction{Continuous, ControlSystemsBase.SisoRational{Float64}}) = tf(1)
 
 
 reflect(x) = complex(-abs(real(x)), imag(x))
@@ -249,7 +249,7 @@ end
 function minimum_phase(G::StateSpace)
     H = tf(G)
     G = ss(minimum_phase(H))
-    G = ControlSystems.balance_statespace(G)[1]
+    G = ControlSystemsBase.balance_statespace(G)[1]
     try
         G = balreal(G)[1]
     catch

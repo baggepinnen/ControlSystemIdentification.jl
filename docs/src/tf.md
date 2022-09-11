@@ -26,7 +26,7 @@ na,nb = 1,1   # Number of polynomial coefficients
 
 Gls = arx(d,na,nb,stochastic=false) # set stochastic to true to get a transfer function of MonteCarloMeasurements.Particles
 @show Gls
-# TransferFunction{ControlSystems.SisoRational{Float64}}
+# TransferFunction{ControlSystemsBase.SisoRational{Float64}}
 #     0.8000000000000005
 # --------------------------
 # 1.0*z - 0.8999999999999997
@@ -44,27 +44,27 @@ Gtls     = arx(d,na,nb, estimator=tls)       # Total least-squares estimation
 Gwtls    = arx(d,na,nb, estimator=wtls_estimator(y,na,nb)) # Weighted Total least-squares estimation
 Gplr, Gn = plr(d,na,nb,nc, initial_order=20) # Pseudo-linear regression
 @show Gls; @show  Gtls; @show  Gwtls; @show  Gplr; @show  Gn;
-# TransferFunction{ControlSystems.SisoRational{MonteCarloMeasurements.Particles{Float64,500}}}
+# TransferFunction{ControlSystemsBase.SisoRational{MonteCarloMeasurements.Particles{Float64,500}}}
 #     0.824 ± 0.029
 # ---------------------
 # 1.0*z - 0.713 ± 0.013
 
-# Gtls = TransferFunction{ControlSystems.SisoRational{Float64}}
+# Gtls = TransferFunction{ControlSystemsBase.SisoRational{Float64}}
 #     1.848908051191616
 # -------------------------
 # 1.0*z - 0.774385918070221
 
-# Gwtls = TransferFunction{ControlSystems.SisoRational{Float64}}
+# Gwtls = TransferFunction{ControlSystemsBase.SisoRational{Float64}}
 #    0.8180228878106678
 # -------------------------
 # 1.0*z - 0.891939152690534
 
-# Gplr = TransferFunction{ControlSystems.SisoRational{Float64}}
+# Gplr = TransferFunction{ControlSystemsBase.SisoRational{Float64}}
 #     0.8221837077656046
 # --------------------------
 # 1.0*z - 0.8896345125395438
 
-# Gn = TransferFunction{ControlSystems.SisoRational{Float64}}
+# Gn = TransferFunction{ControlSystemsBase.SisoRational{Float64}}
 #     0.9347035105826179
 # --------------------------
 # 1.0*z - 0.8896345125395438
