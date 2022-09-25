@@ -19,13 +19,18 @@ The input consists of the motor torque and the output is the acceleration of the
 
 Before we estimate any model, we inspect the data and the coherence function
 ```@example robot
-xt = [3,10,30,100]
+xt = [2,5,10,20,50]
 plot(
     plot(d),
-    coherenceplot(d, xticks=(xt,xt)),
+    coherenceplot(d, xticks=(xt,xt), hz=true),
 )
 ```
-The coherence is low for high frequencies as well as frequencies between 11 and 40 rad/s. We should thus be careful with relying on the estimated model too much in these frequency ranges. The reason for the low coherence may be either a poor signal-to-noise ratio, or the presence of nonlinearities. For systems with anti-resonances, like this one, the SNR is often poor at the notch frequencies (indeed, a notch frequency is defined as a frequency where there will be very little signal).
+The coherence is low for high frequencies as well as frequencies between 2 and 6 Hz. We should thus be careful with relying on the estimated model too much in these frequency ranges. The reason for the low coherence may be either a poor signal-to-noise ratio, or the presence of nonlinearities. For systems with anti-resonances, like this one, the SNR is often poor at the notch frequencies (indeed, a notch frequency is defined as a frequency where there will be very little signal).
+We can investigate the spectra of the input and output using [`welchplot`](@ref) (see also [`specplot`](@ref))
+```@example robot
+welchplot(d, yticks=(xt,xt))
+```
+Not surprisingly, we see that the input has very little power above 20Hz, this is the reason for the low coherence above 20Hz. Limiting the bandwidth of the excitation signal is usually a good thing, mechanical structures often exhibit higher-order resonances and nonlinear behavior at high frequencies, which we see eveidence of in the output spectrum at around 34Hz.
 
 We also split the data in half, and use the first half for estimation and the second for validation. We'll use a subspace-based identification algorithm for estimation
 ```@example robot
@@ -46,11 +51,11 @@ We can visualize the estimated models in the frequency domain as well. We show b
 
 ```@example robot
 w = exp10.(LinRange(-1, log10(pi/d.Ts), 200))
-bodeplot(model_pem.sys, w, lab="PEM", plotphase=false)
-bodeplot!(model_ss.sys, w, lab="Subspace", plotphase=false)
-plot!(tfest(d), legend=:bottomleft)
+bodeplot(model_pem.sys, w, lab="PEM", plotphase=false, hz=true)
+bodeplot!(model_ss.sys, w, lab="Subspace", plotphase=false, hz=true)
+plot!(tfest(d), legend=:bottomleft, hz=true, xticks=(xt,xt))
 ```
-It looks like the model fails to capture the notches accurately. Estimating zeros is known to be hard, both in practice and in theory.
+It looks like the model fails to capture the notches accurately. Estimating zeros is known to be hard, both in practice and in theory. In the estimated disturbance (labeled *Noise*), we see a peak at around 34Hz. This is likely an overtone due to nonlinearities.
 
 We can also investigate how well the models predict for various prediction horizons, and compare that to how well the model does in open loop (simulation)
 ```@example robot

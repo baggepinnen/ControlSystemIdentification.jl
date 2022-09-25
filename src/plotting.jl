@@ -41,9 +41,11 @@ end
 @userplot Specplot
 
 """
-    specplot(d::IdData)
+    specplot(d::IdData, args...; kwargs...)
 
-Plot a spectrogram of the input and output timeseries.
+Plot a spectrogram of the input and output timeseries. See also [`welchplot`](@ref).
+
+Additional arguments are passed along to `DSP.spectrogram`.
 """
 specplot
 @recipe function specplot(p::Specplot)
@@ -69,6 +71,45 @@ specplot
             subplot := ny + i
             title --> "Input $i"
             S
+        end
+    end
+end
+
+
+@userplot Welchplot
+
+"""
+    welchplot(d::IdData, args...; kwargs...)
+
+Plot a Wlch peridogram of the input and output timeseries. See also [`specplot`](@ref).
+
+Additional arguments are passed along to `DSP.welch_pgram`.
+"""
+welchplot
+@recipe function specplot(p::Welchplot)
+    d = p.args[1]
+    d isa ControlSystemIdentification.AbstractIdData || throw(ArgumentError("Expected AbstractIdData"))
+    ny = d.ny
+    nu = d.nu
+    link --> :both
+    for i = 1:ny
+        S = DSP.welch_pgram(d.y[i,:], p.args[2:end]...; fs=d.fs, window=hanning)
+        @series begin
+            xscale --> :log10
+            yscale --> :log10
+            lab --> "Output $i"
+            xguide --> "Frequency [Hz]"
+            S.freq[2:end], S.power[2:end]
+        end
+    end
+    for i = 1:nu
+        S = DSP.welch_pgram(d.u[i,:], p.args[2:end]...; fs=d.fs, window=hanning)
+        @series begin
+            xscale --> :log10
+            yscale --> :log10
+            lab --> "Input $i"
+            xguide --> "Frequency [Hz]"
+            S.freq[2:end], S.power[2:end]
         end
     end
 end

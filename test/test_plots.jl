@@ -16,6 +16,7 @@ simplot(ss(G), d)
 simplot(d, ss(G))
 
 specplot(d)
+welchplot(d)
 
 Gh,_ = tfest(d)
 plot(Gh, plotphase=true)
