@@ -68,7 +68,13 @@ The prediction-error method is an iterative, gradient-based optimization problem
 ```math
 D_y y = G̃ D_u u ↔ y = D_y^{-1} G̃ D_u u
 ```
-hence `G = Dy \\ G̃ * Du` where \$ G̃ \$ is the plant estimated for the scaled iddata.
+hence `G = Dy \\ G̃ * Du` where \$ G̃ \$ is the plant estimated for the scaled iddata. Example:
+```julia
+Dy = Diagonal(1 ./ vec(std(d.y, dims=2))) # Normalize variance
+Du = Diagonal(1 ./ vec(std(d.u, dims=2))) # Normalize variance
+d̃ = Dy * d * Du
+```
+If a manually provided initial guess `sys0`, this must also be scaled appropriately.
 
 # Arguments:
 - `d`: [`iddata`](@ref)
