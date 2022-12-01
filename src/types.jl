@@ -97,7 +97,7 @@ If the time-series are multivariate, time is in the *last* dimension.
 - index the time axis with seconds `d[3Sec:12Sec]` (`using ControlSystemIdentification: Sec`)
 - access number of inputs, outputs and sample time: `d.nu, d.ny, d.Ts`
 - access the time time vector `d.t`
-- premultiply to scale outputs `C * d`
+- premultiply to scale outputs `C * d`. Scaling the outputs of a multiple-output system to have roughly the same size is usually recommended before estimating a model in case they have different magnitudes.
 - postmultiply to scale inputs `d * B`
 - [`writedlm`](@ref)
 - [`ramp_in`](@ref), [`ramp_out`](@ref)
