@@ -410,6 +410,8 @@ end
 
 Estimate a state-space model using subspace-based identification in the frequency domain.
 
+If results are poor, try modifying `r`, in particular if the amount of data is low.
+
 See the [docs](https://baggepinnen.github.io/ControlSystemIdentification.jl/dev/freq/#Statespace) for an example.
 
 # Arguments:
@@ -443,6 +445,7 @@ function subspaceid(
     weights = nothing,
 ) where {F1,F2,F3}
 
+    verbose && @info "Estimating with r = $r and stability constraint = $stable"
     w = data.w
     Ts ≤ 2π/maximum(w) || error("Highest frequency ($(maximum(w))) is larger that the Nyquist frequency for sample time Ts = $Ts")
     nx !== :auto && r < nx && throw(ArgumentError("r must be at least nx"))
@@ -494,6 +497,7 @@ function subspaceid(
 
     # Observability matrix given by U, C is the first block-row
     Or = S.U 
+    nx <= size(Or, 2) || throw(ArgumentError("nx too large for the amount of data available"))
     C = Or[1:ny, 1:nx]
     A = Aestimator(Or[1:(r-1)ny, 1:nx], Or[ny+1:ny*r, 1:nx])
     if stable && !all(e->abs(e)<=1, eigvals(A))
@@ -724,7 +728,7 @@ function ifreqresp(F, ω, Ts=0)
     end
     U = similar(F, nu, nw*nu)
     Y = similar(F, ny, nw*nu)
-    Ω = Vector{Float64}(undef, nw*nu)
+    Ω = similar(ω, nw*nu)
     B = I(nu)
 
     for i in 1:nu
