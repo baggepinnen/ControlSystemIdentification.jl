@@ -3,7 +3,7 @@
 Frequency-domain estimation refers to estimation of linear systems using frequency-domain data. We distinguish between nonparametric and parametric models, where parametric models have a fixed number of parameters (such as transfer functions with polynomials or statespace models), whereas nonparametric models are typically given as vectors of frequency-response values over a grid of frequencies, i.e., the number of parameters is not fixed and grows with the number of data points.
 
 ## Nonparametric estimation
-Non-parametric estimation is provided through spectral estimation. To illustrate, we once again simulate some data:
+Non-parametric estimation refers to the estimation of a model without a fixed number of parameters. Instead, the number of estimated parameters typically grows with the size of the data. This form of estimation can be useful to gain an initial understanding of the system, before selecting model orders etc. for a more standard parametric model. We provide non-parametric estimation of transfer functions through spectral estimation. To illustrate, we once again simulate some data:
 ```@example npfreq
 using ControlSystemIdentification, ControlSystemsBase, Plots
 T          = 100000
@@ -68,6 +68,7 @@ Ts    = 0.01 # Sample time
 frd_d = c2d(frd_c::FRD, Ts) # Perform a bilinear transformation to discrete-time frequency vector
 Ph, _ = subspaceid(frd_d, Ts, nx)
 ```
+This can be done automatically by passing `bilinear_transform = true` to [`subspaceid`](@ref).
 
 The following example generates simulated frequency-response data `frd` from a random system, this data could in practice have come from a frequency-response analysis. We then use the data to fit a model using subspace-based identification in the frequency domain using [`subspaceid`](@ref).
 ```@example subspacefreq
