@@ -123,11 +123,15 @@ Ts = 1                                  # Sample time
 G = ssrand(ny,nu,nx; Ts, proper=true);  # Generate a random system
 
 N = 200                                 # Number of frequency points
-w = range(0, stop=pi/Ts-1/N, length=N)  # Frequency vector
+w = range(1e-6, stop=pi/Ts-1/N, length=N)  # Frequency vector
 
 frd = FRD(w, G);                        # Build a frequency-response data object
 @test frd.r == freqresp(G, w)
 @test frd.w == w
+
+@test bode(frd) == bode(G, w)
+@test nyquist(frd) == nyquist(G, w)
+
 
 # Tests for FRD printing
 littlefrd = FRD([1, 2], [im, 2*im])

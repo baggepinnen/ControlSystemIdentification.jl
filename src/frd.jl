@@ -69,6 +69,8 @@ Base.size(f::FRD) = (1, 1) # Size in the ControlSystemsBasesense
 Base.lastindex(f::FRD) = length(f)
 function Base.getproperty(f::FRD, s::Symbol)
     s === :Ts && return π / maximum(f.w)
+    s === :nu && return ninputs(f)
+    s === :ny && return noutputs(f)
     getfield(f, s)
 end
 Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts)
@@ -83,8 +85,22 @@ function Base.show(io::IO, frd::FRD)
     show(io, MIME("text/plain"), frd.r)
 end
 
-ControlSystemsBase.noutputs(f::FRD) = 1
-ControlSystemsBase.ninputs(f::FRD) = 1
+ControlSystemsBase.noutputs(f::FRD) = f.r isa AbstractVector ? 1 : size(f.r, 1)
+ControlSystemsBase.ninputs(f::FRD) = f.r isa AbstractVector ? 1 : size(f.r, 2)
+ControlSystemsBase._default_freq_vector(f::Vector{<:FRD}, _) = f[1].w
+function ControlSystemsBase.bode(f::FRD, w::AbstractVector = f.w; unwrap=true)
+    w == f.w || error("Frequency vector must match the one stored in the FRD")
+    angles = angle.(f.r)
+    angles = reshape(angles, f.ny, f.nu, :)
+    unwrap && ControlSystemsBase.unwrap!(angles,3)
+    @. angles = rad2deg(angles)
+    reshape(abs.(f.r), f.ny, f.nu, :), angles, f.w
+end
+
+function ControlSystemsBase.freqresp(f::FRD, w::AbstractVector{W} = f.w) where W <: Real
+    w == f.w || error("Frequency vector must match the one stored in the FRD")
+    reshape(f.r, f.ny, f.nu, :)
+end
 
 sqrt(f::FRD) = FRD(f.w, sqrt.(f.r))
 function getindex(f::FRD, i)
