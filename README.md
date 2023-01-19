@@ -7,16 +7,16 @@
 
 System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). 
 
-This package estimates linear statespace models on the form
+This package estimates linear [statespace models](https://en.wikipedia.org/wiki/State-space_representation) on the form
 ```math
 \begin{aligned}
 x^+ &= Ax + Bu + Ke\\
 y &= Cx + Du + e
 \end{aligned}
 ```
-or transfer functions on the form
+or [transfer functions](https://en.wikipedia.org/wiki/Transfer_function) on the form
 ```math
-G(s) = \dfrac{B(z)}{A(z)} = \dfrac{b_0 + b_1 z^{-1} + \dots + b_{n_b} z^{-n_b}}{1 + a_1 z^{-1} + \dots + a_{n_a} z^{-n_a}}
+G(s) = \dfrac{B(z)}{A(z)} = \dfrac{b_m z^m + \dots + b_0}{z^n + a_{n-1} z^{n-1} + \dots + a_0}
 ```
 
 
