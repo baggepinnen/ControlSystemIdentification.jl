@@ -1,12 +1,14 @@
-# LTI state-space models
+# Statespace model estimation
 
-This page documents the facilities available for estimating statespace models on the form
+This page documents the facilities available for estimating linear statespace models with inputs on the form
 ```math
 \begin{aligned}
 x^+ &= Ax + Bu + Ke\\
 y &= Cx + Du + e
 \end{aligned}
 ```
+
+This package estimates models in discrete time, but they may be converted to continuous-time models using the function [`d2c`](https://juliacontrol.github.io/ControlSystems.jl/stable/lib/synthesis/#ControlSystemsBase.d2c) from [ControlSystemsBase.jl](https://github.com/JuliaControl/ControlSystems.jl).
 
 There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref), [`newpem`](@ref) and [`era`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas [`n4sid`](@ref) is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl) and ins generally slightly more accurate but also more computationally expensive. If unsure which method to use, try [`subspaceid`](@ref) first (unless the data comes from closed-loop operation, use [`newpem`](@ref) in this case).
 
@@ -46,7 +48,7 @@ bodeplot!(sys3, lab=["ERA" ""])
 
 
 
-## PEM (Prediction-error method)
+## Prediction-error method (PEM)
 !!! note "Note"
     The old function [`pem`](@ref) is "soft deprecated" in favor of [`newpem`](@ref) which is more general and much more performant.
 

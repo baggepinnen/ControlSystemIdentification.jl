@@ -5,18 +5,19 @@
 [![Documentation, stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://baggepinnen.github.io/ControlSystemIdentification.jl/stable)
 [![Documentation, latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://baggepinnen.github.io/ControlSystemIdentification.jl/dev)
 
-System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). 
+System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/), implemented in Julia. 
 
-This package estimates linear [statespace models](https://en.wikipedia.org/wiki/State-space_representation) on the form
+This package estimates linear [statespace models](https://en.wikipedia.org/wiki/State-space_representation) with inputs on the form
 ```math
 \begin{aligned}
 x^+ &= Ax + Bu + Ke\\
 y &= Cx + Du + e
 \end{aligned}
 ```
+using methods such as N4SID or the prediction-error method, 
 or [transfer functions](https://en.wikipedia.org/wiki/Transfer_function) on the form
 ```math
-G(s) = \dfrac{B(z)}{A(z)} = \dfrac{b_m z^m + \dots + b_0}{z^n + a_{n-1} z^{n-1} + \dots + a_0}
+G(z) = \dfrac{B(z)}{A(z)} = \dfrac{b_m z^m + \dots + b_0}{z^n + a_{n-1} z^{n-1} + \dots + a_0}
 ```
 
 

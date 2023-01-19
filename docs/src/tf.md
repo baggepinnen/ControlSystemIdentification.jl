@@ -1,17 +1,32 @@
 # Transfer function estimation
 
-Basic support for ARX/ARMAX model estimation, i.e. a model on any of the forms
+This page documents how to estimate transfer functions, sometimes called ARX or ARMAX models, i.e. models on any of the forms
 ```math
-Ay = Bu + w
+\begin{aligned}
+G(z) &= \dfrac{B(z)}{A(z)} = \dfrac{b_m z^m + \dots + b_0}{z^n + a_{n-1} z^{n-1} + \dots + a_0} \\
+Ay &= Bu + w \\
+Ay &= Bu + Cw \\
+Ay &= Bu + 1/D w
+\end{aligned}
 ```
-```math
-Ay = Bu + Cw
-```
-```math
-Ay = Bu + 1/D w
-```
-is provided. The ARX estimation problem is convex and the solution is available on closed-form.
-Usage example:
+
+This package estimates models in discrete time, but they may be converted to continuous-time models using the function [`d2c`](https://juliacontrol.github.io/ControlSystems.jl/stable/lib/synthesis/#ControlSystemsBase.d2c) from [ControlSystemsBase.jl](https://github.com/JuliaControl/ControlSystems.jl).
+
+The methods available are:
+## Functions
+- [`arx`](@ref): Transfer-function estimation using least-squares fitting with a closed-form solution.
+- [`arma`](@ref): Estimate an ARMA model (no control input).
+- [`ar`](@ref): Estimate an AR model (no input).
+- [`arma_ssa`](@ref) Estimate an ARMA model with estimated noise as input (no control input).
+- [`plr`](@ref): Transfer-function estimation (ARMAX model) using pseudo-linear regression. [`armax`](@ref) is an alias for this function. This method estimates a noise model as well.
+- [`arxar`](@ref): Transfer-function estimation using generalized least-squares method. This method estimates a noise model as well.
+- [`getARXregressor`](@ref)/[`getARregressor`](@ref): For low-level control over the estimation
+See docstrings for further help.
+
+!!! note
+    Most methods for estimation of transfer functions handle SISO, SIMO or MISO systems only. For estimation of MIMO systems, consider using state-space based methods and convert the result to a transfer function using `tf` after estimation if required. 
+
+## Usage example:
 ```julia
 N  = 2000     # Number of time steps
 t  = 1:N
@@ -82,19 +97,6 @@ Time-series modeling can be seen as special cases of transfer-function modeling 
 - [`arma_ssa`](@ref) Estimate an ARMA model with estimated noise as input (no control input).
 
 
-
-## Functions
-- [`arx`](@ref): Transfer-function estimation using closed-form solution.
-- [`arma`](@ref): Estimate an ARMA model.
-- [`ar`](@ref): Estimate an AR model (no input).
-- [`arma_ssa`](@ref) Estimate an ARMA model with estimated noise as input (no control input).
-- [`plr`](@ref): Transfer-function estimation using pseudo-linear regression
-- [`arxar`](@ref): Transfer-function estimation using generalized least squares method
-- [`getARXregressor`](@ref)/[`getARregressor`](@ref): For low-level control over the estimation
-See docstrings for further help.
-
-!!! note
-    Most methods for estimation of transfer functions handle SISO, SIMO or MISO systems only. For estimation of MIMO systems, consider using state-space based methods and convert the result to a transfer function using `tf` after estimation if required. 
 
 
 ```@docs

@@ -30,6 +30,8 @@ or in the form of transfer functions
 Y(z) = \dfrac{B(z)}{A(z)}U(z)
 ```
 
+This package is implemented in the free and open-source programming language [Julia](https://julialang.org/).
+
 If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](
 https://github.com/JuliaControl/ControlExamples.jl). An introductory video is available below (system identification example starts around 55 minutes)
 
@@ -37,10 +39,20 @@ https://github.com/JuliaControl/ControlExamples.jl). An introductory video is av
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Fdz2Fsm1aTY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 ```
 
+## Installation
+Install [Julia](https://julialang.org/) from the [download](https://julialang.org/downloads/) page. Then, in the Julia REPL, type
+```julia
+using Pkg
+Pkg.add("ControlSystemIdentification")
+```
+
+*Optional:* To work with linear systems and plot Bode plots etc., also install the control toolbox [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl) package which this package builds upon, as well as the plotting package
+```julia
+Pkg.add(["ControlSystemsBase", "Plots"])
+```
 
 
-
-# Other resources
+## Other resources
 - For estimation of linear **time-varying** models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
 - For estimation of linear and nonlinear **grey-box models in continuous time**, see [DifferentialEquations.jl (parameter estimation)](https://docs.sciml.ai/DiffEqParamEstim/stable/)
 - Estimation of **nonlinear black-box models in continuous time** [DiffEqFlux.jl](https://github.com/JuliaDiffEq/DiffEqFlux.jl/) and [DataDrivenDiffEq.jl](https://docs.sciml.ai/DataDrivenDiffEq/stable/)
