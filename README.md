@@ -5,10 +5,25 @@
 [![Documentation, stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://baggepinnen.github.io/ControlSystemIdentification.jl/stable)
 [![Documentation, latest](https://img.shields.io/badge/docs-latest-blue.svg)](https://baggepinnen.github.io/ControlSystemIdentification.jl/dev)
 
-System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). Examples in the form of jupyter notebooks are provided [here](
-https://github.com/JuliaControl/ControlExamples.jl?files=1).
+System identification for [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl/). 
+
+This package estimates linear statespace models on the form
+```math
+\begin{aligned}
+x^+ &= Ax + Bu + Ke\\
+y &= Cx + Du + e
+\end{aligned}
+```
+or transfer functions on the form
+```math
+G(s) = \dfrac{B(z)}{A(z)} = \dfrac{b_0 + b_1 z^{-1} + \dots + b_{n_b} z^{-n_b}}{1 + a_1 z^{-1} + \dots + a_{n_a} z^{-n_a}}
+```
+
 
 See the [documentation](https://baggepinnen.github.io/ControlSystemIdentification.jl/stable) for help.
+
+Examples in the form of jupyter notebooks are provided [here](
+https://github.com/JuliaControl/ControlExamples.jl?files=1).
 
 
 ## Quick example:
