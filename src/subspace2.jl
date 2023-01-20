@@ -206,7 +206,7 @@ function subspaceid(
     r = nx === :auto ? min(length(data) ÷ 20, 20) : nx + 10, # the maximal prediction horizon used
     s1 = r, # number of past outputs
     s2 = r, # number of past inputs
-    γ = nothing,
+    γ = nothing, # discarded, aids switching from n4sid
     W = :MOESP,
     zeroD = false,
     stable = true, 

@@ -39,6 +39,17 @@ bodeplot!(sys2.sys, lab=["subspace" ""])
 
 Both functions allow you to choose which functions are used for least-squares estimates and computing the SVD, allowing e.g., robust estimators for resistance against outliers etc.
 
+### Tuning the model fit
+The subspace-based estimation algorithms have a number of parameters that can be tuned if the initial model fit is not satisfactory.
+- `focus` determines the focus of the model fit. The default is `:prediction` which minimizes the prediction error. If this choice produces an unstable model for a stable system, or the simmulation performance is poor, `focus = :simulation` may be a better choice.
+- There are several horizon parameters that can be tuned. The keyword argument `r` selects the prediction horizon, this has to be greater than the model order, with the default being `nx + 10`. `s1` and `s2` control the past horizons for the output and input, respectively. The default is `s1 = s2 = r`. Past horizons can only be tuned for `subspaceid`.
+- *(Advanced)* The method used to compute the svd as well as performing least-squares fitting can be changed using the keywords `svd, Aestimator, Bestimator`.
+- `zeroD` allows you to force the estimated ``D`` matrix to be zero (a strictly proper model).
+- It is possible to select the weight type `W`, choose between `:MOESP, :CVA, :N4SID, :IVM`. The default is `:MOESP`.
+
+
+See the docstrings of [`subspaceid`](@ref) and [`n4sid`](@ref) for additional arguments and more details.
+
 ## ERA and OKID
 The "Eigenvalue realization algorithm" and "Observer Kalman identification" algorithms are available as [`era`](@ref) and [`okid`](@ref). If `era` is called with a data object, `okid` is automatically used internally to produce the Markov parameters to the ERA algorithm.
 ```@example ss
@@ -52,14 +63,14 @@ bodeplot!(sys3, lab=["ERA" ""])
 !!! note "Note"
     The old function [`pem`](@ref) is "soft deprecated" in favor of [`newpem`](@ref) which is more general and much more performant.
 
-A simple algorithm for identification of discrete-time LTI systems on state-space form:
+The prediction-error method is a simple but powerful algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
 \begin{aligned}
 x' &= Ax + Bu + Ke \\
 y  &= Cx + Du + e
 \end{aligned}
 ```
-is provided. The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
+The user can choose to minimize either prediction errors or simulation errors, with arbitrary metrics, i.e., not limited to squared errors.
 
 The result of the identification with [`newpem`](@ref) is a custom type with extra fields for the identified Kalman gain and noise covariance matrices.
 
@@ -90,9 +101,21 @@ predplot(sysh, d)     # Plot prediction and true output
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl/blob/master/identification_statespace.ipynb) for more plots as well as several examples in the example section of this documentation.
 
+### Arguments
+The algorithm has several options:
+- The optimization is by default started with an initial guess provided by [`subspaceid`](@ref), but this can be overridden by providing an initial guess to [`newpem`](@ref) using the keyword argument [`sys0`](@ref).
+- `focus` determines the focus of the model fit. The default is `:prediction` which minimizes the prediction error. If this choice produces an unstable model for a stable system, or the simmulation performance is poor, `focus = :simulation` may be a better choice.
+- A regularizer may be provided using the keyword argument `regularizer`.
+- A stable model may be enforced using `stable = true`.
+- The ``D`` matrix may be forced to be zero using `zeroD = true`.
+- A trade-off between prediction and simulation performance can be achieved by optimizing the ``h``-step prediction error. The default is ``h=1`` which corresponds to the standard prediction error. This can be changed using the keyword argument `h`. A large value of `h` will make the optimization problem computationally expensive to solve.
+
+See the docstring of [`newpem`](@ref) for additional arguments and more details.
+
 
 ### Internals
 Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to [`newpem`](@ref), and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
+
 
 
 
@@ -109,6 +132,8 @@ Furthermore, we have the utility functions below
 - [`predictiondata`](@ref)
 - [`noise_model`](@ref)
 
+## Code generation
+To generate C-code for, e.g., simulating a system, see [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl).
 
 ```@docs
 ControlSystemIdentification.subspaceid
