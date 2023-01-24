@@ -58,7 +58,7 @@ hline!([1], primary = false, l = (:black, :dash))
 lp = plot(lsim(ss(G), u), lab="G (true)")
 plot!(lsim(ss(Gh), u), lab = "arx")
 plot!(lsim(ss(Gh2), u), lab = "plr", ticks = :default)
-plot!(data.t, yn[:], lab = "Estimation data")
+plot!(data.t, yn[:], lab = "Estimation data", alpha=0.3)
 
 plot(bp, sp, lp, layout = @layout([[a b]; c]))
 ```
