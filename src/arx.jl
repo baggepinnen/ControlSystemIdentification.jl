@@ -1,5 +1,5 @@
 """
-    getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb; inputdelay = ones(Int, size(nb)))
+    y, A = getARXregressor(y::AbstractVector,u::AbstractVecOrMat, na, nb; inputdelay = ones(Int, size(nb)))
 
 Returns a shortened output signal `y` and a regressor matrix `A` such that the least-squares ARX model estimate of order `na,nb` is `y\\A`
 
