@@ -57,7 +57,7 @@ function narx(d, na, nb;
         simulate(tree, dataset.X, dataset.y, options) # updates yh in place
         ws = workspaces[Threads.threadid()]
         ws.yh .= abs2.(y .- ws.yh) # reuse allocated memory
-        mean(ws.yh)
+        sqrt(mean(ws.yh))
     end
 
     opts2 = @set options.loss_function = Simloss3(simloss)
@@ -97,8 +97,10 @@ w = 2pi .* exp10.(LinRange(-3, log10(0.5), 500))
 G0 = tf(1, [10, 1]) # The true system, 10ẋ = -x + u
 G = c2d(G0, 1)      # discretize with a sample time of 1s
 
-u = sign.(sin.((0:0.01:20) .^ 2))' .+ 1 # sample a control input for identification
-unl = sqrt.(abs.(u))          # Clamp input to [-1, 1]
+u0 = sign.(sin.((0:0.01:20) .^ 2))' .+ 0.9 # sample a control input for identification
+u1 = sin.((0:0.01:20) .^ 2 .+ 1)' # sample a control input for identification
+u = u0 + u1
+unl = sqrt.(abs.(u))        # Apply nonlinear function
 
 y, t, x = lsim(ss(G), unl) # Simulate the true system to get test data
 yn = y .+ 0.01 .* randn.() # add measurement noise
@@ -111,12 +113,13 @@ plot(d)
 sqrtabs(x) = sqrt(abs(x))
 options = SymbolicRegression.Options(
     binary_operators        = [+, *, -],
-    unary_operators         = [sqrtabs],
-    complexity_of_operators = [sqrtabs => 2, (+) => 0.5],
+    unary_operators         = [sqrt, abs],
+    complexity_of_operators = [sqrt => 2, (+) => 0.5],
     npopulations            = 11,
     maxdepth                = 12,
     complexity_of_constants = 0.1,
-    nested_constraints      = [sqrtabs => [sqrtabs => 0]],
+    nested_constraints      = [sqrt => [sqrt => 0], abs => [abs => 0]],
+    enable_autodiff         = true,
 )
 
 na = 1
@@ -136,13 +139,16 @@ trees = [member.tree for member in dominating]
 ti = 3
 tree = trees[ti]
 default(show=false)
-plot(d)
+f1 = plot(d)
+simlosses = Float64[]
 for (ti, tree) in enumerate(trees[1:end])
     eqn = node_to_symbolic(tree, options, varMap=varMap(na, nb))
-    println("Tree number $ti, simloss: $(simloss_fun(tree, dataset, options))", Symbolics.simplify(eqn))
+    push!(simlosses, simloss_fun(tree, dataset, options))
+    println("Tree number $ti, simloss: $(round(simlosses[end], sigdigits=4))  ", Symbolics.simplify(eqn))
     yh = simulate_fun(tree, A', y, options)
     yh[1] = 0
     plot!(d.t[2:end], yh, sp=1, lab="Tree $ti")
 end
 
+plot(f1, plot(simlosses, m=:circle))
 display(current())
