@@ -374,7 +374,7 @@ function subspaceid(
 end
 
 """
-    subspaceid(frd::FRD, args...; estimate_x0 = false, bilinear_transform = false, kwargs...)
+    model, x0 = subspaceid(frd::FRD, Ts, args...; estimate_x0 = false, bilinear_transform = false, kwargs...)
 
 If a frequency-reponse data object is supplied
 - The FRD will be automatically converted to an [`InputOutputFreqData`](@ref)
@@ -393,7 +393,7 @@ function subspaceid(frd::FRD, Ts::Real, args...; estimate_x0 = false, weights = 
 end
 
 """
-    subspaceid(data::InputOutputFreqData,
+    model, x0 = subspaceid(data::InputOutputFreqData,
         Ts = data.Ts,
         nx = :auto;
         cont = false,
