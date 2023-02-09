@@ -385,8 +385,8 @@ Base.@kwdef struct PredictionStateSpace{T, ST <: AbstractStateSpace{T}, KT, QT, 
     Q::QT = nothing
     R::RT = nothing
     S::ST2 = nothing
-    PredictionStateSpace(sys, K, Q=nothing, R=nothing, S=nothing) = new{typeof(sys.timeevol), typeof(sys),typeof(K),typeof(Q),typeof(R),typeof(S)}(sys, K, Q, R, S)
 end
+PredictionStateSpace(sys, K, Q=nothing, R=nothing, S=nothing) = PredictionStateSpace{typeof(sys.timeevol), typeof(sys),typeof(K),typeof(Q),typeof(R),typeof(S)}(sys, K, Q, R, S)
 
 
 """
@@ -416,6 +416,12 @@ function Base.:(-)(sys0::ST) where ST <: AbstractPredictionStateSpace
     otherfields = ntuple(i->getfield(sys0, i+1), fieldcount(ST)-1)
     sys = sys0.sys
     ST(typeof(sys)(sys.A, sys.B, -sys.C, -sys.D, sys.timeevol), otherfields...)
+end
+
+function Base.:(*)(K::AbstractMatrix, sys0::ST) where ST <: AbstractPredictionStateSpace
+    otherfields = ntuple(i->getfield(sys0, i+1), fieldcount(ST)-1)
+    sys = sys0.sys
+    ST(typeof(sys)(sys.A, sys.B, K*sys.C, K*sys.D, sys.timeevol), otherfields...)
 end
 
 """
