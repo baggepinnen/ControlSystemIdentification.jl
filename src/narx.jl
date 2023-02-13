@@ -3,7 +3,7 @@ using LossFunctions
 using Setfield
 using Symbolics
 
-struct Simloss3{S} <: Function
+struct Simloss{S} <: Function
     simloss::S
 end
 
@@ -23,7 +23,7 @@ function narx(d, na, nb;
    
     y, A = getARXregressor(d, na, nb)
     
-    A = [A[:, 1] A]
+    A = [A[:, 1] A] # All but the first column will be replaced by the simulation results
 
     T = eltype(y)
     yh = zero(y)::Vector{T}
@@ -60,7 +60,7 @@ function narx(d, na, nb;
         sqrt(mean(ws.yh))
     end
 
-    opts2 = @set options.loss_function = Simloss3(simloss)
+    opts2 = @set options.loss_function = Simloss(simloss)
     hall_of_fame = EquationSearch(A', y; niterations, options=opts2, parallelism, varMap = varMap(na, nb), kwargs...)
 
     (; hall_of_fame, simulate, simloss, y, A)
@@ -88,7 +88,7 @@ end
 =#
 
 function SymbolicRegression.LossFunctionsModule.evaluator(
-    sl::Simloss3, tree::Node{T}, dataset::Dataset{T}, options::Options
+    sl::Simloss, tree::Node{T}, dataset::Dataset{T}, options::Options
 )::T where {T<:Real}
     return sl.simloss(tree, dataset, options)
 end
@@ -103,7 +103,7 @@ u = u0 + u1
 unl = sqrt.(abs.(u))        # Apply nonlinear function
 
 y, t, x = lsim(ss(G), unl) # Simulate the true system to get test data
-yn = y .+ 0.01 .* randn.() # add measurement noise
+yn = y .+ 0.1 .* randn.() # add measurement noise
 d = iddata(yn, u, t[2] - t[1]) # create a data object
 
 plot(d)
@@ -124,8 +124,8 @@ options = SymbolicRegression.Options(
 
 na = 1
 nb = 1
-output = narx(d, na, nb; options, parallelism=:multithreading, niterations=20,)
-hall_of_fame, simulate_fun, simloss_fun, y, A = output
+output = narx(d, na, nb; options, parallelism=:multithreading, niterations=10,)
+hall_of_fame, simulate_fun, simloss_fun, y1, A = output
 
 # with d[1:1000]
 # 17.145589 seconds (268.45 M allocations: 13.675 GiB, 9.04% gc time, 8.87% compilation time: 100% of which was recompilation
@@ -133,22 +133,29 @@ hall_of_fame, simulate_fun, simloss_fun, y, A = output
 # 11.039410 seconds (206.37 M allocations: 7.552 GiB, 8.05% gc time, 14.18% compilation time: 100% of which was recompilation) type assert y
 # 8.054081 seconds (134.20 M allocations: 4.934 GiB, 7.30% gc time, 19.54% compilation time: 100% of which was recompilation) reuse yh in simloss
 
-dataset = (; y, X=A')
-dominating = calculate_pareto_frontier(A', y, hall_of_fame, options)
+dataset = (; y=y1, X=A')
+dominating = calculate_pareto_frontier(A', y1, hall_of_fame, options)
 trees = [member.tree for member in dominating]
 ti = 3
 tree = trees[ti]
 default(show=false)
 f1 = plot(d)
+plot!(f1, d.t, y[:], lab="Noise-free y")
 simlosses = Float64[]
 for (ti, tree) in enumerate(trees[1:end])
     eqn = node_to_symbolic(tree, options, varMap=varMap(na, nb))
     push!(simlosses, simloss_fun(tree, dataset, options))
-    println("Tree number $ti, simloss: $(round(simlosses[end], sigdigits=4))  ", Symbolics.simplify(eqn))
-    yh = simulate_fun(tree, A', y, options)
+    println("Tree number $ti, simloss: $(round(simlosses[end], sigdigits=4))  ", Symbolics.simplify(eqn; expand=true))
+    yh = simulate_fun(tree, A', y1, options)
     yh[1] = 0
     plot!(d.t[2:end], yh, sp=1, lab="Tree $ti")
 end
 
+
 plot(f1, plot(simlosses, m=:circle))
 display(current())
+
+
+## npem
+
+# build a tree that computs (x⁺, y) = f(x, u)
