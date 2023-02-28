@@ -339,8 +339,10 @@ function ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_co
 end
 
 """
-    Qd = ControlSystemsBase.c2d(sys::StateSpace{Discrete}, Q::Matrix)
-    Qd, Rd = ControlSystemsBase.c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix)
+    Qd = c2d(sys::StateSpace{Discrete}, Q::Matrix)
+    Qd, Rd = c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix)
+    Qd = c2d(sys::StateSpace{Continuous}, Qc::Matrix; Ts)
+    Qd, Rd = c2d(sys::StateSpace{Continuous}, Qc::Matrix, R::Matrix; Ts)
 
 Sample a continuous-time covariance matrix to fit the provided discrete-time system.
 The measurement covariance `R` may also be provided
@@ -369,6 +371,23 @@ function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Dis
         return Qd
     else
         Qd, R ./ h
+    end
+end
+
+
+function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Continuous}, Qc::AbstractMatrix, R=nothing; Ts)
+    # Ref: Charles Van Loan: Computing integrals involving the matrix exponential, IEEE Transactions on Automatic Control. 23 (3): 395–404, 1978
+    n = sys.nx
+    Ac  = sys.A
+    F = [-Ac Qc; zeros(size(Qc)) Ac']
+    G = exp(F)
+    Ad = G[n+1:end, n+1:end]'
+    AdiQd = G[1:n, n+1:end]
+    Qd = Ad*AdiQd
+    if R === nothing
+        return Qd
+    else
+        Qd, R ./ Ts
     end
 end
 

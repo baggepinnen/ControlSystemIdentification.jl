@@ -180,6 +180,10 @@ end
         @test Qd ≈ sys.Q
 
         sysc = d2c(sys)
+        Qd2 = c2d(sysc, Qc; Ts = sys.Ts)
+        @test Qd2 ≈ Qd
+
+        sysc = d2c(sys)
         sysd = c2d(sysc, sys.Ts)
         @test sysd.Q ≈ sys.Q
         @test sysd.K ≈ sys.K rtol=1e-2
