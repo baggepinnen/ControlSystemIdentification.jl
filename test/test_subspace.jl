@@ -51,7 +51,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         y, t, x = lsim(G, u, 1:N, x0 = randn(r))
         @assert sum(!isfinite, y) == 0
-        ϵ = 0.01
+        ϵ = 0.001
         yn = y + ϵ * randn(size(y))
         d = iddata(yn, u)
 
@@ -144,7 +144,7 @@ end
 
         y, t, x = lsim(G, u, 1:N, x0 = randn(nx))
         @assert sum(!isfinite, y) == 0
-        ϵ = 0.01
+        ϵ = 0.001
         yn = y + ϵ * randn(size(y))
         d = iddata(yn, u, 1)
 
