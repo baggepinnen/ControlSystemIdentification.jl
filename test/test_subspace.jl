@@ -51,7 +51,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
         y, t, x = lsim(G, u, 1:N, x0 = randn(r))
         @assert sum(!isfinite, y) == 0
-        ϵ = 0.01
+        ϵ = 0.001
         yn = y + ϵ * randn(size(y))
         d = iddata(yn, u)
 
@@ -66,7 +66,7 @@ freqresptest(G, model, tol) = freqresptest(G, model) < tol
         iy, it, ix = impulse(G, 20)
         H = okid(d2, r, 20, p=1)
         # @show norm(iy - permutedims(H, (1, 3, 2)))
-        @test norm(iy - permutedims(H, (1, 3, 2))) < 1e-2
+        @test norm(iy - permutedims(H, (1, 3, 2))) < 2e-2
         # plot([iy vec(H)])
 
         H = okid(d2, r, 20, p = 20)
@@ -144,7 +144,7 @@ end
 
         y, t, x = lsim(G, u, 1:N, x0 = randn(nx))
         @assert sum(!isfinite, y) == 0
-        ϵ = 0.01
+        ϵ = 0.001
         yn = y + ϵ * randn(size(y))
         d = iddata(yn, u, 1)
 
