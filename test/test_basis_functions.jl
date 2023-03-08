@@ -55,3 +55,23 @@ if isinteractive()
     bodeplot(G, w)
     bodeplot!(Gh, w)
 end
+
+
+## laguerre_id
+n = 4
+Ts = G.Ts
+a = 10
+basis = ControlSystemIdentification.laguerre_id(a, n, 0.01)
+Y = filter_bank(basis, u)
+p = Y'\vec(signal)
+Gh = sum_basis(basis, p)
+@test norm(signal' - Y'*p)/norm(signal) < 1e-3
+@test isdiscrete(Gh) == isdiscrete(basis)
+@test mean(abs2, abs2.(freqresp(G, w)) - abs2.(freqresp(Gh, w))) < 0.1
+@test mean(abs2, (freqresp(G, w)) - (freqresp(Gh, w))) < 0.1
+
+if isinteractive()
+    bodeplot(G, w)
+    bodeplot!(Gh, w)
+end
+
