@@ -25,7 +25,7 @@ end
 """
     kautz(a::Vector, h)
 
-Construct a discrete-time Kautz basis of length with poles at `a` amd sample time `h`.
+Construct a discrete-time Kautz basis with poles at `a` amd sample time `h`.
 """
 function kautz(a::AbstractVector, h)
     if maximum(abs, a) > 1
@@ -33,7 +33,7 @@ function kautz(a::AbstractVector, h)
             a = -a
         end
         a = exp.(h .* a)
-        @assert all(<(1) ∘ abs, a) "Ustable poles does not make sense"
+        @assert all(<(1) ∘ abs, a) "Including ustable poles does not make sense"
     end
     factors = basis_factor.(a)
     Q = factors[1]
@@ -51,7 +51,7 @@ end
 """
     laguerre_oo(a::Number, Nq)
 
-Construct an output orthogonalized Laguerre basis of length `Nq` with poles at `a`.
+Construct an output orthogonalized Laguerre basis of length `Nq` with poles at `-a`.
 """
 function laguerre_oo(a::Number, Nq)
     A = diagm(fill(-a, Nq))
@@ -65,7 +65,7 @@ end
 """
     laguerre(a::Number, Nq)
 
-Construct a Laguerre basis of length `Nq` with poles at `a`.
+Construct a Laguerre basis of length `Nq` with poles at `-a`.
 """
 function laguerre(a, Nq)
     A = diagm(fill(-a, Nq))
@@ -79,6 +79,35 @@ function laguerre(a, Nq)
     Ma = sqrt(2a)*diagm((2a).^(0:Nq-1))
     C = [1 zeros(1, Nq-1)]
     ss(A,Ma*B,C,0)
+end
+
+"""
+    laguerre_id(a::Number, Nq, Ts)
+
+Construct a discrete-time Laguerre basis of length `Nq` with poles at `-a` for system identification.
+
+NOTE: for large `Nq`, this basis may be numerically ill-conditioned. Consider applying `balance_statespace` to the resulting basis.
+"""
+function laguerre_id(a, Nq, Ts)
+    # Ref: Time delay integrating systems: a challenge for process control industries. A practical solution
+    # Ref 2: INDUSTRIAL AUTOMATION WITH BRAINWAVE – MULTIMAX AN ADAPTIVE MODEL BASED PREDICTIVE CONTROLLER https://people.ece.ubc.ca/huzmezan/docs/MultimaxPaper1.pdf
+    Nq >= 2 || error("Nq must be at least 2")
+    e = exp(-a*Ts)
+    τ1 = e
+    τ2 = Ts + 2/a*(e - 1)
+    τ3 = -Ts*e - τ2
+    τ4 = sqrt(2a)*(1-τ1)/a
+    diags = [
+        fill(τ1, Nq),
+        fill((-τ1*τ2 - τ3)/Ts, Nq-1),
+        [
+            fill((-1)^(i-1) * τ2^(i-2)*(τ1*τ2 + τ3)/Ts^(i-1), Nq-i+1) for i in 3:Nq
+        ]...
+    ]
+    A = diagm(((0:-1:-Nq+1) .=> diags)...)
+    B = [τ4*(-τ2*Ts) ^ (i-1) for i in 1:Nq] # TODO: not sure about the τ4 here
+    C = I# diagm([Ts^i for i in 1:Nq])
+    ss(A,B,C,0,Ts)
 end
 
 

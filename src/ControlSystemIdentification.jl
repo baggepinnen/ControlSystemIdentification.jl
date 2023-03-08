@@ -70,7 +70,7 @@ export KalmanFilter
 
 export weighted_estimator, Bandpass, Bandstop, Lowpass, Highpass, prefilter
 
-export kautz, laguerre, laguerre_oo, adhocbasis, sum_basis, basis_responses, filter_bank, basislength, ωζ2complex, add_poles, minimum_phase
+export kautz, laguerre, laguerre_oo, laguerre_id, adhocbasis, sum_basis, basis_responses, filter_bank, basislength, ωζ2complex, add_poles, minimum_phase
 
 include("utils.jl")
 include("types.jl")
