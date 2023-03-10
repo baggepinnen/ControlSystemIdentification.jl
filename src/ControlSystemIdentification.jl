@@ -384,6 +384,7 @@ function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Con
     Ad = G[n+1:end, n+1:end]'
     AdiQd = G[1:n, n+1:end]
     Qd = Ad*AdiQd
+    Qd .= (Qd .+ Qd') ./ 2
     if R === nothing
         return Qd
     else
