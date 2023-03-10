@@ -85,7 +85,9 @@ Create a **time-domain** identification data object.
 - `x::AbstractArray`: state data (if available)
 - `Ts::Union{Real,Nothing} = nothing`: optional sample time
 
-If the time-series are multivariate, time is in the *last* dimension.
+If the time-series are multivariate, time is in the *last* dimension. This means that the rows of the matrix represent different variables or observations, 
+while the columns represent different points in time. 
+To see an univariate variable in the same way you can define it as adjoint, e.g. `u=[1,2,3]'` (not required).
 
 # Operations on iddata
 - [`detrend`](@ref)
