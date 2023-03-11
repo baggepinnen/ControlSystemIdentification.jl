@@ -85,7 +85,8 @@ Create a **time-domain** identification data object.
 - `x::AbstractArray`: state data (if available)
 - `Ts::Union{Real,Nothing} = nothing`: optional sample time
 
-If the time-series are multivariate, time is in the *last* dimension.
+If the time-series are multivariate, time is in the *last* dimension,
+i.e., the sizes of the arrays are `(num_variables, num_timepoints)` (see examples below).
 
 # Operations on iddata
 - [`detrend`](@ref)
