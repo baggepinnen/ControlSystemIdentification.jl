@@ -1,6 +1,8 @@
 In this example, we will estimate a model for a laboratory setup acting like a hair dryer. Air is fanned through a tube and heated at the inlet. The air temperature is measured by a thermocouple at the output. The input is the voltage over the heating device (a mesh of resistor wires).
 
-The example comes from [STADIUS's Identification Database](https://homes.esat.kuleuven.be/~smc/daisy/daisydata.html) 
+The example comes from [STADIUS's Identification Database](https://homes.esat.kuleuven.be/~smc/daisy/daisydata.html).
+
+An extension to this example where an MPC controller is designed for the estimated system can be found [here](https://help.juliahub.com/juliasimcontrol/dev/examples/sysid_mpc/), as well as in video form [here](https://www.youtube.com/watch?v=z8o83UORuqQ&ab_channel=JuliaHub).
 
 > Ljung L.  System identification - Theory for the User. Prentice Hall, Englewood Cliffs, NJ, 1987. 
 
