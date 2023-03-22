@@ -116,6 +116,8 @@ plot(
 )
 ```
 
+The returned model is of type `PredictionStateSpace` and contains the field `sys` with the system model, as well as covariance matrices and estimated Kalman gain for a Kalman filter.
+
 # Extended help
 This implementation uses a tridiagonal parametrization of the A-matrix that has been shown to be favourable from an optimization perspective.¹ The initial guess `sys0` is automatically transformed to a special tridiagonal modal form. 
 [1]: Mckelvey, Tomas & Helmersson, Anders. (1997). State-space parametrizations of multivariable linear systems using tridiagonal matrix forms.

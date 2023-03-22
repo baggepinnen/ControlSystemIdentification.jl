@@ -175,9 +175,13 @@ end
         weights = nothing,
     ) 
 
-Estimate a state-space model using subspace-based identification.
+Estimate a state-space model using subspace-based identification. Several different subspace-based algorithms are available, and can be chosen using the `W` keyword. Options are `:MOESP, :CVA, :N4SID, :IVM`.
 
 Ref: Ljung, Theory for the user.
+
+Resistance against outliers can be improved by supplying a custom factorization algorithm and replacing the internal least-squares estimators. See the documentation for the keyword arguments `svd`, `Aestimator`, and `Bestimator` below.
+
+The returned model is of type `N4SIDStateSpace` and contains the field `sys` with the system model, as well as covariance matrices for a Kalman filter.
 
 # Arguments:
 - `data`: Identification data [`iddata`](@ref)
@@ -190,10 +194,10 @@ Ref: Ljung, Theory for the user.
 - `zeroD`: Force the `D` matrix to be zero.
 - `stable`: Stabilize unstable system using eigenvalue reflection.
 - `focus`: `:prediction` or `simulation`
-- `svd`: The function to use for `svd`
+- `svd`: The function to use for `svd`. For resistance against outliers, consider using `TotalLeastSquares.rpca` to preprocess the data matrix before applying `svd`, like `svd = A->svd!(rpca(A)[1])`.
 - `scaleU`: Rescale the input channels to have the same energy.
-- `Aestimator`: Estimator function used to estimate `A,C`.
-- `Bestimator`: Estimator function used to estimate `B,D`.
+- `Aestimator`: Estimator function used to estimate `A,C`. The default is `\`, i.e., least squares, but robust estimators, such as `irls, flts, rtls` from [TotalLeastSquares.jl](https://github.com/baggepinnen/TotalLeastSquares.jl/), can be used to gain resistance against outliers.
+- `Bestimator`: Estimator function used to estimate `B,D`. Weighted estimation can be eachieved by passing `wls` from TotalLeastSquares.jl together with the `weights` keyword argument.
 - `weights`: A vector of weights can be provided if the `Bestimator` is `wls`. 
 
 # Extended help
