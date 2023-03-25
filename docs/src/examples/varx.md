@@ -36,12 +36,13 @@ d = iddata(y, u, 1)
 
 We now estimate two models, one using subspace-based identification ([`subspaceid`](@ref)) and one using the prediction-error method ([`newpem`](@ref)). The VARX model we estimated had a state of order 4, two lags of ``y``, each of which is a vector of length 2, we thus estimate models of order 4 below.
 ```@example VARX
-model1 = subspaceid(d, 4, zeroD=true, s1=2)
-model2, _ = newpem(d, 4)
+model1 = subspaceid(d, 4, zeroD=true)
+model2, x0 = newpem(d, 4)
 
 plot(
-    simplot(d, model1, title="Simulation performance subspaceid", layout=2),
-    simplot(d, model2, title="Simulation performance PEM", layout=2),
+    simplot(d, model1, title="Simulation subspaceid", layout=2),
+    simplot(d, model2, x0, title="Simulation PEM", layout=2),
+    titlefontsize=10,
 )
 ```
 The simulation indicates that the fit is close to 100%, i.e., the general linear model fit the VARX model perfectly, it does not however have exactly the same structure as the original VARX model. 
