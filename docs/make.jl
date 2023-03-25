@@ -26,7 +26,7 @@ makedocs(
                   "Glass furnace" => "examples/glass_furnace.md"
                   "Evaporator" => "examples/evaporator.md"
                   "Hair dryer" => "examples/hair_dryer.md"
-                  "VARX model" => "examples/varx.md",
+                  "VARX model" => "examples/varx.md"
             ],
             "API" => "api.md",
       ],
