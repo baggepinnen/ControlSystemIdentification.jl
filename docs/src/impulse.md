@@ -37,3 +37,7 @@ plot!(reshape(H, sys.nu+sys.ny, :)', lab="OKID Estiamte", seriestype=:steppre, l
 
 See the [example notebooks](
 https://github.com/JuliaControl/ControlExamples.jl) for more details.
+
+
+## Estimate model from impulse-response data
+The [`era`](@ref) ("Eigenvalue realization algorithm") and [`okid`](@ref) ("Observer Kalman identification") algorithms are often used together, where the latter estimates the Markov parameters (impulse response) and the former takes those and estimates a statespace model. If you have the Markov parameters already, you can call [`era`](@ref) directly to estimate a model from an impulse response.
