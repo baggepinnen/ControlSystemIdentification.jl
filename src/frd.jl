@@ -205,6 +205,8 @@ end
 Calculates the magnitude-squared coherence Function. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
 κ: Coherence function (not squared)
 N: Noise model
+
+See also [`coherenceplot`](@ref)
 """
 function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
     noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
@@ -239,7 +241,7 @@ end
     ir, t, Σ = impulseest(d::AbstractIdData, n; λ=0, estimator=ls)
 
 Estimates the system impulse response by fitting an `n`:th order FIR model. Returns impulse-response estimate, time vector and covariance matrix.
-See also `impulseestplot`
+See also [`impulseestplot`](@ref) and [`okid`](@ref).
 """
 function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls)
     d.ny == 1 || error("impulseest only supports single-output data")

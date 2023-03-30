@@ -299,10 +299,10 @@ end
 """
     era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int, n::Int)
 
-Eigenvalue realization algorithm.
+Eigenvalue realization algorithm. The algorithm returns a statespace model.
 
 # Arguments:
-- `YY`: Markov parameters (impulse response) size `n_out×n_in×n_time`
+- `YY`: Markov parameters (impulse response) size `ny × nu × n_time`
 - `Ts`: Sample time
 - `r`: Model order
 - `m`: Number of rows in Hankel matrix
@@ -334,8 +334,7 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
             end
         end
     end
-    # return H
-    any(!isfinite, H) && error("Got infinite stuff in H")
+    all(isfinite, H) || error("Got infinite stuff in H")
     U, S, V = svd(H)
     Ur = U[:, 1:r]
     Vr = V[:, 1:r]
@@ -364,15 +363,16 @@ era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...) =
 """
     H = okid(d::AbstractIdData, nx, l = 5nx; p = 1, λ=0, estimator = /)
 
-Observer Kalman filter identification. Returns the Markov parameters `H` size `n_out×n_in×l+1`
+Observer Kalman filter identification. Returns the Markov parameters (impulse response) `H` size `ny × nu × (l+1)`
 
 # Arguments:
 - `nx`: Model order
-- `l`: Number of Markov parameters to estimate.
+- `l`: Number of Markov parameters to estimate (length of impulse response).
 - `λ`: Regularization parameter
 - `p`: Optionally, delete the first `p` columns in the internal Hankel matrices to account for initial conditions != 0. If `x0 != 0`, try setting `p` around the same value as `l`.
+- `estimator`: Function to use for estimating the Markov parameters. Defaults to `/` (least squares), but can also be a robust option such as `TotalLeastSquares.irls / flts` or `TotalLeastSquares.tls` for a total least-squares solutoins (errors in variables).
 """
-@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0, p = 1, estimator = /)
+@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0.0, p::Int = 1, estimator = /)
     y, u = time2(output(d)), time2(input(d))
     q, N = size(y) # p is the number of outputs
     m = size(u, 1) # q is the number of inputs
