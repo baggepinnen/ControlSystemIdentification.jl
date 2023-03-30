@@ -106,4 +106,9 @@ ControlSystemIdentification.tfest
 ControlSystemIdentification.coherence
 ControlSystemIdentification.laguerre_oo
 ControlSystemIdentification.model_spectrum
+ControlSystemIdentification.welchplot
+ControlSystemIdentification.specplot
+ControlSystemIdentification.coherenceplot
+ControlSystemIdentification.autocorplot
+ControlSystemIdentification.crosscorplot
 ```

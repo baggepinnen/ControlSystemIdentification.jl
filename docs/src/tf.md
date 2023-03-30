@@ -100,6 +100,7 @@ Time-series modeling can be seen as special cases of transfer-function modeling 
 ## Code generation
 To generate C-code for, e.g., simulating a system or filtering through an estimated transfer function, see [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl).
 
+## Transfer-function API
 
 ```@docs
 ControlSystemIdentification.arx

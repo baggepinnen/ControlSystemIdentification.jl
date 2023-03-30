@@ -135,6 +135,8 @@ Furthermore, we have the utility functions below
 ## Code generation
 To generate C-code for, e.g., simulating a system, see [SymbolicControlSystems.jl](https://github.com/JuliaControl/SymbolicControlSystems.jl).
 
+## Statespace API
+
 ```@docs
 ControlSystemIdentification.subspaceid
 ControlSystemIdentification.n4sid

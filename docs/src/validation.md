@@ -111,3 +111,17 @@ plot(hs, perrs, lab="Prediction errors", xlabel="Horizon", ylabel="RMS error")
 hline!([serr], lab="Simulation error", l=:dash, legend=:bottomright, ylims=(0, Inf))
 ```
 
+## Validation API
+
+```@docs
+ControlSystemIdentification.predict
+ControlSystemIdentification.simulate
+ControlSystemIdentification.predplot
+ControlSystemIdentification.simplot
+ControlSystemIdentification.innovation_form
+ControlSystemIdentification.coherenceplot
+ControlSystemIdentification.autocorplot
+ControlSystemIdentification.crosscorplot
+ControlSystemIdentification.rms
+ControlSystemIdentification.modelfit
+```
