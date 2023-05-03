@@ -109,19 +109,19 @@ i.e., the sizes of the arrays are `(num_variables, num_timepoints)` (see example
 # Examples
 ```jldoctest
 julia> iddata(randn(10))
-Output data of length 10 with 1 outputs
+Output data of length 10 with 1 outputs, Ts = nothing
 
 julia> iddata(randn(10), randn(10), 1)
-InputOutput data of length 10 with 1 outputs and 1 inputs
+InputOutput data of length 10, 1 outputs, 1 inputs, Ts = 1
 
 julia> d = iddata(randn(2, 10), randn(3, 10), 0.1)
-InputOutput data of length 10 with 2 outputs and 3 inputs
+InputOutput data of length 10, 2 outputs, 3 inputs, Ts = 0.1
 
 julia> [d d] # Concatenate along time
-InputOutput data of length 20 with 2 outputs and 3 inputs
+InputOutput data of length 20, 2 outputs, 3 inputs, Ts = 0.1
 
 julia> d[1:3]
-InputOutput data of length 3 with 2 outputs and 3 inputs
+InputOutput data of length 3, 2 outputs, 3 inputs, Ts = 0.1
 
 julia> d.nu
 3
@@ -147,7 +147,7 @@ iddata(y::AbstractArray, u::AbstractArray, w::AbstractVector) = InputOutputFreqD
 """
     iddata(res::ControlSystemsBase.SimResult)
 
-Create an identification data directly from a simulation result.
+Create an identification-data object directly from a simulation result.
 """
 iddata(res::ControlSystemsBase.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[1])
 
