@@ -58,12 +58,12 @@ function autodim(x)
 end
 
 function Base.show(io::IO, d::OutputData)
-    write(io, "Output data of length $(length(d)) with $(noutputs(d)) outputs")
+    write(io, "Output data of length $(length(d)) with $(noutputs(d)) outputs, Ts = $(d.Ts)")
 end
 function Base.show(io::IO, d::InputOutputData)
     write(
         io,
-        "InputOutput data of length $(length(d)) with $(noutputs(d)) outputs and $(ninputs(d)) inputs",
+        "InputOutput data of length $(length(d)), $(noutputs(d)) outputs, $(ninputs(d)) inputs, Ts = $(d.Ts)",
     )
 end
 
