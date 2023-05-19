@@ -10,6 +10,7 @@ makedocs(
       sitename = "ControlSystemIdentification Documentation",
       doctest = false,
       modules = [ControlSystemIdentification],
+      pagesonly = true,
       pages = [
             "Home" => "index.md",
             "Identification data" => "iddata.md",
@@ -19,14 +20,15 @@ makedocs(
             "Frequency-domain estimation" => "freq.md",
             "Validation" => "validation.md",
             "Examples" => [
-                  "Temperature control" => "examples/temp.md"
-                  "Identification in closed loop" => "examples/closed_loop_id.md"
-                  "Ball and beam" => "examples/ballandbeam.md"
-                  "Flexible robot arm" => "examples/flexible_robot.md"
-                  "Glass furnace" => "examples/glass_furnace.md"
-                  "Evaporator" => "examples/evaporator.md"
-                  "Hair dryer" => "examples/hair_dryer.md"
-                  "VARX model" => "examples/varx.md"
+                  "Temperature control" => "examples/temp.md",
+                  "Identification in closed loop" => "examples/closed_loop_id.md",
+                  "Identification of unstable systems" => "examples/unstable_systems.md",
+                  "Ball and beam" => "examples/ballandbeam.md",
+                  "Flexible robot arm" => "examples/flexible_robot.md",
+                  "Glass furnace" => "examples/glass_furnace.md",
+                  "Evaporator" => "examples/evaporator.md",
+                  "Hair dryer" => "examples/hair_dryer.md",
+                  "VARX model" => "examples/varx.md",
             ],
             "API" => "api.md",
       ],

@@ -1,3 +1,4 @@
+# Ball and beam
 In this example, we will estimate a model for a ball on a beam. 
 
 We will get the data from [STADIUS's Identification Database](https://homes.esat.kuleuven.be/~smc/daisy/daisydata.html)
@@ -43,7 +44,7 @@ predplot(model, dval, h=1)
 predplot!(model, dval, h=10, ploty=false)
 predplot!(model, dval, h=20, ploty=false)
 ```
-The figures above show the result of predicting $h={1, 10, 20}$ steps into the future. Since the process is unstable, simulation is not feasible, and already 20 steps prediction shows tendencies towards being unstable.
+The figures above show the result of predicting $h={1, 10, 20}$ steps into the future. Since the process is unstable, simulation is unstable and not feasible,[^1] and already 20 steps prediction shows tendencies towards being unstable.
 
 We can visualize the estimated models in the frequency domain as well. We show both the model estimated using PEM and a nonparametric estimate using a Fourier-based method ([`tfest`](@ref)), this method estimates a noise model as well.
 
@@ -53,3 +54,5 @@ bodeplot(model.sys, w, lab="PEM", plotphase=false)
 plot!(tfest(d))
 ```
 It looks like the two models disagree for low frequencies, which is expected after the discussion above.
+
+[^1]: To learn more, see [Identification of unstable systems](@ref)

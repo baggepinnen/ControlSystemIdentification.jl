@@ -82,7 +82,7 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 - `zeroD`: Force zero `D` matrix
 - `stable` if true, stability of the estimated system will be enforced by eigenvalue reflection using [`schur_stab`](@ref) with `ϵ=1/100` (default). If `stable` is a real value, the value is used instead of the default `ϵ`.
 - `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
-- `focus`: `prediction` or `:simulation`. If `:simulation`, hte `K` matrix will be zero.
+- `focus`: `prediction` or `:simulation`. If `:simulation`, the `K` matrix will be zero.
 - `optimizer`: One of Optim's optimizers
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
@@ -122,7 +122,7 @@ The returned model is of type `PredictionStateSpace` and contains the field `sys
 This implementation uses a tridiagonal parametrization of the A-matrix that has been shown to be favourable from an optimization perspective.¹ The initial guess `sys0` is automatically transformed to a special tridiagonal modal form. 
 [1]: Mckelvey, Tomas & Helmersson, Anders. (1997). State-space parametrizations of multivariable linear systems using tridiagonal matrix forms.
 
-The parameter vector used in the optimizaiton takes the following form
+The parameter vector used in the optimization takes the following form
 ```julia
 p = [trivec(A); vec(B); vec(C); vec(D); vec(K); vec(x0)]
 ```
