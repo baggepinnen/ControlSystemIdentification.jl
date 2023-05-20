@@ -87,7 +87,7 @@ In both of these examples, we may make use of measurements we have of the evolut
 We start by defining a model of the pendulum. The model takes a parameter $p = L$ corresponding to the length of the pendulum.
 
 ```@example PEM
-using Plots, Statistics, DataInterpolations, ForwardDiff, LowLevelParticleFilters
+using Plots, Statistics, DataInterpolations, LowLevelParticleFilters
 
 Ts = 0.01 # Sample time
 tsteps = range(0, stop=20, step=Ts)
