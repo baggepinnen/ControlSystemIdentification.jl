@@ -297,14 +297,14 @@ end
 
 ##
 """
-    era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int = 2r, n::Int = 2r)
+    era(YY::AbstractArray{<:Any, 3}, Ts, nx::Int, m::Int = 2nx, n::Int = 2nx)
 
 Eigenvalue realization algorithm. The algorithm returns a statespace model.
 
 # Arguments:
 - `YY`: Markov parameters (impulse response) size `ny × nu × n_time`
 - `Ts`: Sample time
-- `r`: Model order
+- `nx`: Model order
 - `m`: Number of rows in Hankel matrix
 - `n`: Number of columns in Hankel matrix
 """
@@ -346,8 +346,8 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int = 2r, n::Int = 2r)
 end
 
 """
-    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, λ=0)
-    era(ds::Vector{IdData}, r, m = 2r, n = 2r, l = 5r; p = l, λ=0)
+    era(d::AbstractIdData, nx; m = 2nx, n = 2nx, l = 5nx, p = l, λ=0)
+    era(ds::Vector{IdData}, nx; m = 2nx, n = 2nx, l = 5nx, p = l, λ=0)
 
 Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as an initial step.
 
@@ -356,20 +356,22 @@ The parameter `l` is likely to require tuning, a reasonable starting point to ch
 If a vector of datasets is provided, the Markov parameters estimated from each experiment are averaged before calling `era`. This allows use of data from multiple experiments to improve the model estimate.
 
 # Arguments:
-- `r`: Model order
+- `nx`: Model order
 - `l`: Number of Markov parameters to estimate.
-- `λ`: Regularization parameter
+- `λ`: Regularization parameter (don't overuse this, prefer to make more experiments instead)
 - `p`: Optionally, delete the first `p` columns in the internal Hankel matrices to account for initial conditions != 0. If `x0 != 0`, for `era`, `p` defaults to `l`, while when calling `okid` directly, `p` defaults to 0.
 """
 era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...) =
     era(okid(d, r, l; p, kwargs...), d.Ts, r, m, n)
 
-function era(ds::AbstractVector{<:AbstractIdData}, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...)
+function era(ds::AbstractVector{<:AbstractIdData}, r, m, n = 2r, l = 5r; p = l, kwargs...)
     allequal(d.Ts for d in ds) || throw(ArgumentError("Sample time mismatch between datasets"))
     Ys = okid.(ds, r, l; p, kwargs...)
     Y = mean(Ys)
     era(Y, ds[1].Ts, r, m, n)
 end
+
+era(d, r; m=2r, n=2r, l=5r, p=l, kwargs...) = era(d, r, m, n, l; p, kwargs...)
 
 
 """

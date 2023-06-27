@@ -53,7 +53,7 @@ See the docstrings of [`subspaceid`](@ref) and [`n4sid`](@ref) for additional ar
 ## ERA and OKID
 The "Eigenvalue realization algorithm" and "Observer Kalman identification" algorithms are available as [`era`](@ref) and [`okid`](@ref). If `era` is called with a data object, `okid` is automatically used internally to produce the Markov parameters to the ERA algorithm.
 ```@example ss
-sys3 = era(d, 2)
+sys3 = era(d, 2) # era has a lot of parameters that may require tuning
 bodeplot!(sys3, lab=["ERA" ""])
 ```
 

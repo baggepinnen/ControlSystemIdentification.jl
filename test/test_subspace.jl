@@ -391,4 +391,5 @@ using Statistics
     plot(f1, f2)
 
     @test meanmodel ≈ era(ds, 2, 50, 50, round(Int, 10/Ts), p=1)
+    @test meanmodel ≈ era(ds, 2; m=50, n=50, l=round(Int, 10/Ts), p=1)
 end
