@@ -297,18 +297,18 @@ end
 
 ##
 """
-    era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int, n::Int)
+    era(YY::AbstractArray{<:Any, 3}, Ts, nx::Int, m::Int = 2nx, n::Int = 2nx)
 
 Eigenvalue realization algorithm. The algorithm returns a statespace model.
 
 # Arguments:
 - `YY`: Markov parameters (impulse response) size `ny × nu × n_time`
 - `Ts`: Sample time
-- `r`: Model order
+- `nx`: Model order
 - `m`: Number of rows in Hankel matrix
 - `n`: Number of columns in Hankel matrix
 """
-function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
+function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int = 2r, n::Int = 2r)
     nout, nin, T = size(YY)
     size(YY, 3) >= m + n ||
         throw(ArgumentError("hankel size too large for input size. $(size(YY,3)) < m+n ($(m+n))"))
@@ -346,24 +346,40 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
 end
 
 """
-    era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, λ=0)
+    era(d::AbstractIdData, nx; m = 2nx, n = 2nx, l = 5nx, p = l, λ=0)
+    era(ds::Vector{IdData}, nx; m = 2nx, n = 2nx, l = 5nx, p = l, λ=0)
 
 Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as an initial step.
 
+The parameter `l` is likely to require tuning, a reasonable starting point to choose `l` large enough for the impulse response to have mostly dissipated.
+
+If a vector of datasets is provided, the Markov parameters estimated from each experiment are averaged before calling `era`. This allows use of data from multiple experiments to improve the model estimate.
+
 # Arguments:
-- `r`: Model order
+- `nx`: Model order
 - `l`: Number of Markov parameters to estimate.
-- `λ`: Regularization parameter
+- `λ`: Regularization parameter (don't overuse this, prefer to make more experiments instead)
 - `p`: Optionally, delete the first `p` columns in the internal Hankel matrices to account for initial conditions != 0. If `x0 != 0`, for `era`, `p` defaults to `l`, while when calling `okid` directly, `p` defaults to 0.
 """
 era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...) =
     era(okid(d, r, l; p, kwargs...), d.Ts, r, m, n)
 
+function era(ds::AbstractVector{<:AbstractIdData}, r, m, n = 2r, l = 5r; p = l, kwargs...)
+    allequal(d.Ts for d in ds) || throw(ArgumentError("Sample time mismatch between datasets"))
+    Ys = okid.(ds, r, l; p, kwargs...)
+    Y = mean(Ys)
+    era(Y, ds[1].Ts, r, m, n)
+end
+
+era(d, r; m=2r, n=2r, l=5r, p=l, kwargs...) = era(d, r, m, n, l; p, kwargs...)
+
 
 """
     H = okid(d::AbstractIdData, nx, l = 5nx; p = 1, λ=0, estimator = /)
 
-Observer Kalman filter identification. Returns the Markov parameters (impulse response) `H` size `ny × nu × (l+1)`
+Observer Kalman filter identification. Returns the Markov parameters (impulse response) `H` size `ny × nu × (l+1)`.
+
+The parameter `l` is likely to require tuning, a reasonable starting point to choose `l` large enough for the impulse response to have mostly dissipated.
 
 # Arguments:
 - `nx`: Model order
