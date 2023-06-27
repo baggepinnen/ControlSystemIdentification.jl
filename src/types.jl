@@ -92,7 +92,7 @@ i.e., the sizes of the arrays are `(num_variables, num_timepoints)` (see example
 - [`detrend`](@ref)
 - [`prefilter`](@ref)
 - [`resample`](@ref)
-- append two along the time dimension `[d1 d2]`
+- append two along the time dimension `[d1 d2]` (only do this if the state of the system at the end of `d1` is close to the state at the beginning of `d2`)
 - index time series `d[output_index, input_index]`
 - index the time axis with indices `d[time_indices]`
 - index the time axis with seconds `d[3Sec:12Sec]` (`using ControlSystemIdentification: Sec`)
@@ -129,6 +129,15 @@ julia> d.nu
 julia> d.t # access time vector
 0.0:0.1:0.9
 ```
+
+# Use of multiple datasets
+Some estimation methods support the use of multiple datasets to estimate a model. In this case, the datasets are provided as a vector of iddata objects. The methods that currently support this are:
+- [`arx`](@ref)
+- [`era`](@ref)
+
+Several of the other estimation methods can be made to accept multiple datasets with minor modifications.
+
+In some situations, multiple datasets can also be handled by concatination. For this to be a good idea, the state of the system at the end of one data set must be close to the state at the beginning of the next, e.g., all experiments start and end at the same operating point.
 """
 iddata(
     y::AbstractArray,
