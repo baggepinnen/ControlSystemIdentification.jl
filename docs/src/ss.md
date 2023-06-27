@@ -60,6 +60,7 @@ bodeplot!(sys3, lab=["ERA" ""])
 ### Using multiple datasets
 ERA/OKID supports the use of multiple datasets to improve the estimation accuracy. Below, we show how to perform this manually
 ```@example ss
+using ControlSystemIdentification, ControlSystemsBase, Plots, Statistics
 Ts = 0.1
 G = c2d(tf(1, [1,1,1]), Ts) # True system
 
