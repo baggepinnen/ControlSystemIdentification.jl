@@ -297,7 +297,7 @@ end
 
 ##
 """
-    era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int, n::Int)
+    era(YY::AbstractArray{<:Any, 3}, Ts, r::Int, m::Int = 2r, n::Int = 2r)
 
 Eigenvalue realization algorithm. The algorithm returns a statespace model.
 
@@ -308,7 +308,7 @@ Eigenvalue realization algorithm. The algorithm returns a statespace model.
 - `m`: Number of rows in Hankel matrix
 - `n`: Number of columns in Hankel matrix
 """
-function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int, n::Int)
+function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int = 2r, n::Int = 2r)
     nout, nin, T = size(YY)
     size(YY, 3) >= m + n ||
         throw(ArgumentError("hankel size too large for input size. $(size(YY,3)) < m+n ($(m+n))"))
@@ -347,8 +347,13 @@ end
 
 """
     era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, λ=0)
+    era(ds::Vector{IdData}, r, m = 2r, n = 2r, l = 5r; p = l, λ=0)
 
 Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as an initial step.
+
+The parameter `l` is likely to require tuning, a reasonable starting point to choose `l` large enough for the impulse response to have mostly dissipated.
+
+If a vector of datasets is provided, the Markov parameters estimated from each experiment are averaged before calling `era`. This allows use of data from multiple experiments to improve the model estimate.
 
 # Arguments:
 - `r`: Model order
@@ -359,11 +364,20 @@ Eigenvalue realization algorithm. Uses `okid` to find the Markov parameters as a
 era(d::AbstractIdData, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...) =
     era(okid(d, r, l; p, kwargs...), d.Ts, r, m, n)
 
+function era(ds::AbstractVector{<:AbstractIdData}, r, m = 2r, n = 2r, l = 5r; p = l, kwargs...)
+    allequal(d.Ts for d in ds) || throw(ArgumentError("Sample time mismatch between datasets"))
+    Ys = okid.(ds, r, l; p, kwargs...)
+    Y = mean(Ys)
+    era(Y, ds[1].Ts, r, m, n)
+end
+
 
 """
     H = okid(d::AbstractIdData, nx, l = 5nx; p = 1, λ=0, estimator = /)
 
-Observer Kalman filter identification. Returns the Markov parameters (impulse response) `H` size `ny × nu × (l+1)`
+Observer Kalman filter identification. Returns the Markov parameters (impulse response) `H` size `ny × nu × (l+1)`.
+
+The parameter `l` is likely to require tuning, a reasonable starting point to choose `l` large enough for the impulse response to have mostly dissipated.
 
 # Arguments:
 - `nx`: Model order

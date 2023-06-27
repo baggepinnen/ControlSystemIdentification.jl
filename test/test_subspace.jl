@@ -358,3 +358,37 @@ end
 
 end
 
+
+using Statistics
+
+@testset "muli_era" begin
+    @info "Testing muli_era"
+
+    ## era/okid on multiple experiements
+    Ts = 0.1
+    G = c2d(tf(1, [1,1,1]), Ts)
+
+    # Create several "experiments"
+    ds = map(1:5) do i
+        u = randn(1, 1000)
+        y, t, x = lsim(G, u)
+        yn = y + 0.2randn(size(y))
+        iddata(yn, u, Ts)
+    end
+
+    Ys = okid.(ds, 2, round(Int, 10/Ts)) # Estimate impulse response for each experiment
+    Y = mean(Ys)   # Average all impulse responses
+
+    f1 = plot(vec.(Ys), lab="Individual impulse-response estimates")
+    plot!(vec(Y), l=(3, :black), lab="Mean")
+
+    models = era.(Ys, Ts, 2, 50, 50)    # estimate models based on individual experiments
+    meanmodel = era(Y, Ts, 2, 50, 50)   # estimate model based on mean impulse response
+
+    f2 = bodeplot([G, meanmodel], lab=["True" "" "Combined estimate" ""], l=2)
+    bodeplot!(models, lab="Individual estimates", c=:black, alpha=0.5, legend=:bottomleft)
+
+    plot(f1, f2)
+
+    @test meanmodel ≈ era(ds, 2, 50, 50, round(Int, 10/Ts), p=1)
+end
