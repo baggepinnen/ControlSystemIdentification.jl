@@ -203,8 +203,8 @@ end
     κ = coherence(d; n = length(d)÷10, noverlap = n÷2, window=hamming)
 
 Calculates the magnitude-squared coherence Function. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
-κ: Coherence function (not squared)
-N: Noise model
+
+- κ: Coherence function (not squared) in the form of an [`FRD`](@ref).
 
 See also [`coherenceplot`](@ref)
 """
@@ -213,7 +213,7 @@ function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, wi
     ninputs(d) == 1 || throw(ArgumentError("coherence only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
     Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
-    k = (abs2.(Syu) ./ (Suu .* Syy))#[end÷2+1:end]
+    k = @. abs2(Syu) / (Suu * Syy) # [end÷2+1:end]
     Sch = FRD(freqvec(h, k), k)
     return Sch
 end
@@ -228,9 +228,9 @@ function wcfft(y, u; n = length(y) ÷ 10, noverlap = n ÷ 2, window = hamming)
     for i in eachindex(uw)
         xy = rfft(yw[i])
         xu = rfft(uw[i])
-        Syu .+= xy .* conj.(xu)
-        Syy .+= abs2.(xy)
-        Suu .+= abs2.(xu)
+        @. Syu += xy * conj(xu)
+        @. Syy += abs2(xy)
+        @. Suu += abs2(xu)
     end
     Syy, Suu, Syu
 end
