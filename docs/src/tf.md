@@ -14,7 +14,7 @@ This package estimates models in discrete time, but they may be converted to con
 
 The methods available are:
 ## Functions
-- [`arx`](@ref): Transfer-function estimation using least-squares fitting with a closed-form solution.
+- [`arx`](@ref): Transfer-function estimation using least-squares fitting with a closed-form solution. Supports multiple datasets and custom estimator functions.
 - [`arma`](@ref): Estimate an ARMA model (no control input).
 - [`ar`](@ref): Estimate an AR model (no input).
 - [`arma_ssa`](@ref) Estimate an ARMA model with estimated noise as input (no control input).

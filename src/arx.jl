@@ -83,6 +83,8 @@ heavy measurement noise. The number of free parameters is `na+nb`
 - `stochastic`: if true, returns a transfer function with uncertain parameters represented by `MonteCarloMeasurements.Particles`.
 
 Supports MISO estimation by supplying an iddata with a matrix `u`, with nb = [nb₁, nb₂...] and optional inputdelay = [d₁, d₂...]
+
+This function supports multiple datasets, provided as a vector of iddata objects.
 """
 function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator = \, stochastic = false)
     d.ny == 1 || throw(ArgumentError("arx only supports single output."))
@@ -104,6 +106,17 @@ function arx(d::AbstractIdData, na, nb; inputdelay = ones(Int, size(nb)), λ = 0
         return TransferFunction(Particles, model, Σ) |> cancel_z!
     end
     return model |> cancel_z!
+end
+
+function arx(ds::AbstractVector{<:AbstractIdData}, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator = \)
+    allequal(sampletime(d) for d in ds) || throw(ArgumentError("All data sets must have the same sample time"))
+    yA = getARXregressor.(ds, na, nb; inputdelay)
+    y_train = reduce(vcat, first.(yA))
+    A = reduce(vcat, last.(yA))
+    w = ls(A, y_train, λ, estimator) |> vec
+    a, b = params2poly2(w, na, nb; inputdelay)
+    model = tf(b, a, sampletime(ds[1]))
+    model |> cancel_z!
 end
 
 """
