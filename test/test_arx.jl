@@ -48,6 +48,8 @@ Gh = arx(d, na, nb)
 # bodeplot(G,ω)
 # bodeconfidence!(Gh, Σ, ω=ω, color=:blue, lab="Est")
 
+@test arx([d,d], na, nb) ≈ Gh rtol = 1e-10
+
 yh1 = predict(Gh, d)
 yh2 = simulate(ss(Gh), d)
 @test yh1 ≈ yh2
