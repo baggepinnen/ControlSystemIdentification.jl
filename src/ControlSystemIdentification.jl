@@ -339,10 +339,10 @@ function ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_co
 end
 
 """
-    Qd = c2d(sys::StateSpace{Discrete}, Q::Matrix)
-    Qd, Rd = c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix)
-    Qd = c2d(sys::StateSpace{Continuous}, Qc::Matrix; Ts)
-    Qd, Rd = c2d(sys::StateSpace{Continuous}, Qc::Matrix, R::Matrix; Ts)
+    Qd = c2d(sys::StateSpace{Discrete}, Q::Matrix, opt=:o)
+    Qd, Rd = c2d(sys::StateSpace{Discrete}, Q::Matrix, R::Matrix, opt=:o)
+    Qd = c2d(sys::StateSpace{Continuous}, Qc::Matrix; Ts, opt=:o)
+    Qd, Rd = c2d(sys::StateSpace{Continuous}, Qc::Matrix, R::Matrix; Ts, opt=:o)
 
 Sample a continuous-time covariance matrix to fit the provided discrete-time system.
 The measurement covariance `R` may also be provided
@@ -353,12 +353,17 @@ Ref: "Discrete-time Solutions to the Continuous-time
 Differential Lyapunov Equation With Applications to Kalman Filtering", 
 Patrik Axelsson and Fredrik Gustafsson
 
+If `opt = :c`, the matrix is instead assumed to be a cost matrix for an LQR problem.
+
 On singular covariance matrices: The traditional double integrator with covariance matrix `Q = diagm([0,σ²])` can not be sampled with this method. Instead, the input matrix ("Cholesky factor") of `Q` must be manually kept track of, e.g., the noise of variance `σ²` enters like `N = [0, 1]` which is sampled using ZoH and becomes `Nd = [1/2 Ts^2; Ts]` which results in the covariance matrix `σ² * Nd * Nd'`. 
 """
-function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qc::AbstractMatrix, R=nothing)
+function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qc::AbstractMatrix, R=nothing, opt=:o)
     Ad  = sys.A
     Ac  = real(log(Ad)./sys.Ts)
-    h   = sys.Ts
+    if opt === :o
+        Ac = Ac'
+        Ad = Ad'
+    end
     C   = Symmetric(Qc - Ad*Qc*Ad')
     Qd  = MatrixEquations.lyapc(Ac, C)
     # The method below also works, but no need to use quadgk when MatrixEquations is available.
@@ -370,17 +375,24 @@ function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Dis
     if R === nothing
         return Qd
     else
-        Qd, R ./ h
+        if opt === :c
+            Qd, R .* sys.Ts
+        else
+            Qd, R ./ sys.Ts
+        end
     end
 end
 
 
-function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Continuous}, Qc::AbstractMatrix, R=nothing; Ts)
+function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Continuous}, Qc::AbstractMatrix, R=nothing; Ts, opt=:o)
     # Ref: Charles Van Loan: Computing integrals involving the matrix exponential, IEEE Transactions on Automatic Control. 23 (3): 395–404, 1978
     n = sys.nx
     Ac  = sys.A
+    if opt === :o
+        Ac = Ac'
+    end
     F = [-Ac Qc; zeros(size(Qc)) Ac']
-    G = exp(F)
+    G = exp(F*Ts)
     Ad = G[n+1:end, n+1:end]'
     AdiQd = G[1:n, n+1:end]
     Qd = Ad*AdiQd
@@ -388,7 +400,11 @@ function ControlSystemsBase.c2d(sys::AbstractStateSpace{<:ControlSystemsBase.Con
     if R === nothing
         return Qd
     else
-        Qd, R ./ Ts
+        if opt === :c
+            Qd, R .* Ts
+        else
+            Qd, R ./ Ts
+        end
     end
 end
 
@@ -422,20 +438,26 @@ function ControlSystemsBase.d2c(sys::AbstractPredictionStateSpace{<:ControlSyste
 end
 
 """
-    d2c(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qd::AbstractMatrix)
+    Qc = d2c(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qd::AbstractMatrix; opt=:o)
 
 Resample discrete-time covariance matrix belonging to `sys` to the equivalent continuous-time matrix.
 
 The method used comes from theorem 5 in the reference below.
+
+If `opt = :c`, the matrix is instead assumed to be a cost matrix for an LQR problem.
 
 Ref: Discrete-time Solutions to the Continuous-time
 Differential Lyapunov Equation With
 Applications to Kalman Filtering
 Patrik Axelsson and Fredrik Gustafsson
 """
-function ControlSystemsBase.d2c(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qd::AbstractMatrix)
+function ControlSystemsBase.d2c(sys::AbstractStateSpace{<:ControlSystemsBase.Discrete}, Qd::AbstractMatrix; opt=:o)
     Ad = sys.A
     Ac = real(log(Ad)./sys.Ts)
+    if opt === :o
+        Ac = Ac'
+        Ad = Ad'
+    end
     C = Symmetric(Ac*Qd + Qd*Ac')
     Qc = MatrixEquations.lyapd(Ad, -C)
     isposdef(Qc) || @error("Calculated covariance matrix not positive definite")

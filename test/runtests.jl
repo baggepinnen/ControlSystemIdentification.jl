@@ -167,13 +167,14 @@ end
         l = 2
         A = Matrix{Float64}(I(r))
         A[1, 1] = 1.01
-        G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), 1)
+        Ts = 0.5
+        G = ss(A, randn(r, m), randn(l, r), 0 * randn(l, m), Ts)
         u = randn(m, N)
         x0 = randn(r)
-        y, t, x = lsim(G, u, 1:N, x0 = x0)
+        y, t, x = lsim(G, u, x0 = x0)
         @test sum(!isfinite, y) == 0
         yn = y + 0.1randn(size(y))
-        d = iddata(yn, u, 1)
+        d = iddata(yn, u, Ts)
         sys = n4sid(d, r, γ = 0.99)
         Qc = d2c(sys, sys.Q)
         Qd = c2d(sys, Qc)
@@ -187,6 +188,43 @@ end
         sysd = c2d(sysc, sys.Ts)
         @test sysd.Q ≈ sys.Q
         @test sysd.K ≈ sys.K rtol=1e-2
+
+        # Test sampling of cost matrix
+        sys = DemoSystems.resonant()
+        x0 = randn(sys.nx)
+
+        Ts = 0.001 # cost approximation becomes more crude as Ts increases, expected?
+        Qc = [1 0.01; 0.01 2]
+        Rc = I(1)
+        sysd = c2d(sys, Ts)
+        Qd, Rd = c2d(sys, Qc, Rc; Ts, opt=:c)
+        Qc2 = d2c(sysd, Qd; opt=:c)
+        @test Qc2 ≈ Qc
+
+
+        # NOTE: these tests are not run due to OrdinaryDiffEq latency, they should pass
+        # using OrdinaryDiffEq
+        # L = lqr(sys, Qc, Rc)
+        # dynamics = function (xc, p, t)
+        #     x = xc[1:sys.nx]
+        #     u = -L*x
+        #     dx = sys.A*x + sys.B*u
+        #     dc = dot(x, Qc, x) + dot(u, Rc, u)
+        #     return [dx; dc]
+        # end
+        # prob = ODEProblem(dynamics, [x0; 0], (0.0, 10.0))
+        # sol = solve(prob, Tsit5())
+        # cc = sol.u[end][end]
+        # Ld = lqr(sys, Qd, Rd)
+        # sold = lsim(sysd, (x, t) -> -Ld*x, 0:Ts:10, x0 = x0)
+        # function cost(x, u, Q, R)
+        #     dot(x, Q, x) + dot(u, R, u)
+        # end
+        # cd = cost(sold.x, sold.u, Qd, Rd)
+        # @test cc ≈ cd rtol=0.05
+
+
+
     end
 end
 
@@ -228,3 +266,8 @@ end
 # end
 #
 # plot(ivec, res)
+
+
+
+
+
