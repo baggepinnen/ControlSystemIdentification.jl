@@ -26,7 +26,7 @@ StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 TotalLeastSquares = "028f657a-7ace-5159-a694-8cfd97933b0c"
 
 [compat]
-ComponentArrays = "0.8, 0.9, 0.10, 0.11, 0.12, 0.13"
+ComponentArrays = "0.8, 0.9, 0.10, 0.11, 0.12, 0.13, 0.14"
 ControlSystemsBase = "1"
 DSP = "0.6.1, 0.7"
 DelimitedFiles = "1"
