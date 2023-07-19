@@ -191,15 +191,41 @@ end
 
         # Test sampling of cost matrix
         sys = DemoSystems.resonant()
-        x0 = randn(sys.nx)
+        x0 = ones(sys.nx)
 
-        Ts = 0.001 # cost approximation becomes more crude as Ts increases, expected?
+        Ts = 0.01 # cost approximation becomes more crude as Ts increases, expected?
         Qc = [1 0.01; 0.01 2]
         Rc = I(1)
         sysd = c2d(sys, Ts)
         Qd, Rd = c2d(sys, Qc, Rc; Ts, opt=:c)
         Qc2 = d2c(sysd, Qd; opt=:c)
         @test Qc2 ≈ Qc
+
+        # test case from paper
+        A = [
+            2 -8 -6
+            10 -19 -12
+            -10 15 8
+        ]
+        B = [
+            5 1
+            1 4
+            3 2
+        ]
+        Qc = [
+            4 1 2
+            1 3 1
+            2 1 5
+        ]
+
+        Qd = c2d(ss(A,B,I,0), Qc, Ts=1, opt=:c)
+        Qd_van_load = [
+            9.934877720 -11.08568953 -9.123023900
+            -11.08568953 13.66870748 11.50451512
+            -9.123023900 11.50451512 10.29179555 
+        ]
+
+        @test norm(Qd - Qd_van_load) < 1e-6
 
 
         # NOTE: these tests are not run due to OrdinaryDiffEq latency, they should pass
@@ -213,23 +239,19 @@ end
         #     return [dx; dc]
         # end
         # prob = ODEProblem(dynamics, [x0; 0], (0.0, 10.0))
-        # sol = solve(prob, Tsit5())
+        # sol = solve(prob, Tsit5(), reltol=1e-8, abstol=1e-8)
         # cc = sol.u[end][end]
-        # Ld = lqr(sys, Qd, Rd)
+        # Ld = lqr(sysd, Qd, Rd)
         # sold = lsim(sysd, (x, t) -> -Ld*x, 0:Ts:10, x0 = x0)
         # function cost(x, u, Q, R)
         #     dot(x, Q, x) + dot(u, R, u)
         # end
         # cd = cost(sold.x, sold.u, Qd, Rd)
-        # @test cc ≈ cd rtol=0.05
-
-
+        # @test cc ≈ cd rtol=0.01
+        # @test abs(cc-cd) < 1.0001*0.005531389319983315
 
     end
 end
-
-
-
 
 
 ##
