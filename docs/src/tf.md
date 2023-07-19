@@ -91,6 +91,11 @@ Uncertain transfer function with `Particles` coefficients can be used like any o
 
 See also function [`arma`](@ref) for estimation of signal models without inputs.
 
+A video using the function [`arx`](@ref) is available here:
+```@raw html
+<iframe style="height: 315px; width: 560px" src="https://www.youtube.com/embed/HSx28O956kA" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+```
+
 ## Time-series modeling
 Time-series modeling can be seen as special cases of transfer-function modeling where there are no control inputs. This package is primarily focused on control system identification, but we nevertheless provide two methods aimed at time-series estimation:
 - [`ar`](@ref): Estimate an AR model (no input).

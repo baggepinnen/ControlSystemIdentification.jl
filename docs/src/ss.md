@@ -180,3 +180,9 @@ ControlSystemIdentification.newpem
 ControlSystemIdentification.era
 ControlSystemIdentification.okid
 ```
+
+## Video tutorial
+A video tutorial performing statespace estimation is available here:
+```@raw html
+<iframe style="height: 315px; width: 560px" src="https://www.youtube.com/embed/z8o83UORuqQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+```
