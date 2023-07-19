@@ -175,19 +175,19 @@ end
         @test sum(!isfinite, y) == 0
         yn = y + 0.1randn(size(y))
         d = iddata(yn, u, Ts)
-        sys = n4sid(d, r, γ = 0.99)
-        Qc = d2c(sys, sys.Q)
-        Qd = c2d(sys, Qc)
-        @test Qd ≈ sys.Q
+        sysd = n4sid(d, r, γ = 0.99)
+        Qc = d2c(sysd, sysd.Q, opt=:o)
+        Qd = c2d(sysd, Qc, opt=:o)
+        @test Qd ≈ sysd.Q
 
-        sysc = d2c(sys)
-        Qd2 = c2d(sysc, Qc; Ts = sys.Ts)
-        @test Qd2 ≈ Qd
+        sysc = d2c(sysd)
+        @test sysc.Q ≈ Qc
+        Qd2 = c2d(sysc, Qc, sysd.Ts, opt=:o)
+        @test Qd2 ≈ Qd rtol=1e-5
 
-        sysc = d2c(sys)
-        sysd = c2d(sysc, sys.Ts)
-        @test sysd.Q ≈ sys.Q
-        @test sysd.K ≈ sys.K rtol=1e-2
+        sysd2 = c2d(sysc, sysd.Ts)
+        @test sysd2.Q ≈ sysd.Q
+        @test sysd2.K ≈ sysd.K rtol=1e-5
 
         # Test sampling of cost matrix
         sys = DemoSystems.resonant()
@@ -197,7 +197,7 @@ end
         Qc = [1 0.01; 0.01 2]
         Rc = I(1)
         sysd = c2d(sys, Ts)
-        Qd, Rd = c2d(sys, Qc, Rc; Ts, opt=:c)
+        Qd, Rd = c2d(sys, Qc, Rc, Ts, opt=:c)
         Qc2 = d2c(sysd, Qd; opt=:c)
         @test Qc2 ≈ Qc
 
@@ -218,7 +218,7 @@ end
             2 1 5
         ]
 
-        Qd = c2d(ss(A,B,I,0), Qc, Ts=1, opt=:c)
+        Qd = c2d(ss(A,B,I,0), Qc, 1, opt=:c)
         Qd_van_load = [
             9.934877720 -11.08568953 -9.123023900
             -11.08568953 13.66870748 11.50451512
