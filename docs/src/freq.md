@@ -6,6 +6,7 @@ Frequency-domain estimation refers to estimation of linear systems using frequen
 Non-parametric estimation refers to the estimation of a model without a fixed number of parameters. Instead, the number of estimated parameters typically grows with the size of the data. This form of estimation can be useful to gain an initial understanding of the system, before selecting model orders etc. for a more standard parametric model. We provide non-parametric estimation of transfer functions through spectral estimation. To illustrate, we once again simulate some data:
 ```@example npfreq
 using ControlSystemIdentification, ControlSystemsBase, Plots
+gr(fmt=:png) # hide
 T          = 100000
 h          = 1
 sim(sys,u) = lsim(sys, u, 1:T)[1][:]

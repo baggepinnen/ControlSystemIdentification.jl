@@ -5,6 +5,7 @@ We will get the data from [STADIUS's Identification Database](https://homes.esat
 ```@example furnace
 using DelimitedFiles, Plots
 using ControlSystemIdentification, ControlSystemsBase
+gr(fmt=:png) # hide
 
 url = "https://ftp.esat.kuleuven.be/pub/SISTA/data/process_industry/glassfurnace.dat.gz"
 zipfilename = "/tmp/furnace.dat.gz"

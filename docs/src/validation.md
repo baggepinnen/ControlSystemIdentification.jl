@@ -37,6 +37,7 @@ nothing # hide
 After fitting the models, we validate the results using the validation data and the functions `simplot` and `predplot` (cf. Matlab sys.id's `compare`):
 ```@example validation
 using Plots
+gr(fmt=:png) # hide
 ω   = exp10.(range(-2, stop=log10(pi), length=150))
 fig = plot(layout=4, size=(1000,600))
 for i in eachindex(res)

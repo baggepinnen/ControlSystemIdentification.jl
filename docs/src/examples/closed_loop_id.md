@@ -30,6 +30,7 @@ The ARX and PEM methods are theoretically unbiased in the presence of output fee
 
 ```@example closedloop
 using ControlSystemsBase, ControlSystemIdentification, Plots
+gr(fmt=:png) # hide
 G = tf(1, [1, -0.9], 1) # True system
 
 function generate_data(u; T)

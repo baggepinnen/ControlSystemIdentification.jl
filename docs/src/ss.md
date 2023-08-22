@@ -15,7 +15,8 @@ There exist several methods for identification of statespace models, [`subspacei
 ## Subspace-based identification using `n4sid` and `subspaceid`
 In this example we will estimate a statespace model using the [`n4sid`](@ref) method. This function returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `sys.sys`.
 ```@example ss
-using ControlSystemIdentification, ControlSystemsBase
+using ControlSystemIdentification, ControlSystemsBase, Plots
+gr(fmt=:png) # hide
 Ts = 0.1
 G  = c2d(DemoSystems.resonant(), Ts)
 u  = randn(1,1000)
@@ -61,6 +62,7 @@ bodeplot!(sys3, lab=["ERA" ""])
 ERA/OKID supports the use of multiple datasets to improve the estimation accuracy. Below, we show how to perform this manually
 ```@example ss
 using ControlSystemIdentification, ControlSystemsBase, Plots, Statistics
+gr(fmt=:png) # hide
 Ts = 0.1
 G = c2d(tf(1, [1,1,1]), Ts) # True system
 
