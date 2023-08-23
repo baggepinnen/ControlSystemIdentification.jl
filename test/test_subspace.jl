@@ -6,8 +6,8 @@ freqresptest(G, model) =
 
 freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
-@testset "n4sid" begin
-    @info "Testing n4sid"
+@testset "n4sid and era/okid" begin
+    @info "Testing n4sid and era/okid"
 
 
     N = 500

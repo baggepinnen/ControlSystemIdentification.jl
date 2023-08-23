@@ -449,6 +449,8 @@ The parameter `l` is likely to require tuning, a reasonable starting point to ch
     for k = 2:l+1
         H[:, :, k] = Y[:, :, k-1]
     end
-    H ./= Ts # Scale to match continuous-time response
+    if Ts !== nothing && !iszero(Ts)
+        H ./= Ts # Scale to match continuous-time response
+    end
     H
 end
