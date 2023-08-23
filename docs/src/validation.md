@@ -46,10 +46,10 @@ for i in eachindex(res)
     predplot!(sysh, dnv, x0h; sp=2, ploty=false)
 end
 plot!(dnv.y' .* [1 1], lab="y", l=(:dash, :black), sp=[1 2])
-bodeplot!((getindex.(res,1)),                     ω, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
-bodeplot!(innovation_form.(getindex.(res,1)),     ω, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
-bodeplot!(sys,                                    ω, plotphase=false, subplot=3, lab="True", l=(:black, :dash), legend = :bottomleft, title="System model")
-bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, plotphase=false, subplot=4, lab="True", l=(:black, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
+bodeplot!((getindex.(res,1)),                     ω, link = :none, balance=false, plotphase=false, subplot=3, title="Process", linewidth=2*[4 3 2 1])
+bodeplot!(innovation_form.(getindex.(res,1)),     ω, link = :none, balance=false, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
+bodeplot!(sys,                                    ω, link = :none, balance=false, plotphase=false, subplot=3, lab="True", l=(:black, :dash), legend = :bottomleft, title="System model")
+bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, link = :none, balance=false, plotphase=false, subplot=4, lab="True", l=(:black, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
 ```
 
 In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. All models capture the system dynamics reasonably well, but struggle slightly with capturing the gain of the noise dynamics.
@@ -121,7 +121,6 @@ ControlSystemIdentification.simulate
 
 - [`predplot`](@ref)
 - [`simplot`](@ref)
-- [`innovation_form`](@ref)
 - [`coherenceplot`](@ref)
 - [`autocorplot`](@ref)
 - [`crosscorplot`](@ref)
