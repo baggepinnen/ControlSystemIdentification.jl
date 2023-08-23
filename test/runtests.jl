@@ -161,6 +161,7 @@ end
 
     @testset "sampling of covariance matrices" begin
         @info "Testing sampling of covariance matrices"
+        Random.seed!(1)
         N = 200
         r = 2
         m = 2
