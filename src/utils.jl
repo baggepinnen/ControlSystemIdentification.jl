@@ -69,8 +69,23 @@ mse(x::AbstractMatrix) = sum(abs2, x, dims=2) ./ size(x, 2)
 
 rms(x::AbstractMatrix) = sqrt.(mean(abs2.(x), dims = 2))[:]
 sse(x::AbstractMatrix) = sum(abs2, x, dims = 2)[:]
+
+
+"""
+    modelfit(y, yh)
+
+Compute the model fit of `yh` to `y` as a percentage, sometimes referred to as the normalized root mean square error (NRMSE).
+
+```math
+\\text{modelfit}(y, \\hat{y}) = 100 \\left(1 - \\frac{\\sqrt{\\text{SSE}(y - \\hat{y})}}{\\sqrt{\\text{SSE}(y - \\bar{y})}}\\right)
+```
+
+An output of 100 indicates a perfect fit, an output of 0 indicates that the fit is no better than the mean if the data. Negative values are possible if the prediction is worse than predicting the mean of the data.
+"""
 modelfit(y, yh) = 100 * (1 .- rms(y .- yh) ./ rms(y .- mean(y, dims = 2)))
 modelfit(y::T, yh::T) where {T<:AbstractVector} =
     100 * (1 .- rms(y .- yh) ./ rms(y .- mean(y)))
 aic(x::AbstractVector, d) = log(sse(x)) .+ 2d / size(x, 2)
+
+"See [`modelfit`](@ref)"
 const nrmse = modelfit
