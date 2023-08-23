@@ -158,7 +158,10 @@ Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to op
 
 
 ## Filtering, prediction and simulation
-Models can be simulated using `lsim` from ControlSystemsBase.jl and using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
+
+When you **estimate** models, you can sometimes select the "focus" of the estimation, to either focus on `:prediciton` performance or `:simulation` performance. Simulation tends to require accurate low-frequency properties, especially for integrating systems, whereas prediction favors an accurate model for higher frequencies. If there are significant input disturbances affecting the system, or if the system is unstable, prediction focus is generally preferred.
+
+When you **validate** the estimated models, you can simulate them using `lsim` from ControlSystemsBase.jl or using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
 
 Furthermore, we have the utility functions below
 - [`predict`](@ref)`(sys, d, x0=zeros; h=1)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter. `h` denotes the prediction horizon.
