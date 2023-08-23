@@ -342,6 +342,9 @@ function era(YY::AbstractArray{<:Any,3}, Ts, r::Int, m::Int = 2r, n::Int = 2r)
     Ar = S2 * Ur'H2 * Vr * S2
     Br = S2 * Ur'H[:, 1:nin]
     Cr = H[1:nout, :] * Vr * S2
+    if Ts !== nothing
+        Br .*= Ts # Scale to match scaling in okid for match between discrete and continuous impulse responses
+    end
     ss(Ar, Br, Cr, Dr, Ts === nothing ? 1 : Ts)
 end
 
@@ -385,11 +388,13 @@ The parameter `l` is likely to require tuning, a reasonable starting point to ch
 - `nx`: Model order
 - `l`: Number of Markov parameters to estimate (length of impulse response).
 - `λ`: Regularization parameter
+- `smooth`: If true, the regularization given by `λ` penalizes curvature in the estimated impulse response. If [`era`](@ref) is to be used after `okid`, favor a small `λ` with `smooth=true`, but if the impulse response is to be inspected by eye, a larger smoothing can yield a visually more accurate estimate of the impulse response.
 - `p`: Optionally, delete the first `p` columns in the internal Hankel matrices to account for initial conditions != 0. If `x0 != 0`, try setting `p` around the same value as `l`.
 - `estimator`: Function to use for estimating the Markov parameters. Defaults to `/` (least squares), but can also be a robust option such as `TotalLeastSquares.irls / flts` or `TotalLeastSquares.tls` for a total least-squares solutoins (errors in variables).
 """
-@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0.0, p::Int = 1, estimator = /)
+@views function okid(d::AbstractIdData, nx, l = 5nx; λ = 0.0, smooth=false, p::Int = 1, estimator = /)
     y, u = time2(output(d)), time2(input(d))
+    Ts = d.Ts
     q, N = size(y) # p is the number of outputs
     m = size(u, 1) # q is the number of inputs
     # Step 2, form y, V, solve for observer Markov params, Ȳ
@@ -408,7 +413,15 @@ The parameter `l` is likely to require tuning, a reasonable starting point to ch
         y = y[:, p+1:end]
     end
     if λ > 0
-        Ȳ = estimator([y zeros(size(y, 1), size(V, 1))], [V λ * I])
+        if smooth
+            n = size(V, 1)
+            Λ = (λ / Ts^2) * diagm(-1=>ones(n-1), 0=>-2ones(n), 1=>ones(n-1))
+            Λ[1,:] .= 0
+            Λ[end,:] .= 0
+            Ȳ = estimator([y zeros(size(y, 1), size(V, 1))], [V Λ'])
+        else
+            Ȳ = estimator([y zeros(size(y, 1), size(V, 1))], [V λ * I])
+        end
     else
         Ȳ = estimator(y, V)
     end
@@ -435,6 +448,9 @@ The parameter `l` is likely to require tuning, a reasonable starting point to ch
     H[:, :, 1] = D
     for k = 2:l+1
         H[:, :, k] = Y[:, :, k-1]
+    end
+    if Ts !== nothing && !iszero(Ts)
+        H ./= Ts # Scale to match continuous-time response
     end
     H
 end
