@@ -74,11 +74,13 @@ ds = map(1:5) do i
     iddata(yn, u, Ts)
 end
 
-Ys = okid.(ds, 2, round(Int, 10/Ts))    # Estimate impulse response for each experiment
+Ys = okid.(ds, 2, round(Int, 10/Ts), smooth=true, λ=1)    # Estimate impulse response for each experiment
 Y = mean(Ys)                            # Average all impulse responses
 
-f1 = plot(vec.(Ys), lab="Individual estimates", title="Impulse-response estimates")
-plot!(vec(Y), l=(3, :black), lab="Mean")
+imp = impulse(G, 10)
+f1 = plot(imp, lab="True", l=5)
+plot!(imp.t, vec.(Ys), lab="Individual estimates", title="Impulse-response estimates")
+plot!(imp.t, vec(Y), l=(3, :black), lab="Mean")
 
 models = era.(Ys, Ts, 2, 50, 50)    # estimate models based on individual experiments
 meanmodel = era(Y, Ts, 2, 50, 50)   # estimate model based on mean impulse response
@@ -89,9 +91,9 @@ bodeplot!(models, lab="Individual estimates", c=:black, alpha=0.5, legend=:botto
 plot(f1, f2)
 ```
 
-The procedure shown above is equivalent to calling [`era`](@ref) directly with a vector of data sets, in which case the averaging of the impluse responses is done internally.
+The procedure shown above is equivalent to calling [`era`](@ref) directly with a vector of data sets, in which case the averaging of the impulse responses is done internally.
 ```@example ss
-era(ds, 2, 50, 50, round(Int, 10/Ts), p=1) # Should be identical to meanmodel above
+era(ds, 2, 50, 50, round(Int, 10/Ts), p=1, λ=1, smooth=true) # Should be identical to meanmodel above
 ```
 
 
