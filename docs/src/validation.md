@@ -117,12 +117,12 @@ hline!([serr], lab="Simulation error", l=:dash, legend=:bottomright, ylims=(0, I
 ```@docs
 ControlSystemIdentification.predict
 ControlSystemIdentification.simulate
-ControlSystemIdentification.predplot
-ControlSystemIdentification.simplot
-ControlSystemIdentification.innovation_form
-ControlSystemIdentification.coherenceplot
-ControlSystemIdentification.autocorplot
-ControlSystemIdentification.crosscorplot
-ControlSystemIdentification.rms
-ControlSystemIdentification.modelfit
 ```
+
+- [`predplot`](@ref)
+- [`simplot`](@ref)
+- [`innovation_form`](@ref)
+- [`coherenceplot`](@ref)
+- [`autocorplot`](@ref)
+- [`crosscorplot`](@ref)
+- [`modelfit`](@ref)
