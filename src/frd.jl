@@ -241,10 +241,13 @@ end
     ir, t, Σ = impulseest(d::AbstractIdData, n; λ=0, estimator=ls)
 
 Estimates the system impulse response by fitting an `n`:th order FIR model. Returns impulse-response estimate, time vector and covariance matrix.
+
+This function only supports single-output data, use [`okid`](@ref) for multi-output data.
+
 See also [`impulseestplot`](@ref) and [`okid`](@ref).
 """
 function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls)
-    d.ny == 1 || error("impulseest only supports single-output data")
+    d.ny == 1 || error("impulseest only supports single-output data, consider using the function okid instead")
     h, y, u = d.Ts, time1(output(d)), time1(input(d))
     N = min(size(u, 1), size(y, 1))
     @views yt, A = getARXregressor(y[1:N], u[1:N,:], 0, d.nu == 1 ? n : fill(n, d.nu); inputdelay = d.nu == 1 ? 0 : zeros(Int, d.nu))

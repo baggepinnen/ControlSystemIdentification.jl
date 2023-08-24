@@ -291,8 +291,9 @@ end
 """
     impulseestplot(data,n; σ = 2)
 
-Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% (2σ) confidence band.
-See also [`impulseest`](@ref).
+Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% (2σ) confidence band. This method only supports single-output data, use [`okid`](@ref) for multi-output data.
+
+See also [`impulseest`](@ref) and [`okid`](@ref).
 """
 impulseestplot
 @recipe function impulseestplot(p::Impulseestplot; λ = 0, σ = 2)
@@ -420,6 +421,12 @@ function _process_res_args(sys, d::AbstractIdData, lags = -min(length(d) ÷ 10, 
     sys, d, lags
 end
 
+"""
+    residualplot(model, data)
+
+Plot residual autocorrelation and input-residual correlation.
+"""
+residualplot
 @recipe function residualplot(p::Residualplot; h=1)
     sys, d, lags = _process_res_args(p.args...)
     lagsac = 1:maximum(lags)
