@@ -78,29 +78,38 @@ zipfilename = "/tmp/bd.zip"
 cd("/tmp")
 path = Base.download(url, zipfilename)
 run(`unzip -o $path`)
-data = readdlm("/tmp/DATAPRBS.csv", ',')[2:end, 1:6]
-y = data[:, 1]' .|> Float64 # input
-u = data[:, 2]' .|> Float64 # output
-d = iddata(y, u, 1/50)
+data = readdlm("/tmp/DATAUNIF.csv", ',')[2:end, 1:4]
+iddatas = map(0:1) do ind
+    u = data[:, 1 + ind]' .|> Float64 # input
+    y = data[:, 3 + ind]' .|> Float64 # output
+    iddata(y, u, 1/50)
+end
+
+plot(plot.(iddatas)...)
+
+d = iddatas[1] # We use one dataset for estimation 
 output_nonlinearity = (y, p) -> y .= abs.(y)
 
 nx = 3 # Model order
 
-results = map(1:50) do _ # This example is a bit more difficult, so we try more random initializations
+results = map(1:40) do _ # This example is a bit more difficult, so we try more random initializations
     sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=true, focus=:simulation)
     (; sysh, x0h, opt)
 end;
 
 (; sysh, x0h, opt) = argmin(r->r.opt.minimum, results) # Find the model with the smallest cost
 
-yh = simulate(sysh, d, x0h)
+dv = iddatas[2] # We use the second dataset for validation
+yh = simulate(sysh, dv)
 output_nonlinearity(yh, nothing) # We need to manually apply the output nonlinearity to the simulation
-plot(d, lab=["Measured nonlinear output" "Input"], layout=(2,1), xlabel="Time")
-plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
+plot(dv, lab=["Measured nonlinear output" "Input"], layout=(2,1), xlabel="Time")
+plot!(dv.t, yh', lab="Simulation", sp=1, l=:dash)
 ```
 
 ```@example beltdrive
 bodeplot(sysh)
 ```
 
-If everything went as expected, the model should be able to predict the output quite well, and the estimated model should have a resonance peak around 20rad/s.
+If everything went as expected, the model should be able to predict the output reasonably well, and the estimated model should have a resonance peak around 20rad/s (compare with Fig. 8 in the report).
+
+The dataset consists of two different experiments, here, we used one for identification and another one for validation. They both differ in the amplitude of the input. Ideally, we'd use a dataset that mixes different amplitudes for training.
