@@ -7,6 +7,26 @@ using Plots
 gr()
 
 
+
+
+
+
+
+using DelimitedFiles
+url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectricDrivesDataSetAndReferenceModels.zip"
+zipfilename = "/tmp/bd.zip"
+cd("/tmp")
+path = Base.download(url, zipfilename)
+@show run(`unzip -o $path`)
+@show pwd()
+@show run(`ls`)
+data = readdlm("/tmp/DATAUNIF.csv", ',')[2:end, 1:4]
+
+
+
+
+
+
 makedocs(
       sitename = "ControlSystemIdentification Documentation",
       doctest = false,
