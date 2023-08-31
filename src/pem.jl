@@ -87,12 +87,14 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
 - `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
-- `output_nonlinearity`: A function of `(y, p)` that operates on the output signal `y` and modifies it in-place. See below for details. `p` is a vector of estimated parameters that can be optimized.
+- `output_nonlinearity`: A function of `(y::Vector, p)` that operates on the output signal at a single time point, `yₜ`, and modifies it in-place. See below for details. `p` is a vector of estimated parameters that can be optimized.
+- `input_nonlinearity`: A function of `(u::Matrix, p)` that operates on the _entire_ input signal `u` at once and modifies it in-place. See below for details. `p` is a vector of estimated parameters that is shared with `output_nonlinearity`.
 - `nlp`: Initial guess vector for nonlinear parameters. If `output_nonlinearity` is provided, this can optionally be provided.
 
 # Nonlinear estimation
 Nonlinear systems on Hammerstein-Wiener form, i.e., systems with a static input nonlinearity and a static output nonlinearity with a linear system inbetween, can be estimated as long as the nonlinearities are known. The procedure is
-1. Manually apply the input nonlinearity (if present) to the input signal `u` _before_ estimation, i.e., use the nonlinearly transformed input in the [`iddata`](@ref) object `d`.
+1. If there is a known input nonlinearity, manually apply the input nonlinearity to the input signal `u` _before_ estimation, i.e., use the nonlinearly transformed input in the [`iddata`](@ref) object `d`.
+If the input nonlinearity has unknown parameters, provide the input nonlinearity as a function using the keyword argument `input_nonlinearity` to `newpem`. This function is expected to operate on the entire (matrix) input signal `u` and modify it _in-place_.
 2. If the output nonlinearity _is invertible_, apply the inverse to the output signal `y` _before_ estimation similar to above.
 3. If the output nonlinearity _is not invertible_, provide the nonlinear output transformation as a function using the keyword argument `output_nonlinearity` to `newpem`. This function is expected to operate on the (vector) output signal `y` and modify it _in-place_. Example:
 ```julia
@@ -101,13 +103,14 @@ function output_nonlinearity(y, p)
     y[2] = abs(y[2])
 end
 ```
-The second argument to `output_nonlinearity` is an (optional) vector of parameters that can be optimized. To use this option, pass the keyword argument `nlp` to `newpem` with a vector of initial guesses for the nonlinear parameters.
+Please note, `y = f(y)` does not change `y` in-place, but creates a new vector `y` and assigns it to the variable `y`. This is not what we want here.
+
+The second argument to `input_nonlinearity` and `output_nonlinearity` is an (optional) vector of parameters that can be optimized. To use this option, pass the keyword argument `nlp` to `newpem` with a vector of initial guesses for the nonlinear parameters. The nonlinear parameters are shared between output and input nonlinearities, i.e., these two functions will receive the same vector of parameters.
 
 The result of this estimation is the linear system _without_ the nonlinearities.
 
-The default optimizer BFGS may struggle with problems including nonlinearities, if you do not get good results, try a different optimizer, e.g., `optimizer = Optim.NelderMead()`.
-
 # Example
+The following simulates data from a linear system and estimates a model. For an example of nonlinear identification, see the documentation.
 ```
 using ControlSystemIdentification, ControlSystemsBase Plots
 G = DemoSystems.doylesat()
@@ -155,6 +158,7 @@ function newpem(
     h = 1,
     stable = true,
     output_nonlinearity = nothing,
+    input_nonlinearity = nothing,
     nlp = nothing,
     sys0 = output_nonlinearity === nothing ? subspaceid(d, nx; zeroD, focus, stable) : 0.001*ssrand(d.ny, d.nu, nx, proper=zeroD, Ts=d.Ts),
     metric::F = abs2,
@@ -205,12 +209,18 @@ function newpem(
     D0 = zeros(T, ny, nu)
     function predloss(p)
         sysi, Ki, x0, nlpi = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
+        pdi = if input_nonlinearity === nothing
+            pd
+        else
+            predictiondata(iddata(d.y, input_nonlinearity(copy(d.u), nlpi), d.Ts))
+        end
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
         Pyh = ControlSystemsBase.observer_predictor(syso; h)
-        yh, _ = lsim(Pyh, pd; x0)
+        yh, _ = lsim(Pyh, pdi; x0)
         unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
         @views if output_nonlinearity !== nothing
             for i = axes(yh, 2)
+                # NOTE: the output nonlinearity is applied after the prediction error correction which is likely suboptimal
                 output_nonlinearity(yh[:, i], nlpi)
             end
         end
@@ -220,7 +230,12 @@ function newpem(
     end
     function simloss(p)
         syssim, _, x0, nlpi = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
-        y, _ = lsim(syssim, d; x0)
+        di = if input_nonlinearity === nothing
+            d
+        else
+            iddata(d.y, input_nonlinearity(copy(d.u), nlpi), d.Ts)
+        end
+        y, _ = lsim(syssim, di; x0)
         @views if output_nonlinearity !== nothing
             for i = axes(y, 2)
                 output_nonlinearity(y[:, i], nlpi)
