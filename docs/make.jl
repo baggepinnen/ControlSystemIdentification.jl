@@ -19,6 +19,7 @@ makedocs(
             "Impulse-response estimation" => "impulse.md",
             "Frequency-domain estimation" => "freq.md",
             "Validation" => "validation.md",
+            "Nonlinear identification" => "nonlinear.md",
             "Examples" => [
                   "Temperature control" => "examples/temp.md",
                   "Identification in closed loop" => "examples/closed_loop_id.md",

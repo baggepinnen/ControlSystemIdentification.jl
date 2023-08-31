@@ -45,6 +45,15 @@ for i = 1:10
     i == 10 && @test false
 end
 
+for i = 1:10
+    sysh, x0h, opt = ControlSystemIdentification.newpem(dn, nx; show_every=500, safe=true, output_nonlinearity, focus=:simulation)
+    if freqresptest(sys, sysh.sys) < 1e-2 && Optim.minimum(opt) < T*1e-4
+        @test true
+        break
+    end
+    i == 10 && @test false
+end
+
 
 # Test with some noise
 # Only measurement noise

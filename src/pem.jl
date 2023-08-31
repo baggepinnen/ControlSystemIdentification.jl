@@ -100,8 +100,6 @@ function output_nonlinearity(y)
 end
 ```
 The result of this estimation is the linear system _without_ the nonlinearities.
-For scalar nonlinearities, it is possible to create a `ControlSystemsBase.HammersteinWienerSystem` from the estimated linear system and the nonlinearities using the function `nonlinearity`.
-
 
 # Example
 ```
@@ -213,8 +211,8 @@ function newpem(
         syssim, _, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
         y, _ = lsim(syssim, d; x0)
         if output_nonlinearity !== nothing
-            for i = axes(yh, 2)
-                output_nonlinearity(@view(yh[:, i]))
+            for i = axes(y, 2)
+                output_nonlinearity(@view(y[:, i]))
             end
         end
         y .= metric.(y .- d.y)
