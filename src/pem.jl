@@ -88,6 +88,21 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 The rest of the arguments are related to `Optim.Options`.
 - `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
 
+# Nonlinear estimation
+Nonlinear systems on Hammerstein-Wiener form, i.e., systems with a static input nonlinearity and a static output nonlinearity with a linear system inbetween, can be estimated as long as the nonlinearities are known. The procedure is
+1. Manually apply the input nonlinearity (if present) to the input signal `u` _before_ estimation, i.e., use the nonlinearly transformed input in the [`iddata`](@ref) object `d`.
+2. If the output nonlinearity _is invertible_, apply the inverse to the output signal `y` _before_ estimation similar to above.
+3. If the output nonlinearity _is not invertible_, provide the nonlinear output transformation as a function using the keyword argument `output_nonlinearity` to `newpem`. This function is expected to operate on the (vector) output signal `y` and modify it _in-place_. Example:
+```julia
+function output_nonlinearity(y)
+    y[1] = y[1]^2       # Note how the incoming vector is modified in-place
+    y[2] = abs(y[2])
+end
+```
+The result of this estimation is the linear system _without_ the nonlinearities.
+For scalar nonlinearities, it is possible to create a `ControlSystemsBase.HammersteinWienerSystem` from the estimated linear system and the nonlinearities using the function `nonlinearity`.
+
+
 # Example
 ```
 using ControlSystemIdentification, ControlSystemsBase Plots
@@ -135,7 +150,8 @@ function newpem(
     focus = :prediction,
     h = 1,
     stable = true,
-    sys0 = subspaceid(d, nx; zeroD, focus, stable),
+    output_nonlinearity = nothing,
+    sys0 = output_nonlinearity === nothing ? subspaceid(d, nx; zeroD, focus, stable) : 0.001*ssrand(d.ny, d.nu, nx, proper=zeroD, Ts=d.Ts),
     metric::F = abs2,
     regularizer::RE = (p, P) -> 0,
     optimizer = BFGS(
@@ -181,15 +197,26 @@ function newpem(
     function predloss(p)
         sysi, Ki, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
-        Pe = prediction_error_filter(syso; h)
-        e, _ = lsim(Pe, pd; x0)
+        Pyh = ControlSystemsBase.observer_predictor(syso; h)
+        yh, _ = lsim(Pyh, pd; x0)
         unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
-        c1 = sum(metric, e)
+        if output_nonlinearity !== nothing
+            for i = axes(yh, 2)
+                output_nonlinearity(@view(yh[:, i]))
+            end
+        end
+        yh .= metric.(yh .- d.y)
+        c1 = sum(yh)
         c1 + min(10*ForwardDiff.value(c1)*unstab, 1e6) + regularizer(p, syso)
     end
     function simloss(p)
         syssim, _, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
         y, _ = lsim(syssim, d; x0)
+        if output_nonlinearity !== nothing
+            for i = axes(yh, 2)
+                output_nonlinearity(@view(yh[:, i]))
+            end
+        end
         y .= metric.(y .- d.y)
         sum(y) + regularizer(p, syssim)
     end
