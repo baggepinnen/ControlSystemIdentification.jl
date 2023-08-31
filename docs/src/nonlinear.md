@@ -12,7 +12,7 @@ The result of this estimation is the linear system _without_ the nonlinearities.
 The default optimizer BFGS may struggle with problems including nonlinearities, if you do not get good results, try a different optimizer, e.g., `optimizer = Optim.NelderMead()`.
 
 
-## Example:
+## Example 1:
 
 The example below identifies a model of a resonant system with a static where the sign of the output is unknown, i.e., the output nonlinearity is given by ``y_{nl} = |y|``. To make the example a bit more realistic, we also simulate colored measurement and input noise, `yn` and `un`.
 ```@example HW
@@ -47,15 +47,54 @@ output_nonlinearity = (y, p) -> y .= abs.(y)
 # Estimate 10 models with different random initialization and pick the best one
 # If results are poor, try `optimizer = Optim.NelderMead()` instead
 results = map(1:10) do _
-    sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=false)
+    sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=false, focus = :simulation)
     (; sysh, x0h, opt)
 end;
 
 (; sysh, x0h, opt) = argmin(r->r.opt.minimum, results) # Find the model with the smallest cost
 
-yh = predict(sysh, d, x0h)
+yh = simulate(sysh, d, x0h)
 output_nonlinearity(yh, nothing) # We need to manually apply the output nonlinearity to the prediction
 plot(d.t, [abs.(y); u]', lab=["True nonlinear output" "Input"], seriestype = [:line :steps], layout=(2,1), xlabel="Time")
 scatter!(d.t, ynn', lab="Measured nonlinear output", sp=1)
-plot!(d.t, yh', lab="Prediction", sp=1, l=:dash)
+plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
+```
+
+## Example 2: 
+Below, we identify a similar model but this time with data recorded from a physical system. The data comes from the belt-drive system depicted below.
+
+![Belt drive](https://lh6.googleusercontent.com/AjBmg1ezDWGGMEX6f4vDJCpHFIM2PrAMZRzYLj6dA5033LYuhwU4O0NtwD_ZEhIYRtn2k0YX86nGMCfqrznY2apE5KmlrTZhhCV7rd6EbiNTjJbT=w1280)
+
+It's described in detail in [this report](http://www.google.com/url?q=http%3A%2F%2Fwww.it.uu.se%2Fresearch%2Fpublications%2Freports%2F2017-024%2F2017-024-nc.pdf&sa=D&sntz=1&usg=AOvVaw0yNPLBveaHDGWB9mwnHCxd) and available on the link downloaded in the code snippet below.
+
+The speed sensor available in this system cannot measure the direction, we thus have an absolute-value nonlinearity at the output similar to above. The technical report further indicates that there is a low-pass filter on the output, _after_ the nonlinearity. We do not have capabilities of estimating this complicated structure in this package, so we ignore the additional low-pass filter and only estimate only the initial linear system and the nonlinearity.
+
+```@example beltdrive
+using DelimitedFiles, Plots
+using ControlSystemIdentification, ControlSystemsBase
+
+url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectricDrivesDataSetAndReferenceModels.zip"
+zipfilename = "/tmp/bd.zip"
+cd("/tmp")
+path = Base.download(url, zipfilename)
+run(`unzip -o $path`)
+data = readdlm("/tmp/DATAPRBS.csv", ',')[2:end, 1:6]
+y = data[:, 1]' .|> Float64 # input
+u = data[:, 2]' .|> Float64 # output
+d = iddata(y, u, 1/50)
+output_nonlinearity = (y, p) -> y .= abs.(y)
+
+nx = 3 # Model order
+
+results = map(1:50) do _ # This example is a bit more difficult, so we try more random initializations
+    sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=true, focus=:simulation)
+    (; sysh, x0h, opt)
+end;
+
+(; sysh, x0h, opt) = argmin(r->r.opt.minimum, results) # Find the model with the smallest cost
+
+yh = simulate(sysh, d, x0h)
+output_nonlinearity(yh, nothing) # We need to manually apply the output nonlinearity to the simulation
+plot(d, lab=["Measured nonlinear output" "Input"], layout=(2,1), xlabel="Time")
+plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
 ```
