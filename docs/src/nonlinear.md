@@ -31,6 +31,7 @@ The example below identifies a model of a resonant system with a static where th
 ```@example HW
 using ControlSystemIdentification, ControlSystemsBase
 using ControlSystemsBase.DemoSystems: resonant
+using Random
 
 # Generate some data from the system
 Random.seed!(1)
@@ -57,13 +58,13 @@ d  = iddata(ynn, un, 1)
 output_nonlinearity = (y, p) -> y .= abs.(y)
 
 # Estimate 10 models with different random initialization and pick the best one
-
+# If results are poor, try `optimizer = Optim.NelderMead()` instead
 results = map(1:10) do _
     sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=false)
     (; sysh, x0h, opt)
 end;
 
-(; sysh, x0h, opt) = argmin(r->r.opt.minimum, results)
+(; sysh, x0h, opt) = argmin(r->r.opt.minimum, results) # Find the model with the smallest cost
 
 yh = predict(sysh, d, x0h)
 output_nonlinearity(yh, nothing)
