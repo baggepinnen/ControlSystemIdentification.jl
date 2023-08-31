@@ -77,7 +77,9 @@ url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectri
 zipfilename = "/tmp/bd.zip"
 cd("/tmp")
 path = Base.download(url, zipfilename)
-run(`unzip -o $path`)
+@show run(`unzip -o $path`)
+@show pwd()
+@show run(`ls`)
 data = readdlm("/tmp/DATAUNIF.csv", ',')[2:end, 1:4]
 iddatas = map(0:1) do ind
     u = data[:, 1 + ind]' .|> Float64 # input
