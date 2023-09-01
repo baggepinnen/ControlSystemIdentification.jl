@@ -32,8 +32,15 @@ Another method to identify the delay would be to estimate the impulse response o
 impulseestplot(d, 60; λ=0.5, lab="Estimated", title="Impulse response of delay system")
 plot!(impulse(P, 6), lab="True", framestyle=:zerolines)
 ```
-Estimation of impulse responses in the presence of such large delays is numerically challenging, and a regularization of ``λ=0.5`` was required to achieve a reasonable result. If the delay is expected to be large, it is thus recommended to use the cross-correlation method instead, since we cannot tune the regularization parameter ``λ`` in a practical setting when we don't know what impulse response to expect. However, for short delays the impulse-response method works rather well.
+Estimation of impulse responses in the presence of such large delays is numerically challenging, and a regularization of ``λ=0.5`` was required to achieve a reasonable result. If the delay is expected to be large and the dataset is small, it is thus recommended to use the cross-correlation method instead, since we cannot tune the regularization parameter ``λ`` in a practical setting when we don't know what impulse response to expect. However, for short delays and large datasets, the impulse-response method works rather well. Below, we show the estimated impulse response for a much larger dataset just to demonstrate:
+```@example DELAY
+u2 = sin.(0.01 .* (0:Ts:300).^2) .+ randn.() # An interesting and long input signal with some noise as well
+res2 = lsim(P, u2')
+d2 = iddata(res2)
 
+impulseestplot(d2, 200; λ=0.0, lab="Estimated", title="Impulse response with large dataset")
+plot!(impulse(P, 20), lab="True", framestyle=:zerolines)
+```
 
 A third method, arguably less elegant, is to use a model-selection method to figure out the delay. Presumably, models estiamted with an order smaller than the delay will be rather poor, something that should be visible if we try models of many orders. Below, we use the function [`find_nanb`](@ref) that tries to identify the appropriate model order for an [`arx`](@ref) model.
 
@@ -50,19 +57,19 @@ c2d(tf(1, [1, 0.5, 1]), Ts)
 Once we know that there is a delay present, we need to somehow handle it while estimating a model. The naive way is to simply select a model with high-enough order and call it a day. However, this is prone to numerical problems and generally not recommended. Some methods have a dedicated `inputdelay` keyword that allows you to specify known input delays, after which the method handles it internally. For methods that do not have this option, one can always preprocess the data to remove the delay, we show how to do this next:
 
 ```@example DELAY
-τ_samples = 20
+τ_samples = 20 # Number of samples delay
 d2 = iddata(d.y[:, τ_samples+1:end], d.u[:, 1:end-τ_samples], d.Ts)
 crosscorplot(d2)
 ```
 The cross-correlation plot now indicates that the delay is gone. Please note, one sample delay is most of the time expected, indeed, it's unrealistic for the output of a physical system to respond at the same time as something happens at the input. Once we have estimated a model with the dataset with the delay removed, we must add the delay back into the estimated model, e.g.,
 ```@example DELAY
-Pest = subspaceid(d2, focus=:simulation) # Estimate a model without delay
-tf(d2c(Pest)) # Does it match the original continuous-time system without delay?
+P̂ = subspaceid(d2, focus=:simulation) # Estimate a model without delay
+tf(d2c(P̂)) # Does it match the original continuous-time system without delay?
 ```
 The estimated model above should be very close to the system `tf(1, [1, 0.5, 1])` (some small higher-order terms in the numerator are expected). To add the delay to this model, we do
 ```@example DELAY
-Pest_τ = Pest*delay(τ, Ts)
-bodeplot([P, Pest_τ], lab=["True system" "" "Estimated system" ""])
+P̂τ = P̂*delay(τ, Ts) # Note that this is different from delay(τ, Ts)*P̂ which adds output delay instead of input delay
+bodeplot([P, P̂τ], lab=["True system" "" "Estimated system" ""])
 ```
 The estimated model should now match the true system very well, including the large drop in phase for higher frequencies due to the delay.
 
