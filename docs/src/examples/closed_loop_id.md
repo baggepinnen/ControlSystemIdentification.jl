@@ -127,4 +127,26 @@ estimate_and_plot(generate_data(u, T=8000), 3, title=title*",  T=8000")
 learning the noise model can sometimes work reasonably well, but requires more data. You may extract the learned noise model using [`noise_model`](@ref).
 
 
+
+## Detecting the presence of feedback
+It is sometimes possible to detect the presence of feedback in a dataset by looking at the cross-correlation between input and output. For a causal system, there shouldn't be any correlation for negative lags, but feedback literally feeds outputs back to the input, leading to a reverse causality:
+```@example closedloop
+L = 0.5 # Feedback gain u = -L*x
+u = (x, t) -> -L * x .+ randn.()
+title = "-Lx + 5sin(t)"
+crosscorplot(generate_data(u, T=500), -5:10, m=:circle)
+```
+Here, the plot clearly has significant correlation for both positive and negative lag, indicating the presence of feedback. The controller used here is a static P-controller, leading to a one-step correlation backwards in time. With a dynamic contorller (like a PI controller), the effect would be more significant.
+
+If we remove the feedback, we get
+```@example closedloop
+L = 0.0 # no feedback
+u = (x, t) -> -L * x .+ randn.()
+title = "-Lx + 5sin(t)"
+crosscorplot(generate_data(u, T=500), -5:10, m=:circle)
+```
+now, the correlation for negative lags and zero lag is mostly non-significant (below the dashed lines).
+
+
+
 [^Ljung]: Ljung, Lennart. "System identification---Theory for the user", Ch 13.
