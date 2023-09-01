@@ -63,7 +63,7 @@ plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
 ## Example 2: 
 Below, we identify a similar model but this time with data recorded from a physical system. The data comes from the belt-drive system depicted below.
 
-![Belt drive](https://lh6.googleusercontent.com/AjBmg1ezDWGGMEX6f4vDJCpHFIM2PrAMZRzYLj6dA5033LYuhwU4O0NtwD_ZEhIYRtn2k0YX86nGMCfqrznY2apE5KmlrTZhhCV7rd6EbiNTjJbT=w1280)
+![Belt drive](https://user-images.githubusercontent.com/3797491/264962931-e62c56ee-3dab-43f5-bdd3-858c841fb516.png)
 
 The system is described in detail in [this report](http://www.google.com/url?q=http%3A%2F%2Fwww.it.uu.se%2Fresearch%2Fpublications%2Freports%2F2017-024%2F2017-024-nc.pdf&sa=D&sntz=1&usg=AOvVaw0yNPLBveaHDGWB9mwnHCxd) and the data is available on the link downloaded in the code snippet below.
 
