@@ -3,18 +3,34 @@
 For nonlinear graybox identification, i.e., identification of models on a known form but with unknown parameters, we suggest to implement a nonlinear version of the prediction-error method by using an Unscented Kalman filter as predictor. A tutorial for this is available [in the documentation of LowLevelParticleFilters.jl](https://baggepinnen.github.io/LowLevelParticleFilters.jl/stable/parameter_estimation/#Using-an-optimizer) which also provides the UKF.
 
 
-This package provides very elementary identification of nonlinear systems on Hammerstein-Wiener form, i.e., systems with a static input nonlinearity and a static output nonlinearity with a linear system inbetween, **where the nonlinearities are known**. The only aspect of the nonlinearities that are optionally estimated are parameters.
+This package provides very elementary identification of nonlinear systems on Hammerstein-Wiener form, i.e., systems with a static input nonlinearity and a static output nonlinearity with a linear system inbetween, **where the nonlinearities are known**. The only aspect of the nonlinearities that are optionally estimated are parameters. To formalize this, the estimation method [`newpem`](@ref) allows for estimation of a model of the form
 
-The procedure to estimate such a model is detailed in the docstring for [`newpem`](@ref).
 
-The result of this estimation is the linear system _without_ the nonlinearities.
+```math
+\begin{aligned}
+x^+ &= Ax + B g_i(u, p)\\
+y &= g_o(Cx + Du, p)
+\end{aligned}
+```
+
+```
+   ┌─────┐   ┌─────┐   ┌─────┐
+ u │     │   │     │   │     │  y
+──►│  gᵢ ├──►│  P  ├──►│  gₒ ├─►
+   │     │   │     │   │     │
+   └─────┘   └─────┘   └─────┘
+```
+
+where `g_i` and `g_o` are static, nonlinear functions that may depend on some parameter vector ``p`` which is optimized together with the matrices ``A,B,C,D``. The procedure to estimate such a model is detailed in the docstring for [`newpem`](@ref).
+
+The result of this estimation is the linear system _without_ the nonlinearities applied, those must be handled manually by the user.
 
 The default optimizer BFGS may struggle with problems including nonlinearities, if you do not get good results, try a different optimizer, e.g., `optimizer = Optim.NelderMead()`.
 
 
 ## Example with simulated data:
 
-The example below identifies a model of a resonant system with a static where the sign of the output is unknown, i.e., the output nonlinearity is given by ``y_{nl} = |y|``. To make the example a bit more realistic, we also simulate colored measurement and input noise, `yn` and `un`.
+The example below identifies a model of a resonant system where the sign of the output is unknown, i.e., the output nonlinearity is given by ``y_{nl} = |y|``. To make the example a bit more realistic, we also simulate colored measurement and input noise, `yn` and `un`.
 ```@example HW
 using ControlSystemIdentification, ControlSystemsBase
 using ControlSystemsBase.DemoSystems: resonant
