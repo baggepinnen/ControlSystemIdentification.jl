@@ -30,6 +30,60 @@ sysh, x0h, opt = ControlSystemIdentification.newpem(d, nx, show_every=100, h=2, 
 
 predplot(sysh, d; h=10)
 
+
+# Test with output nonlinearity
+ynn = abs.(yn) .- 1
+unn = un .- 1
+dn  = iddata(ynn, unn, 1)[1:200]
+output_nonlinearity = (y, p) -> y .= abs.(y) .- p[1]
+input_nonlinearity = (u, p) -> u .= u .- p[2]
+
+nlp = [0.9, 0.9]
+
+using Optim.LineSearches
+# optimizer = LBFGS(
+#     alphaguess = LineSearches.InitialStatic(alpha = 0.001),
+#     # linesearch = LineSearches.BackTracking(),
+# )
+optimizer = NelderMead()
+
+regularizer = (p, P) -> 0#0.0001*sum(abs2, p)
+
+for i = 1:30
+    sysh, x0h, opt, nlph = ControlSystemIdentification.newpem(dn, nx; show_every=5000, safe=true, input_nonlinearity, output_nonlinearity, nlp, optimizer, regularizer)
+
+    local either_or
+    try
+        either_or = min(hinfnorm(sys-sysh.sys)[1], hinfnorm(sys+sysh.sys)[1])
+    catch
+        either_or = 1e10
+    end
+
+    if either_or < 1 && Optim.minimum(opt) < T*1e-3 && abs(nlph[1] - 1) < 0.1 && abs(nlph[2] - 1) < 0.1
+        @test true
+        break
+    end
+    i == 10 && @test false
+end
+
+for i = 1:30
+    sysh, x0h, opt, nlph = ControlSystemIdentification.newpem(dn, nx; show_every=5000, safe=true, input_nonlinearity, output_nonlinearity, nlp, focus=:simulation, optimizer, regularizer)
+
+    local either_or
+    try
+        either_or = min(hinfnorm(sys-sysh.sys)[1], hinfnorm(sys+sysh.sys)[1])
+    catch
+        either_or = 1e10
+    end
+
+    if either_or < 1 && Optim.minimum(opt) < T*1e-3 && abs(nlph[1] - 1) < 0.1 && abs(nlph[2] - 1) < 0.1
+        @test true
+        break
+    end
+    i == 10 && @test false
+end
+
+
 # Test with some noise
 # Only measurement noise
 σu = 0.0

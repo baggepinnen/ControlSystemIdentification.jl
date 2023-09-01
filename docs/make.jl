@@ -1,9 +1,24 @@
 ENV["GKSwstype"] = 322 # workaround for gr segfault on GH actions
 using Documenter, ControlSystemIdentification, ControlSystemsBase, DelimitedFiles
+ENV["JULIA_DEBUG"]=Documenter # Enable this for debugging
 
 using Plots
 
-gr()
+gr(fmt=:png)
+
+
+# Run this code here to make sure the tutorial can access the file, not sure why it does not work from within the tutorial
+using DelimitedFiles
+url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectricDrivesDataSetAndReferenceModels.zip"
+zipfilename = "/tmp/bd.zip"
+cd("/tmp")
+path = Base.download(url, zipfilename)
+@show run(`unzip -o $path`)
+@show pwd()
+@show run(`ls`)
+data = readdlm("/tmp/DATAUNIF.csv", ',')[2:end, 1:4]
+
+
 
 
 makedocs(
@@ -19,6 +34,7 @@ makedocs(
             "Impulse-response estimation" => "impulse.md",
             "Frequency-domain estimation" => "freq.md",
             "Validation" => "validation.md",
+            "Nonlinear identification" => "nonlinear.md",
             "Examples" => [
                   "Temperature control" => "examples/temp.md",
                   "Identification in closed loop" => "examples/closed_loop_id.md",
@@ -34,9 +50,8 @@ makedocs(
       ],
       strict = [:example_block],
       format = Documenter.HTML(prettyurls = haskey(ENV, "CI")),
-) # Due to lots of plots, this will just have to be run on my local machine
+)
 
 deploydocs(
-      # deps = Deps.pip("pygments", "mkdocs", "python-markdown-math", "mkdocs-cinder"),
       repo = "github.com/baggepinnen/ControlSystemIdentification.jl.git",
 )

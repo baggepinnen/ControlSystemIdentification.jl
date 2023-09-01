@@ -87,8 +87,30 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
 - `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
+- `output_nonlinearity`: A function of `(y::Vector, p)` that operates on the output signal at a single time point, `yₜ`, and modifies it in-place. See below for details. `p` is a vector of estimated parameters that can be optimized.
+- `input_nonlinearity`: A function of `(u::Matrix, p)` that operates on the _entire_ input signal `u` at once and modifies it in-place. See below for details. `p` is a vector of estimated parameters that is shared with `output_nonlinearity`.
+- `nlp`: Initial guess vector for nonlinear parameters. If `output_nonlinearity` is provided, this can optionally be provided.
+
+# Nonlinear estimation
+Nonlinear systems on Hammerstein-Wiener form, i.e., systems with a static input nonlinearity and a static output nonlinearity with a linear system inbetween, can be estimated as long as the nonlinearities are known. The procedure is
+1. If there is a known input nonlinearity, manually apply the input nonlinearity to the input signal `u` _before_ estimation, i.e., use the nonlinearly transformed input in the [`iddata`](@ref) object `d`.
+If the input nonlinearity has unknown parameters, provide the input nonlinearity as a function using the keyword argument `input_nonlinearity` to `newpem`. This function is expected to operate on the entire (matrix) input signal `u` and modify it _in-place_.
+2. If the output nonlinearity _is invertible_, apply the inverse to the output signal `y` _before_ estimation similar to above.
+3. If the output nonlinearity _is not invertible_, provide the nonlinear output transformation as a function using the keyword argument `output_nonlinearity` to `newpem`. This function is expected to operate on the (vector) output signal `y` and modify it _in-place_. Example:
+```julia
+function output_nonlinearity(y, p)
+    y[1] = y[1] + p[1]*y[1]^2       # Note how the incoming vector is modified in-place
+    y[2] = abs(y[2])
+end
+```
+Please note, `y = f(y)` does not change `y` in-place, but creates a new vector `y` and assigns it to the variable `y`. This is not what we want here.
+
+The second argument to `input_nonlinearity` and `output_nonlinearity` is an (optional) vector of parameters that can be optimized. To use this option, pass the keyword argument `nlp` to `newpem` with a vector of initial guesses for the nonlinear parameters. The nonlinear parameters are shared between output and input nonlinearities, i.e., these two functions will receive the same vector of parameters.
+
+The result of this estimation is the linear system _without_ the nonlinearities.
 
 # Example
+The following simulates data from a linear system and estimates a model. For an example of nonlinear identification, see the documentation.
 ```
 using ControlSystemIdentification, ControlSystemsBase Plots
 G = DemoSystems.doylesat()
@@ -135,7 +157,10 @@ function newpem(
     focus = :prediction,
     h = 1,
     stable = true,
-    sys0 = subspaceid(d, nx; zeroD, focus, stable),
+    output_nonlinearity = nothing,
+    input_nonlinearity = nothing,
+    nlp = nothing,
+    sys0 = output_nonlinearity === nothing ? subspaceid(d, nx; zeroD, focus, stable) : 0.001*ssrand(d.ny, d.nu, nx, proper=zeroD, Ts=d.Ts),
     metric::F = abs2,
     regularizer::RE = (p, P) -> 0,
     optimizer = BFGS(
@@ -158,6 +183,7 @@ function newpem(
     T = promote_type(eltype(d.y), eltype(sys0.A))
     nu = d.nu
     ny = d.ny
+    nnl = nlp === nothing ? 0 : length(nlp)
     sys0, Tmodal = modal_form(sys0)
     A, B, C, D = ssdata(sys0)
     K = if hasfield(typeof(sys0), :K)
@@ -177,19 +203,44 @@ function newpem(
     else
         T.(zeroD ? [trivec(A); vec(B); vec(C); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(x0i)])
     end
+    if output_nonlinearity !== nothing && nlp !== nothing
+       p0 = [p0; nlp]
+    end
     D0 = zeros(T, ny, nu)
     function predloss(p)
-        sysi, Ki, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+        sysi, Ki, x0, nlpi = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
+        pdi = if input_nonlinearity === nothing
+            pd
+        else
+            predictiondata(iddata(d.y, input_nonlinearity(copy(d.u), nlpi), d.Ts))
+        end
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
-        Pe = prediction_error_filter(syso; h)
-        e, _ = lsim(Pe, pd; x0)
+        Pyh = ControlSystemsBase.observer_predictor(syso; h)
+        yh, _ = lsim(Pyh, pdi; x0)
         unstab = maximum(abs, eigvals(ForwardDiff.value.(syso.A - syso.K*syso.C))) >= 1
-        c1 = sum(metric, e)
+        @views if output_nonlinearity !== nothing
+            for i = axes(yh, 2)
+                # NOTE: the output nonlinearity is applied after the prediction error correction which is likely suboptimal
+                output_nonlinearity(yh[:, i], nlpi)
+            end
+        end
+        yh .= metric.(yh .- d.y)
+        c1 = sum(yh)
         c1 + min(10*ForwardDiff.value(c1)*unstab, 1e6) + regularizer(p, syso)
     end
     function simloss(p)
-        syssim, _, x0 = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
-        y, _ = lsim(syssim, d; x0)
+        syssim, _, x0, nlpi = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
+        di = if input_nonlinearity === nothing
+            d
+        else
+            iddata(d.y, input_nonlinearity(copy(d.u), nlpi), d.Ts)
+        end
+        y, _ = lsim(syssim, di; x0)
+        @views if output_nonlinearity !== nothing
+            for i = axes(y, 2)
+                output_nonlinearity(y[:, i], nlpi)
+            end
+        end
         y .= metric.(y .- d.y)
         sum(y) + regularizer(p, syssim)
     end
@@ -204,7 +255,7 @@ function newpem(
                 time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
             autodiff = :forward,
         )
-        sys_opt::StateSpace{Discrete{T}, T}, K_opt::Matrix{T}, x0_opt = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K)
+        sys_opt::StateSpace{Discrete{T}, T}, K_opt::Matrix{T}, x0_opt, nlp = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
     catch err
         if safe
             @error "Optimization failed, returning initial estimate." err
@@ -238,7 +289,7 @@ function newpem(
     # Note: to get the correct Q so that kalman(sys, Q, R) = K, one must solve an LMI problem to minimize the cross term S. If one tolerates S, we have kalman(sys, Q, R, S) = K, where S = K*R. Without S, Q can be *very* far from correct.
     sysp_opt.R .= R
     sysp_opt.Q .= Q
-    sysp_opt, x0_opt, res
+    (; sys=sysp_opt, x0=x0_opt, res, nlp)
 end
 
 # this method fails for duals so this is an overload to silence the warning and save some time
@@ -246,7 +297,7 @@ ControlSystemsBase.balance_statespace(A::AbstractMatrix{<:ForwardDiff.Dual}, B::
 
 trivec(A) = [A[diagind(A, -1)]; A[diagind(A, 0)]; A[diagind(A, 1)]]
 
-function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
+function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0, nnl)
     if nx > 1
         al = (1:nx-1)
         a  = (1:nx) .+ al[end]
@@ -274,8 +325,9 @@ function vec2modal(p, ny, nu, nx, timeevol, zeroD, pred, D0, K0)
         ki = (0:0) .+ di[end]
         K = K0
     end
-    x0 = p[ki[end]+1:end] # x0 may belong to an extended predictor state and can have any length
-    ss(A, B, C, D, timeevol), K, x0
+    x0 = p[ki[end]+1:end-nnl] # x0 may belong to an extended predictor state and can have any length
+    nlpi = p[end-nnl+1:end]
+    ss(A, B, C, D, timeevol), K, x0, nlpi
 end
 
 function modal2vec(sys)
