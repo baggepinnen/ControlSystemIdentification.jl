@@ -93,7 +93,7 @@ coherenceplot(d)
 The [`coherenceplot`](@ref), a measure of how well a linear model describes the relation between input and output, unsurprisingly indicates that the system is nonlinear. Before estimating a linear model, it's good practice to inspect this non-parametric measure of linearity.
 
 
-```
+```@example beltdrive
 output_nonlinearity = (y, p) -> y .= abs.(y)
 
 nx = 3 # Model order

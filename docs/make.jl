@@ -1,6 +1,6 @@
 ENV["GKSwstype"] = 322 # workaround for gr segfault on GH actions
 using Documenter, ControlSystemIdentification, ControlSystemsBase, DelimitedFiles
-ENV["JULIA_DEBUG"]=Documenter # Enable this for debugging
+# ENV["JULIA_DEBUG"]=Documenter # Enable this for debugging
 
 using Plots
 
