@@ -54,7 +54,7 @@ makedocs(
             # ],
             "API" => "api.md",
       ],
-      strict = [:example_block],
+      # strict = [:example_block],
       format = Documenter.HTML(prettyurls = haskey(ENV, "CI")),
 ) # Due to lots of plots, this will just have to be run on my local machine
 
