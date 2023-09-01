@@ -46,6 +46,9 @@ using Optim, Optim.LineSearches
         sys0   = subspaceid(d, nx; zeroD, focus, stable),
         metric = abs2,
         regularizer = (p, P) -> 0,
+        output_nonlinearity = nothing,
+        input_nonlinearity = nothing,
+        nlp = nothing,
         optimizer = BFGS(
             linesearch = LineSearches.BackTracking(),
         ),
@@ -93,8 +96,7 @@ The rest of the arguments are related to `Optim.Options`.
 
 # Nonlinear estimation
 Nonlinear systems on Hammerstein-Wiener form, i.e., systems with a static input nonlinearity and a static output nonlinearity with a linear system inbetween, can be estimated as long as the nonlinearities are known. The procedure is
-1. If there is a known input nonlinearity, manually apply the input nonlinearity to the input signal `u` _before_ estimation, i.e., use the nonlinearly transformed input in the [`iddata`](@ref) object `d`.
-If the input nonlinearity has unknown parameters, provide the input nonlinearity as a function using the keyword argument `input_nonlinearity` to `newpem`. This function is expected to operate on the entire (matrix) input signal `u` and modify it _in-place_.
+1. If there is **a known input nonlinearity**, manually apply the input nonlinearity to the input signal `u` _before_ estimation, i.e., use the nonlinearly transformed input in the [`iddata`](@ref) object `d`. If **the input nonlinearity has unknown parameters**, provide the input nonlinearity as a function using the keyword argument `input_nonlinearity` to `newpem`. This function is expected to operate on the entire (matrix) input signal `u` and modify it _in-place_.
 2. If the output nonlinearity _is invertible_, apply the inverse to the output signal `y` _before_ estimation similar to above.
 3. If the output nonlinearity _is not invertible_, provide the nonlinear output transformation as a function using the keyword argument `output_nonlinearity` to `newpem`. This function is expected to operate on the (vector) output signal `y` and modify it _in-place_. Example:
 ```julia
