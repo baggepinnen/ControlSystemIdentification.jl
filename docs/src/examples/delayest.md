@@ -62,6 +62,10 @@ tf(d2c(Pest)) # Does it match the original continuous-time system without delay?
 The estimated model above should be very close to the system `tf(1, [1, 0.5, 1])` (some small higher-order terms in the numerator are expected). To add the delay to this model, we do
 ```@example DELAY
 Pest_τ = Pest*delay(τ, Ts)
-bodeplot([P, Pest_τ], lab=["True system" "Estimated system"])
+bodeplot([P, Pest_τ], lab=["True system" "" "Estimated system" ""])
 ```
 The estimated model should now match the true system very well, including the large drop in phase for higher frequencies due to the delay.
+
+
+!!! warning "Internal delays"
+    If the system contains internal delays, it might appear in a cross-correlation plot as if the system has an input-output delay, but in this case shifting the data like we did above is ill-advised. With internal delays, use the number of estimated delay samples as a lower bound on the model order instead. An example of an internal delay is when a control loop is closed around a delayed channel. 
