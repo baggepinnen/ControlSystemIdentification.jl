@@ -291,7 +291,9 @@ end
 """
     impulseestplot(data,n; σ = 2)
 
-Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% (2σ) confidence band. This method only supports single-output data, use [`okid`](@ref) for multi-output data.
+Estimates the system impulse response by fitting an `n`:th order FIR model and plots the result with a 95% (2σ) confidence band. Note, the confidence bound is drawn around zero, i.e., it is drawn such that one can determine whether or not the impulse response is significantly different from zero.
+
+This method only supports single-output data, use [`okid`](@ref) for multi-output data.
 
 See also [`impulseest`](@ref) and [`okid`](@ref).
 """
@@ -403,6 +405,7 @@ end
     # Ni = N .- abs.(lags)
     linestyle := :dash
     seriescolor := :black
+    framestyle --> :zerolines
     @series begin
         seriestype := :hline
         # lags.*d.Ts, 2 .*sqrt.(1 ./ Ni) # The denominator in crosscorr already takes care of this
@@ -491,35 +494,37 @@ end
 
 @userplot Find_nanb
 """
-    find_nanb(d::InputOutputData,na,nb)
-Plots the RMSE and AIC For model orders up to `n`. Useful for model selection
+    find_nanb(d::InputOutputData, na, nb)
+Plots the RMSE and AIC For model orders up to `na`, `nb`. Useful for model selection. `na` can be either an integer or a range. The same holds for `nb`.
 """
 find_nanb
 @recipe function find_nanb(p::Find_nanb; logrms = false)
     d, na, nb = p.args[1:3]
     d.ny == 1 || throw(ArgumentError("Only one-dimensional outputs supported."))
     y, u = vec(output(d)), time1(input(d))
-    error = zeros(na, nb, 2)
-    for i = 1:na, j = 1:nb
-        yt, A = getARXregressor(y, u, i, j)
+    na_range = na isa Int ? (1:na) : na
+    nb_range = nb isa Int ? (1:nb) : nb
+    error = zeros(length(na_range), length(nb_range), 2)
+    for (i, na) = enumerate(na_range), (j, nb) = enumerate(nb_range)
+        yt, A = getARXregressor(y, u, na, nb)
         e = yt - A * (A \ yt)
         error[i, j, 1] = logrms ? log10.(rms(e)) : rms(e)
-        error[i, j, 2] = aic(e, i + j)
+        error[i, j, 2] = aic(e, na + nb)
     end
     layout --> 2
     seriestype --> :heatmap
-    xticks := (1:nb, 1:nb)
-    yticks := (1:na, 1:na)
+    xticks := (nb_range, nb_range)
+    yticks := (na_range, na_range)
     yguide := "na"
     xguide := "nb"
     @series begin
         title := "RMS error"
         subplot := 1
-        error[:, :, 1]
+        nb_range, na_range, error[:, :, 1]
     end
     @series begin
         title := "AIC"
         subplot := 2
-        error[:, :, 2]
+        nb_range, na_range, error[:, :, 2]
     end
 end

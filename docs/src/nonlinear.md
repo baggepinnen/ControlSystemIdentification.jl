@@ -12,7 +12,7 @@ The result of this estimation is the linear system _without_ the nonlinearities.
 The default optimizer BFGS may struggle with problems including nonlinearities, if you do not get good results, try a different optimizer, e.g., `optimizer = Optim.NelderMead()`.
 
 
-## Example 1:
+## Example with simulated data:
 
 The example below identifies a model of a resonant system with a static where the sign of the output is unknown, i.e., the output nonlinearity is given by ``y_{nl} = |y|``. To make the example a bit more realistic, we also simulate colored measurement and input noise, `yn` and `un`.
 ```@example HW
@@ -60,7 +60,7 @@ scatter!(d.t, ynn', lab="Measured nonlinear output", sp=1)
 plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
 ```
 
-## Example 2: 
+## Example with real data: 
 Below, we identify a similar model but this time with data recorded from a physical system. The data comes from the belt-drive system depicted below.
 
 ![Belt drive](https://user-images.githubusercontent.com/3797491/264962931-e62c56ee-3dab-43f5-bdd3-858c841fb516.png)
@@ -88,12 +88,18 @@ end
 plot(plot.(iddatas)...)
 
 d = iddatas[1] # We use one dataset for estimation 
+coherenceplot(d)
+```
+The [`coherenceplot`](@ref), a measure of how well a linear model describes the relation between input and output, unsurprisingly indicates that the system is nonlinear. Before estimating a linear model, it's good practice to inspect this non-parametric measure of linearity.
+
+
+```@example beltdrive
 output_nonlinearity = (y, p) -> y .= abs.(y)
 
 nx = 3 # Model order
 
 results = map(1:40) do _ # This example is a bit more difficult, so we try more random initializations
-    sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=true, focus=:simulation)
+    sysh, x0h, opt = newpem(d, nx; output_nonlinearity, show_trace=false, focus=:simulation)
     (; sysh, x0h, opt)
 end;
 
