@@ -70,7 +70,7 @@ The prediction-error method has a number of other attractive properties, somethi
 
 ## Properties of the Prediction-Error Method
 
-Fundamentally, PEM changes the problem from minimizing a loss based on the simulation performance, to minimizing a loss based on shorter-term predictions. There are several benefits of doing so, and this example will highlight two:
+Fundamentally, PEM changes the problem from minimizing a loss based on the simulation performance, to minimizing a loss based on shorter-term predictions.[^Ljung][^Larsson] There are several benefits of doing so, and this example will highlight two:
 
   - The loss is often easier to optimize.
   - In addition to an accurate simulator, you also obtain a prediction for the system.
