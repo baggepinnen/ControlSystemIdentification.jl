@@ -48,9 +48,42 @@ Pkg.add("ControlSystemIdentification")
 
 *Optional:* To work with linear systems and plot Bode plots etc., also install the control toolbox [ControlSystems.jl](https://github.com/JuliaControl/ControlSystems.jl) package which this package builds upon, as well as the plotting package
 ```julia
-Pkg.add(["ControlSystemsBase", "Plots"])
+Pkg.add(["ControlSystemIdentification", "ControlSystemsBase", "Plots"])
 ```
 
+## Algorithm overview
+The following table indicates which estimation algorithms are applicable in different scenarios. A green circle (🟢) indicates that a particular method is well suited for the situation, an orange diamond (🔶) indicates that a match is possible, but somehow not ideal, while a red square (🟥) indicates that a method in its standard form is ill suited for the situation. The table is not exhaustive, and is intended to give a rough overview of the applicability of different algorithms.
+
+```@setup ALGOVERVIEW
+using PrettyTables, Markdown
+
+header = ["Estimation method", "SIMO", "MISO", "Disturbance models", "Nonlinearities", "Custom loss", "Time domain", "Frequency domain", "Multiple dataset"]
+
+data = [
+    "newpem"            "🟢" "🟢" "🟢" "🟢" "🟢" "🟢" "🟥" "🟥"
+    "subspaceid"        "🟢" "🟢" "🟢" "🟥" "🟥" "🟢" "🟢" "🟥"
+    "arx"               "🟥" "🟢" "🟥" "🔶" "🟢" "🟢" "🟥" "🟢"
+    "arxar"             "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🟥"
+    "plr"               "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🔶"
+    "era/okid"          "🟢" "🟢" "🟥" "🟥" "🟥" "🟢" "🟥" "🟢"
+    "impulseest"        "🟥" "🟢" "🟥" "🟥" "🟢" "🟢" "🟥" "🟥"
+]
+
+io = IOBuffer()
+tab = pretty_table(io, data; header, tf=tf_html_default)
+tab_algos = String(take!(io)) |> HTML
+```
+```@example ALGOVERVIEW
+tab_algos # hide
+```
+
+#### Comments
+- All methods can estimate **SISO** systems, i.e., systems with a single input and a single output.
+- Missing from the comparison is whether an algorithm estimates a **transfer function or a statespace system**, this is because one can without loss convert one to the other by simply calling `tf/ss`. One notable exception is for non-causal transfer functions which cannot be represented as statespace systems, but those do not appear very often.
+- Several methods are listed as 🟥 on **nonlinearities**, but it is oftentimes possible to handle input nonlinearities by adding nonlinearily transformed versions of the input to the dataset. Only [`newpem`](@ref) has explicit methods for estimating parameters of nonlinearies. [`arx`](@ref) is listed as 🔶, since with the correct `estimator` option that promotes sparsity, it is possibly to find the most appropriate nonlinearity among a set of candidates. However, no explicit support for this is provided.
+- **Custom loss functions** is sometimes supported explicitly, such as for [`newpem`](@ref), but often supported by providing a custom `estimator` for methods that solve a problem on the form ``\operatorname{argmin}_w \sum_i \operatorname{loss}(e_i) \quad \forall e_i \in \{e = y - Aw\}``. The default estimator in these cases is always `\`, i.e., to solve a least-squares problem. Useful alternatives are, e.g., [`TotalLeastSquares.tls`](https://github.com/baggepinnen/TotalLeastSquares.jl) and ``TotalLeastSquares.irls``.
+- In specific situations it is possible to use any method with **multiple datasets** by simply concatenating two datasets like `[d1 d2]`. This is only recommended if the state of the system in the end of the first dataset is very close to the state of the system in the beginning of the second dataset, for example, if all experiments starts and ends at rest in the origin.
+- Some methods estimate explicit **disturbance models**, such as [`plr`](@ref) and [`arxar`](@ref), whereas other methods estimate observers with an *implicit* disturbance model, such as [`newpem`](@ref) and [`subspaceid`](@ref). All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance).
 
 ## Other resources
 - For estimation of linear **time-varying** models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
