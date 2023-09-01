@@ -39,6 +39,7 @@ makedocs(
                   "Temperature control" => "examples/temp.md",
                   "Identification in closed loop" => "examples/closed_loop_id.md",
                   "Identification of unstable systems" => "examples/unstable_systems.md",
+                  "Delay estimation" => "examples/delayest.md",
                   "Ball and beam" => "examples/ballandbeam.md",
                   "Flexible robot arm" => "examples/flexible_robot.md",
                   "Glass furnace" => "examples/glass_furnace.md",
