@@ -27,7 +27,7 @@ where `g_i` and `g_o` are static, nonlinear functions that may depend on some pa
 
 The result of this estimation is the linear system _without_ the nonlinearities applied, those must be handled manually by the user.
 
-The default optimizer BFGS may struggle with problems including nonlinearities, if you do not get good results, try a different optimizer, e.g., `optimizer = Optim.NelderMead()`.
+The default optimizer BFGS may struggle with problems including nonlinearities. If you do not get good results, try a different optimizer, e.g., `optimizer = Optim.NelderMead()`.
 
 
 ## Example with simulated data:
@@ -79,13 +79,13 @@ plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
 ```
 
 ## Example with real data: 
-Below, we identify a similar model but this time with data recorded from a physical system. The data comes from the belt-drive system depicted below.
+Below, we identify a similar model but this time with data recorded from a physical system. The data come from the belt-drive system depicted below.
 
 ![Belt drive](https://user-images.githubusercontent.com/3797491/264962931-e62c56ee-3dab-43f5-bdd3-858c841fb516.png)
 
 The system is described in detail in [this report](http://www.google.com/url?q=http%3A%2F%2Fwww.it.uu.se%2Fresearch%2Fpublications%2Freports%2F2017-024%2F2017-024-nc.pdf&sa=D&sntz=1&usg=AOvVaw0yNPLBveaHDGWB9mwnHCxd) and the data is available on the link downloaded in the code snippet below.
 
-The speed sensor available in this system cannot measure the direction, we thus have an absolute-value nonlinearity at the output similar to above. The technical report further indicates that there is a low-pass filter on the output, _after_ the nonlinearity. We do not have capabilities of estimating this complicated structure in this package, so we ignore the additional low-pass filter and only estimate only the initial linear system and the nonlinearity.
+The speed sensor available in this system cannot measure the direction, we thus have an absolute-value nonlinearity at the output similar to above. The technical report further indicates that there is a low-pass filter on the output, _after_ the nonlinearity. We do not have capabilities of estimating this complicated structure in this package, so we ignore the additional low-pass filter and estimate only the initial linear system and the nonlinearity.
 
 ```@example beltdrive
 using DelimitedFiles, Plots
@@ -136,4 +136,4 @@ bodeplot(sysh)
 
 If everything went as expected, the model should be able to predict the output reasonably well, and the estimated model should have a resonance peak around 20rad/s (compare with Fig. 8 in the report).
 
-The dataset consists of two different experiments, here, we used one for identification and another one for validation. They both differ in the amplitude of the input. Ideally, we'd use a dataset that mixes different amplitudes for training.
+The dataset consists of two different experiments. In this case we used one for identification and another one for validation. The experiments differ in the amplitude of the input. Ideally, we would use a dataset that combines different amplitudes for training.
