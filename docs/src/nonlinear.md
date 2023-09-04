@@ -8,14 +8,16 @@ This package provides very elementary identification of nonlinear systems on Ham
 
 ```math
 \begin{aligned}
-x^+ &= Ax + B g_i(u, p)\\
-y &= g_o(Cx + Du, p)
+x^+ &= Ax + B u_{nl} \\
+y &= Cx + D u_{nl}   \\
+u_{nl} &= g_i(u, p)  \\
+y_{nl} &= g_o(y, p)
 \end{aligned}
 ```
 
 ```
    ┌─────┐   ┌─────┐   ┌─────┐
- u │     │   │     │   │     │  y
+ u │     │uₙₗ│     │ y │     │ yₙₗ
 ──►│  gᵢ ├──►│  P  ├──►│  gₒ ├─►
    │     │   │     │   │     │
    └─────┘   └─────┘   └─────┘
