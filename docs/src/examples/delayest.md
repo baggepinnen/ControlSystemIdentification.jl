@@ -164,7 +164,8 @@ ref = sign.(sin.(0.02 .* (0:Ts:150).^2)) # An interesting reference signal
 Pc = feedback(tf(1, [1, 1, 1]), tf(0.6, [1, 1, 1])*delay(τ)) # Feed 70% of the output back at the input with a delay of 2 seconds (like an echo)
 Pd = c2d(Pc, Ts)
 res = lsim(Pd, ref')
-plot(bodeplot(Pd), pzmap(Pd), plot(res))
+decho = iddata(res)
+plot(bodeplot(Pd), pzmap(Pd), plot(decho))
 ```
 
 The model-selection plot below indicates that we need to reach model orders of 24 to get a good fit
@@ -174,7 +175,6 @@ find_nanb(decho, 3:30, 5:30, xrotation=90, size=(800, 300), margin=5Plots.mm, xt
 
 trying to estimate a 4:th order model with input delay of 20 samples does not work at all this time, but fitting a 24:th order model does
 ```@example DELAY
-decho = iddata(res)
 model3 = arx(decho, 5, 5, inputdelay=τ_samples)
 model4 = subspaceid(decho, 24)
 figsim = simplot(model3, decho, zeros(ss(model3).nx), sysname="ARX")
