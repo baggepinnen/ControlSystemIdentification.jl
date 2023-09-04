@@ -1,6 +1,9 @@
 # Delay estimation
 A frequent property of control systems is the presence of _delays_, either due to processing time, network latency, or other physical phenomena. Delays that occur internally in the system will in the discrete-time setting add a potentially large number of states to the system, ``\tau / T_s`` state variables are required to represent a delay of ``\tau`` seconds in a discrete-time system with sampling time ``T_s``. A common special case is that the delay occurs at either the input or the output of the system, e.g, due to communication delays. Estimating this delay ahead of the estimation of the model is often beneficial, since it reduces the number of parameters that need to be estimated. Below, we generate a dataset with a large input delay ``\tau`` and have a look at how we can estimate ``\tau``.
 
+## Estimating the delay
+
+
 ```@example DELAY
 using DelimitedFiles, Plots
 using ControlSystemIdentification, ControlSystemsBase
@@ -75,4 +78,80 @@ The estimated model should now match the true system very well, including the la
 
 
 !!! warning "Internal delays"
-    If the system contains internal delays, it might appear in a cross-correlation plot as if the system has an input-output delay, but in this case shifting the data like we did above is ill-advised. With internal delays, use the number of estimated delay samples as a lower bound on the model order instead. An example of an internal delay is when a control loop is closed around a delayed channel. 
+    If the system contains internal delays, it might appear in a cross-correlation plot as if the system has an input-output delay, but in this case shifting the data like we did above may be ill-advised. With internal delays, use the number of estimated delay samples as a lower bound on the model order instead. An example of an internal delay is when a control loop is closed around a delayed channel. 
+
+
+## Internal delays
+
+In discrete time, a one-sample delay on either the input or the output appear as a pole in the origin. However, when the delay is internal to the system, it's not as easy to detect. Below, we close the loop around the system ``P`` from above using a PI controller ``C``, and construct a new dataset where the input is the reference to the PI controller rather than the input to the plant. 
+
+```@example DELAY
+C = pid(0.1, 0.5; Ts)
+L = P*C
+G = feedback(L)
+plot(nyquistplot(L), marginplot(L), plot(step(G, 50)))
+```
+
+```@example DELAY
+ref = sign.(sin.(0.02 .* (0:Ts:50).^2)) # An interesting reference signal
+res = lsim(G, ref')
+dG = iddata(res)
+plot(plot(dG), crosscorplot(dG))
+```
+
+We see that the cross-correlation plot still indicates that it takes over 2 seconds for the output to be affected by the input, but if we look at the model-selection plot, we must include orders up to above 23 to get a good fit:
+
+
+```@example DELAY
+find_nanb(dG, 3:30, 5:30, xrotation=90, size=(800, 300), margin=5Plots.mm, xtickfont=6)
+```
+
+We can also inspect the pole-zero maps of the open-loop and closed-loop systems
+
+
+```@example DELAY
+plot(
+    pzmap(P, title="Open-loop system"),
+    pzmap(G, title="Closed-loop system"),
+    plot_title="Pole-zero maps",
+    layout=(1, 2),
+    ratio=:equal,
+    size=(800, 400),
+    xlims=(-1.1, 1.1),
+    ylims=(-1.1, 1.1),
+)
+```
+the presence of the feedback has moved all the delay poles away from the origin (there are multiple poles on top of each other in the left plot).
+
+In this case, we must thus estimate a model of fairly high order (23) in order to accurately capture the dynamics of the system. If we do this, we can see that the estimated model matches the true system very well (since we didn't add any disturbance):
+
+```@example DELAY
+model = subspaceid(dG, G.nx)
+simplot(model, dG)
+```
+
+
+In a practical scenario, estimating a model of such high order may be difficult. It might then be worthwhile trying to estimate the lower-order open-loop system ``P`` directly, taking care to properly handle the delay, which then appears on the input rather than internally.
+
+If we use one of the methods that support the `inputdelay` keyword, we can see whether or not we can approximate the closed-loop system with a model that has an input delay only:
+```@example DELAY
+model2 = arx(dG, 4, 4, inputdelay=τ_samples)
+plot(
+    simplot(model2, dG),
+    pzmap(
+        model2,
+        ratio=:equal,
+        xlims=(-1.1, 1.1),
+        ylims=(-1.1, 1.1),
+        title="Estimated ARX model with input delay",
+    )
+)
+```
+We see that with a model of order 3 (4 free parameters in the denominator) together with a specified input delay of 20 samples, we indeed get a good approximation of the closed-loop system.
+
+If we compare the Bode plots of the true closed-loop system with the two identified models, they match very well.
+```@example DELAY
+bodeplot([G, model, model2])
+```
+
+It may thus be possible to approximate a system with internal delays using a model that has an input delay only.
