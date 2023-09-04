@@ -78,7 +78,7 @@ The estimated model should now match the true system very well, including the la
 
 
 !!! warning "Internal delays"
-    If the system contains internal delays, it might appear in a cross-correlation plot as if the system has an input-output delay, but in this case shifting the data like we did above may be ill-advised. With internal delays, use the number of estimated delay samples as a lower bound on the model order instead. An example of an internal delay is when a control loop is closed around a delayed channel. 
+    If the system contains internal delays, it might appear in a cross-correlation plot as if the system has an input-output delay, but in this case shifting the data like we did above may be ill-advised. With internal delays, use the number of estimated delay samples as a lower bound on the model order instead. An example of an internal delay is when a control loop is closed around a delayed channel, illustrated below.
 
 
 ## Internal delays
@@ -155,3 +155,30 @@ bodeplot([G, model, model2])
 ```
 
 It may thus be possible to approximate a system with internal delays using a model that has an input delay only.
+
+
+For completeness, we construct an example where this is not quite possible. The system in the example below can be thought of as an echo chamber, where the input passes through a resonant channel before it reaches the output, and 45% of the output energy is fed back at the input through the same channel (the echo)
+    
+```@example DELAY
+ref = sign.(sin.(0.02 .* (0:Ts:150).^2)) # An interesting reference signal
+Pc = feedback(tf(1, [1, 1, 1]), tf(0.6, [1, 1, 1])*delay(τ)) # Feed 70% of the output back at the input with a delay of 2 seconds (like an echo)
+Pd = c2d(Pc, Ts)
+res = lsim(Pd, ref')
+plot(bodeplot(Pd), pzmap(Pd), plot(res))
+```
+
+The model-selection plot below indicates that we need to reach model orders of 24 to get a good fit
+```@example DELAY
+find_nanb(decho, 3:30, 5:30, xrotation=90, size=(800, 300), margin=5Plots.mm, xtickfont=6)
+```
+
+trying to estimate a 4:th order model with input delay of 20 samples does not work at all this time, but fitting a 24:th order model does
+```@example DELAY
+decho = iddata(res)
+model3 = arx(decho, 5, 5, inputdelay=τ_samples)
+model4 = subspaceid(decho, 24)
+figsim = simplot(model3, decho, zeros(ss(model3).nx), sysname="ARX")
+simplot!(model4, decho, zeros(model4.nx), ploty=false, plotu=false, sysname="Subspace")
+```
+
+Keep in mind that we do not add any disturbance in our simualtions here, and estimating 24:th order models is likely going to be a challenging task in practice.

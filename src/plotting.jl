@@ -127,11 +127,14 @@ _process_simplotargs(d::AbstractIdData, sys::LTISystem, x0 = :estimate) = _proce
 
 @userplot Simplot
 """
-	simplot(sys, data, x0=nothing; ploty=true, plote=false, sysname="")
+	simplot(sys, data, x0=:estimate; ploty=true, plote=false, sysname="")
 
 Plot system simulation and measured output to compare them.
-`ploty` determines whether or not to plot the measured signal
-`plote` determines whether or not to plot the residual
+
+By default, the initial condition `x0` is estimated using the data. To start the simulation from the origin, provide `x0 = :zero` or `x0 = zeros(sys.nx)`.
+
+- `ploty` determines whether or not to plot the measured signal
+- `plote` determines whether or not to plot the residual
 """
 simplot
 @recipe function simplot(p::Simplot; ploty = true, plote = false, sysname="")
@@ -160,12 +163,15 @@ end
 
 @userplot Predplot
 """
-	predplot(sys, data, x0=nothing; ploty=true, plote=false, h=1, sysname="")
+	predplot(sys, data, x0=:estimate; ploty=true, plote=false, h=1, sysname="")
 
-Plot system simulation and measured output to compare them.
-`ploty` determines whether or not to plot the measured signal
-`plote` determines whether or not to plot the residual
-`h` is the prediction horizon.
+Plot system `h`-step prediction and measured output to compare them.
+
+By default, the initial condition `x0` is estimated using the data. To start the simulation from the origin, provide `x0 = :zero` or `x0 = zeros(sys.nx)`.
+
+- `ploty` determines whether or not to plot the measured signal
+- `plote` determines whether or not to plot the residual
+- `h` is the prediction horizon.
 """
 predplot
 @recipe function predplot(p::Predplot; ploty = true, plote = false, h=1, sysname="")
