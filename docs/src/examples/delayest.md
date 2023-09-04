@@ -89,7 +89,7 @@ In discrete time, a one-sample delay on either the input or the output appear as
 C = pid(0.1, 0.5; Ts)
 L = P*C
 G = feedback(L)
-plot(nyquistplot(L), marginplot(L), plot(step(G, 50)))
+plot(nyquistplot(L), plot(step(G, 50)))
 ```
 
 ```@example DELAY
@@ -127,7 +127,7 @@ In this case, we must thus estimate a model of fairly high order (23) in order t
 
 ```@example DELAY
 model = subspaceid(dG, G.nx)
-simplot(model, dG)
+simplot(model, dG, zeros(model.nx))
 ```
 
 
