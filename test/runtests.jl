@@ -94,6 +94,11 @@ end
         include("test_pem.jl")
     end
 
+    @testset "nonlinear_pem" begin
+        @info "Testing nonlinear_pem"
+        include("nonlinear_pem.jl")
+    end
+
     @testset "arx" begin
         @info "Testing arx"
         include("test_arx.jl")
