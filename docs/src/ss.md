@@ -13,7 +13,7 @@ This package estimates models in discrete time, but they may be converted to con
 There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref), [`newpem`](@ref) and [`era`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas [`n4sid`](@ref) is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl) and ins generally slightly more accurate but also more computationally expensive. If unsure which method to use, try [`subspaceid`](@ref) first (unless the data comes from closed-loop operation, use [`newpem`](@ref) in this case).
 
 ## Subspace-based identification using `n4sid` and `subspaceid`
-In this example we will estimate a statespace model using the [`n4sid`](@ref) method. This function returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `sys.sys`.
+In this example we will estimate a statespace model using the [`subspaceid`](@ref) method. This function returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `sys.sys`.
 ```@example ss
 using ControlSystemIdentification, ControlSystemsBase, Plots
 gr(fmt=:png) # hide
@@ -23,19 +23,21 @@ u  = randn(1,1000)
 y  = lsim(G,u).y
 y .+= 0.01 .* randn.() # add measurement noise
 d  = iddata(y,u,Ts)
-sys = n4sid(d, :auto; verbose=false, zeroD=true)
+sys = subspaceid(d, :auto; verbose=false, zeroD=true)
+
 # or use a robust version of svd if y has outliers or missing values
 # using TotalLeastSquares
 # sys = n4sid(d, :auto; verbose=false, svd=x->rpca(x)[3])
-bodeplot([G, sys.sys], lab=["True" "" "n4sid" ""])
+bodeplot([G, sys.sys], lab=["True" "" "subspace" ""])
 ```
 [`N4SIDStateSpace`](@ref) is a subtype of `AbstractPredictionStateSpace`, a statespace object that contains an observer gain matrix `sys.K` (Kalman filter) as well as estimated covariance matrices etc.
 
-Using the function [`subspaceid`](@ref) instead, we have
+Using the function [`n4sid`](@ref) instead, we have
 ```@example ss
-sys2 = subspaceid(d, :auto; verbose=false, zeroD=true)
-bodeplot!(sys2.sys, lab=["subspace" ""])
+sys2 = n4sid(d, :auto; verbose=false, zeroD=true)
+bodeplot!(sys2.sys, lab=["n4sid" ""])
 ```
+
 [`subspaceid`](@ref) allows you to choose the weighting between `:MOESP, :CVA, :N4SID, :IVM` and is generally preferred over [`n4sid`](@ref).
 
 Both functions allow you to choose which functions are used for least-squares estimates and computing the SVD, allowing e.g., robust estimators for resistance against outliers etc.

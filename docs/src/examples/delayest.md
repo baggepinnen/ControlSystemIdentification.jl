@@ -161,7 +161,7 @@ For completeness, we construct an example where this is not quite possible. The 
     
 ```@example DELAY
 ref = sign.(sin.(0.02 .* (0:Ts:150).^2)) # An interesting reference signal
-Pc = feedback(tf(1, [1, 1, 1]), tf(0.6, [1, 1, 1])*delay(τ)) # Feed 70% of the output back at the input with a delay of 2 seconds (like an echo)
+Pc = feedback(tf(1, [1, 1, 1]), tf(0.6, [1, 1, 1])*delay(τ)) # Feed 60% of the output back at the input with a delay of 2 seconds (like an echo)
 Pd = c2d(Pc, Ts)
 res = lsim(Pd, ref')
 decho = iddata(res)
