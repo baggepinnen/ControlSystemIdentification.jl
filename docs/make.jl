@@ -46,6 +46,7 @@ makedocs(
                   "Evaporator" => "examples/evaporator.md",
                   "Hair dryer" => "examples/hair_dryer.md",
                   "VARX model" => "examples/varx.md",
+                  "Nonlinear belt drive" => "examples/hammerstein_wiener.md",
             ],
             "API" => "api.md",
       ],

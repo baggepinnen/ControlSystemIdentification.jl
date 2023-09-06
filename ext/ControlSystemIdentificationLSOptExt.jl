@@ -208,10 +208,11 @@ end
 
 function ControlSystemIdentification.predict(model::NonlinearPredictionErrorModel, d::AbstractIdData, x0 = model.x0; p = model.p, h=1)
     # model.Ts == d.Ts || throw(ArgumentError("Sample time mismatch between data $(d.Ts) and system $(model.Ts)"))
-    h == 1 || throw(ArgumentError("Only h=1 is supported at the moment"))
+    h == 1 || h == 0 || throw(ArgumentError("Only h=1 is supported at the moment"))
     reset!(model.ukf; x0)
     sol = forward_trajectory(model.ukf, d, p)
-    reduce(hcat, sol.y)
+    yh = model.ukf.measurement.(h == 1 ? sol.x : sol.xt, eachcol(d.u), Ref(p), 1:length(d))
+    reduce(hcat, yh)
 end
 
 ControlSystemIdentification.get_x0(x0::Nothing, sys::NonlinearPredictionErrorModel, d::AbstractIdData) = sys.x0
