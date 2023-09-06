@@ -1,4 +1,5 @@
 using ControlSystemIdentification, SeeToDee, LowLevelParticleFilters
+using LeastSquaresOptim
 
 
 function quadtank(h, u, p, t)
@@ -16,8 +17,9 @@ function quadtank(h, u, p, t)
         -a4/A4*ssqrt(2g*h[4])                          + (1-γ1)*k1/A4 * u[1]
     ]
 end
-
 measurement(x,u,p,t) = SA[x[1], x[2]]
+
+Ts = 1.0
 discrete_dynamics = SeeToDee.Rk4(quadtank, Ts, supersample=2)
 
 nx = 4
@@ -30,12 +32,13 @@ t = 0:Ts:1000
 u1 = vcat.(0.25 .* sign.(sin.(2pi/Tperiod .* (t ./ 40).^2)) .+ 0.25)
 u2 = vcat.(0.25 .* sign.(sin.(2pi/Tperiod .* (t ./ 40).^2 .+ pi/2)) .+ 0.25)
 u  = vcat.(u1,u2)
-x0 = Float64[2,2,3,3]
+u = [u; 0 .* u[1:100]]
+x0 = [2.5, 1.5, 3.2, 2.8]
 x = LowLevelParticleFilters.rollout(discrete_dynamics, x0, u, p_true)[1:end-1]
 y = measurement.(x, u, 0, 0)
 y = [y .+ 0.01randn(ny) for y in y]
 
-plot(
+isinteractive() && plot(
     plot(reduce(hcat, x)', title="States"),
     plot(reduce(hcat, u)', title="Inputs")
 )
@@ -48,25 +51,41 @@ Y = reduce(hcat, y)
 U = reduce(hcat, u)
 
 d = iddata(Y, U, Ts)
-plot(d)
+isinteractive() && plot(d)
 
 
 
 
-x0 = 0.5*[2, 2, 3, 3]
+x00 = 0.5*[2.5, 1.5, 3, 3]
 p0 = [1.4, 1.4, 5.1, 0.25]
 
-result = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, x0, 10R1, R2, nu)
+model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, x00, R1, 100R2, nu)
 
-p_opt = result.p
+p_opt = model.p
 
-Σ = inv(result.Λ())
+Σ = inv(model.Λ())
 
 
 using LinearAlgebra
-norm(p_true - p0) / norm(p_true)
-norm(p_true - p_opt) / norm(p_true)
+e0 = norm(p_true - p0) / norm(p_true)
+eopt = norm(p_true - p_opt) / norm(p_true)
+@test eopt < e0
 
-scatter(p_opt, yerror=2sqrt.(diag(Σ[1:4, 1:4])), lab="Estimate")
-scatter!(p_true, lab="True")
-scatter!(p0, lab="Initial guess")
+e0 = norm(x0 - x00) / norm(x0)
+eopt = norm(x0 - model.x0) / norm(x0)
+@test eopt < e0
+
+
+
+if isinteractive()
+    scatter(p_opt, yerror=2sqrt.(diag(Σ[1:4, 1:4])), lab="Estimate")
+    scatter!(p_true, lab="True")
+    scatter!(p0, lab="Initial guess")
+end
+
+ysim = simulate(model, U)
+ypred = predict(d, model, model.x0)
+
+
+predplot(model, d)
+simplot(model, d)

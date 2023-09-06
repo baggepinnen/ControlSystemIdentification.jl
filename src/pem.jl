@@ -563,56 +563,5 @@ function modal_form(sys; C1 = false)
 end
 
 
-## Nonlinear PEM
-
-using LeastSquaresOptim, StaticArrays
-function nonlinear_pem(d::AbstractIdData, discrete_dynamics, measurement, p0, x0, R1::AbstractMatrix, R2::AbstractMatrix, nu; optimizer = LevenbergMarquardt())
-
-    nx = size(R1, 1)
-    ny = size(R2, 1)
-
-    y = output(d)
-    u = input(d)
-
-    ET = eltype(y)
-
-    yvv = reinterpret(SVector{ny, ET}, y)
-    uvv = reinterpret(SVector{nu, ET}, u)
-
-    R1 = SMatrix{nx, nx, ET, nx^2}(R1)
-    R2 = SMatrix{ny, ny, ET, ny^2}(R2)
-
-    x0inds = SVector{nx, Int}((1:nx) .+ length(p0))
-
-    _inner_pem(yvv, uvv, x0inds, discrete_dynamics, measurement, p0, x0, nu, R1, R2, optimizer) 
-end
-using ForwardDiff
-# Function barrier to handle the type instability caused by the static arrays above
-function _inner_pem(yvv, uvv, x0inds, discrete_dynamics::F, measurement::G, p0, x0, nu, R1, R2, optimizer) where {F,G}
-    R1mut = Matrix(R1)
-
-    function residuals!(res, px0::Vector{T}) where T
-        pi = px0[1:length(p0)]
-        x0i = px0[x0inds]
-        kf = UnscentedKalmanFilter(discrete_dynamics, measurement, R1, R2, MvNormal(T.(x0i), R1mut); ny, nu, p=pi)
-        LowLevelParticleFilters.prediction_errors!(res, kf, uvv, yvv, pi) 
-    end
-
-    p_guess = [p0; x0]
-    T = length(yvv)
-    ny = size(R2, 1)
-
-    res = optimize!(LeastSquaresProblem(; x = p_guess, f! = residuals!, output_length = T*ny, autodiff = :forward), optimizer; show_trace=true, show_every=1) # TODO: lower, upper
-
-    p = res.minimizer[1:length(p0)]
-    x0 = res.minimizer[x0inds]
-
-    function Λ()
-        resid = zeros(T*ny)
-        J = ForwardDiff.jacobian(residuals!, resid, res.minimizer)
-        (T-length(p_guess)) * Symmetric(J'*J)
-    end
-
-    (; p, x0, res, Λ)
-
-end
+"This function is available only if LeastSquaresOptim.jl is manually loaded by the user."
+function nonlinear_pem end
