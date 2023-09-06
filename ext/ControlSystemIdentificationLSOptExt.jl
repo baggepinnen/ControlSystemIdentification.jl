@@ -24,18 +24,31 @@ A nonlinear prediction-error model produced by [`nonlinear_pem`](@ref).
 - `res`: The optimization result structure
 - `Λ::Function`: A functor that returns an estimate of the precision matrix (inverse covariance matrix). Several caveats apply to this estimate, use with care.
 """
-struct NonlinearPredictionErrorModel{UKF, P, X0}
+struct NonlinearPredictionErrorModel{UKF,P,X0}
     ukf::UKF
     p::P
     x0::X0
-    res
+    res::Any
     Λ::Function
-    Ts
+    Ts::Any
 end
 
 
 """
-    nonlinear_pem(d::IdData, discrete_dynamics, measurement, p0, x0, R1, R2, nu; optimizer = LevenbergMarquardt(), λ = 1, optimize_x0 = true,)
+    nonlinear_pem(
+        d::IdData,
+        discrete_dynamics,
+        measurement,
+        p0,
+        x0,
+        R1,
+        R2,
+        nu;
+        optimizer = LevenbergMarquardt(),
+        λ = 1.0,
+        optimize_x0 = true,
+        kwargs...,
+    )
 
 Nonlinear Prediction-Error Method (PEM).
 
@@ -67,7 +80,20 @@ The inner optimizer accepts a number of keyword arguments:
 !!! warning "Experimental"
     This function is considered experimental and may change in the future without respecting semantic versioning. This implementation also lacks a number of features associated with good nonlinear PEM implementations, such as regularization and support for multiple datasets.
 """
-function nonlinear_pem(d::AbstractIdData, discrete_dynamics, measurement, p0::AbstractVector, x0::AbstractVector, R1::AbstractMatrix, R2::AbstractMatrix, nu::Int; optimizer = LevenbergMarquardt(), λ=1, optimize_x0 = true, kwargs...)
+function nonlinear_pem(
+    d::AbstractIdData,
+    discrete_dynamics,
+    measurement,
+    p0::AbstractVector,
+    x0::AbstractVector,
+    R1::AbstractMatrix,
+    R2::AbstractMatrix,
+    nu::Int;
+    optimizer = LevenbergMarquardt(),
+    λ = 1.0,
+    optimize_x0 = true,
+    kwargs...,
+)
 
     nx = size(R1, 1)
     ny = size(R2, 1)
@@ -77,20 +103,21 @@ function nonlinear_pem(d::AbstractIdData, discrete_dynamics, measurement, p0::Ab
 
     ET = eltype(y)
 
-    yvv = reinterpret(SVector{ny, ET}, y)
-    uvv = reinterpret(SVector{nu, ET}, u)
+    yvv = reinterpret(SVector{ny,ET}, y)
+    uvv = reinterpret(SVector{nu,ET}, u)
 
-    R1 = SMatrix{nx, nx, ET, nx^2}(R1)
-    R2 = SMatrix{ny, ny, ET, ny^2}(R2)
+    R1 = SMatrix{nx,nx,ET,nx^2}(R1)
+    R2 = SMatrix{ny,ny,ET,ny^2}(R2)
 
     if optimize_x0
-        x0inds = SVector{nx, Int}((1:nx) .+ length(p0))
+        x0inds = SVector{nx,Int}((1:nx) .+ length(p0))
     else
-        x0inds = SVector{0, Int}()
+        x0inds = SVector{0,Int}()
     end
     x0 = SVector(x0...)
 
-    _inner_pem(d.Ts, yvv, uvv, x0inds, discrete_dynamics, measurement, p0, x0, nu, R1, R2, optimizer, λ, optimize_x0; kwargs...) 
+    _inner_pem(d.Ts, yvv, uvv, x0inds, discrete_dynamics, measurement, p0, x0, nu,
+        R1, R2, optimizer, λ, optimize_x0; kwargs...) 
 end
 
 """
@@ -98,13 +125,31 @@ end
 
 Nonlinear Prediction-Error Method initialized with a model resulting from a previous call to `nonlinear_pem`. Parameters `x0, R1, R2` can be modified to refine the optimization. Calling `nonlinear_pem` repeatedly may be beneficial when the first call uses a small `R2` for large amounts of measurement feedback, this makes it easier to find a good model when the initial parameter guess is poor. A second call can use a larger `R2` to improve the simulation performance of the estimated model.
 """
-nonlinear_pem(d::AbstractIdData, model::NonlinearPredictionErrorModel; x0 = model.x0, R1=model.ukf.R1, R2=model.ukf.R2, kwargs...) = nonlinear_pem(d, model.ukf.dynamics, model.ukf.measurement, model.p, x0, R1, R2, model.ukf.nu; kwargs...)
+function nonlinear_pem(d::AbstractIdData, model::NonlinearPredictionErrorModel; x0 = model.x0, R1=model.ukf.R1, R2=model.ukf.R2, kwargs...)
+    nonlinear_pem(d, model.ukf.dynamics, model.ukf.measurement, model.p, x0, R1, R2, model.ukf.nu; kwargs...)
+end
 
 # Function barrier to handle the type instability caused by the static arrays above
-function _inner_pem(Ts, yvv, uvv, x0inds, discrete_dynamics::F, measurement::G, p0, x0, nu, R1, R2, optimizer, λ, optimize_x0; kwargs...) where {F,G}
+function _inner_pem(
+    Ts,
+    yvv,
+    uvv,
+    x0inds,
+    discrete_dynamics::F,
+    measurement::G,
+    p0,
+    x0,
+    nu,
+    R1,
+    R2,
+    optimizer,
+    λ,
+    optimize_x0;
+    kwargs...,
+) where {F,G}
     R1mut = Matrix(R1)
 
-    function get_ukf(px0::Vector{T}) where T
+    function get_ukf(px0::Vector{T}) where {T}
         pᵢ = px0[1:length(p0)]
         x0i = optimize_x0 ? px0[x0inds] : x0
         UnscentedKalmanFilter(discrete_dynamics, measurement, R1, R2, MvNormal(T.(x0i), R1mut); ny, nu, p=pᵢ)
@@ -124,15 +169,26 @@ function _inner_pem(Ts, yvv, uvv, x0inds, discrete_dynamics::F, measurement::G, 
     T = length(yvv)
     ny = size(R2, 1)
 
-    res = optimize!(LeastSquaresProblem(; x = p_guess, f! = residuals!, output_length = T*ny, autodiff = :forward), optimizer; show_trace=true, show_every=1, kwargs...) 
+    res = optimize!(
+        LeastSquaresProblem(;
+            x = p_guess,
+            f! = residuals!,
+            output_length = T * ny,
+            autodiff = :forward,
+        ),
+        optimizer;
+        show_trace = true,
+        show_every = 1,
+        kwargs...,
+    )
 
     p = res.minimizer[1:length(p0)]
     x0 = optimize_x0 ? res.minimizer[x0inds] : x0
 
     function Λ()
-        resid = zeros(T*ny)
+        resid = zeros(T * ny)
         J = ForwardDiff.jacobian(residuals!, resid, res.minimizer)
-        (T-length(p_guess)) * Symmetric(J'*J)
+        (T - length(p_guess)) * Symmetric(J' * J)
     end
 
     ukf = get_ukf(res.minimizer)
