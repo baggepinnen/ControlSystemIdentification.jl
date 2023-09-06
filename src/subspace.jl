@@ -245,29 +245,30 @@ function LowLevelParticleFilters.KalmanFilter(res::AbstractPredictionStateSpace,
     kf = KalmanFilter(A, B, C, D, Matrix(Q), Matrix(R), MvNormal(x0, P)) # NOTE: cross covariance S ignored
 end
 
+m2vv(x) = collect.(eachcol(x))
 
-function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData)
+function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData, p=parameters(kf))
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
     Y = m2vv(y)
-    forward_trajectory(kf, U, Y)
+    forward_trajectory(kf, U, Y, p)
 end
 
-function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData)
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData, p=parameters(kf))
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
     Y = m2vv(y)
-    LowLevelParticleFilters.smooth(kf, U, Y)
+    LowLevelParticleFilters.smooth(kf, U, Y, p)
 end
 
-function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, M::Int, d::AbstractIdData)
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, M::Int, d::AbstractIdData, p=parameters(kf))
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
     Y = m2vv(y)
-    LowLevelParticleFilters.smooth(kf, M, U, Y)
+    LowLevelParticleFilters.smooth(kf, M, U, Y, p)
 end
 
 function ControlSystemsBase.balreal(sys::AbstractPredictionStateSpace, args...; kwargs...)
