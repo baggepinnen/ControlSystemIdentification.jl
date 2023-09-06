@@ -3,6 +3,7 @@ module ControlSystemIdentificationLSOptExt
 ## Nonlinear PEM
 using ControlSystemIdentification
 using ControlSystemIdentification: AbstractIdData
+import ControlSystemIdentification: nonlinear_pem
 using LowLevelParticleFilters
 using LeastSquaresOptim
 using StaticArrays
@@ -65,7 +66,7 @@ The inner optimizer accepts a number of keyword arguments:
 !!! warning "Experimental"
     This function is considered experimental and may change in the future without respecting semantic versioning. This implementation also lacks a number of features associated with good nonlinear PEM implementations, such as regularization and support for multiple datasets.
 """
-function ControlSystemIdentification.nonlinear_pem(d::AbstractIdData, discrete_dynamics, measurement, p0::AbstractVector, x0::AbstractVector, R1::AbstractMatrix, R2::AbstractMatrix, nu::Int; optimizer = LevenbergMarquardt(), λ=1, kwargs...)
+function nonlinear_pem(d::AbstractIdData, discrete_dynamics, measurement, p0::AbstractVector, x0::AbstractVector, R1::AbstractMatrix, R2::AbstractMatrix, nu::Int; optimizer = LevenbergMarquardt(), λ=1, kwargs...)
 
     nx = size(R1, 1)
     ny = size(R2, 1)
@@ -83,11 +84,18 @@ function ControlSystemIdentification.nonlinear_pem(d::AbstractIdData, discrete_d
 
     x0inds = SVector{nx, Int}((1:nx) .+ length(p0))
 
-    _inner_pem(yvv, uvv, x0inds, discrete_dynamics, measurement, p0, x0, nu, R1, R2, optimizer, λ; kwargs...) 
+    _inner_pem(d.Ts, yvv, uvv, x0inds, discrete_dynamics, measurement, p0, x0, nu, R1, R2, optimizer, λ; kwargs...) 
 end
 
+"""
+    nonlinear_pem(d, model::NonlinearPredictionErrorModel; x0, R1, R2, kwargs...)
+
+Nonlinear Prediction-Error Method initialized with a model resulting from a previous call to `nonlinear_pem`. Parameters `x0, R1, R2` can be modified to refine the optimization. Calling `nonlinear_pem` repeatedly may be beneficial when the first call uses a small `R2` for large amounts of measurement feedback, this makes it easier to find a good model when the initial parameter guess is poor. A second call can use a larger `R2` to improve the simulation performance of the estimated model.
+"""
+nonlinear_pem(d::AbstractIdData, model::NonlinearPredictionErrorModel; x0 = model.x0, R1=model.ukf.R1, R2=model.ukf.R2, kwargs...) = nonlinear_pem(d, model.ukf.dynamics, model.ukf.measurement, model.p, x0, R1, R2, model.ukf.nu; kwargs...)
+
 # Function barrier to handle the type instability caused by the static arrays above
-function _inner_pem(yvv, uvv, x0inds, discrete_dynamics::F, measurement::G, p0, x0, nu, R1, R2, optimizer, λ; kwargs...) where {F,G}
+function _inner_pem(Ts, yvv, uvv, x0inds, discrete_dynamics::F, measurement::G, p0, x0, nu, R1, R2, optimizer, λ; kwargs...) where {F,G}
     R1mut = Matrix(R1)
 
     function get_ukf(px0::Vector{T}) where T
@@ -119,14 +127,13 @@ function _inner_pem(yvv, uvv, x0inds, discrete_dynamics::F, measurement::G, p0, 
 
     ukf = get_ukf(res.minimizer)
 
-    NonlinearPredictionErrorModel(ukf, p, x0, res, Λ, d.Ts)
+    NonlinearPredictionErrorModel(ukf, p, x0, res, Λ, Ts)
 end
 
 
 
 function LowLevelParticleFilters.simulate(model::NonlinearPredictionErrorModel, u, x0 = model.x0; p = model.ukf.p)
     reset!(model.ukf; x0)
-    @show p
     if u isa AbstractIdData
         u = input(u)
     end

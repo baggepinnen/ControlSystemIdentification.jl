@@ -1,5 +1,6 @@
 using ControlSystemIdentification, SeeToDee, LowLevelParticleFilters
 using LeastSquaresOptim
+using StaticArrays
 
 
 function quadtank(h, u, p, t)
@@ -84,8 +85,13 @@ if isinteractive()
 end
 
 ysim = simulate(model, U)
-ypred = predict(d, model, model.x0)
+ypred = predict(model, d, model.x0)
 
 
 predplot(model, d)
 simplot(model, d)
+
+
+model2 = ControlSystemIdentification.nonlinear_pem(d, model; R2 = 1000R2)
+
+@test model2.res.ssr <= model.res.ssr
