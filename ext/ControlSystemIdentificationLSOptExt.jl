@@ -42,52 +42,7 @@ function Base.show(io::IO, model::NonlinearPredictionErrorModel)
 end
 
 
-"""
-    nonlinear_pem(
-        d::IdData,
-        discrete_dynamics,
-        measurement,
-        p0,
-        x0,
-        R1,
-        R2,
-        nu;
-        optimizer = LevenbergMarquardt(),
-        λ = 1.0,
-        optimize_x0 = true,
-        kwargs...,
-    )
 
-Nonlinear Prediction-Error Method (PEM).
-
-This method attempts to find the optimal vector of parameters, ``p``, and the initial condition ``x_0``, that minimizes the sum of squared one-step prediction errors. The prediction is performed using an Unscented Kalman Filter (UKF) and the optimization is performed using a Gauss-Newton method. 
-
-# Arguments:
-- `d`: Identification data
-- `discrete_dynamics`: A dynamics function `(xₖ, uₖ, p, t) -> x(k+1)` that takes the current state `x`, input `u`, parameters `p`, and time `t` and returns the next state `x(k+1)`.
-- `measurement`: The measurement / output function of the nonlinear system `(xₖ, uₖ, p, t) -> yₖ`
-- `p0`: The initial guess for the parameter vector
-- `x0`: The initial guess for the initial condition
-- `R1`: Dynamics noise covariance matrix (increasing this makes the algorithm trust the model less)
-- `R2`: Measurement noise covariance matrix (increasing this makes the algorithm trust the measurements less)
-- `nu`: Number of inputs to the system
-- `optimizer`: Any optimizer from [LeastSquaresOptim](https://github.com/matthieugomez/LeastSquaresOptim.jl)
-- `λ`: A weighting factor to minimize `dot(e, λ, e`). A commonly used metric is `λ = Diagonal(1 ./ (mag.^2))`, where `mag` is a vector of the "typical magnitude" of each output. Internally, the square root of `W = sqrt(λ)` is calculated so that the residuals stored in `res` are `W*e`.
-- `optimize_x0`: Whether to optimize the initial condition `x0` or not. If `false`, the initial condition is fixed to the value of `x0` and the optimization is performed only on the parameters `p`.
-
-The inner optimizer accepts a number of keyword arguments:
-- `lower`: Lower bounds for the parameters
-- `upper`: Upper bounds for the parameters
-- `x_tol = 1e-8`
-- `f_tol = 1e-8`
-- `g_tol = 1e-8`
-- `iterations = 1_000`
-- `Δ = 10.0`
-- `store_trace = false`
-
-!!! warning "Experimental"
-    This function is considered experimental and may change in the future without respecting semantic versioning. This implementation also lacks a number of features associated with good nonlinear PEM implementations, such as regularization and support for multiple datasets.
-"""
 function nonlinear_pem(
     d::AbstractIdData,
     discrete_dynamics,

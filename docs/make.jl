@@ -26,6 +26,7 @@ makedocs(
       doctest = false,
       modules = [ControlSystemIdentification, Base.get_extension(ControlSystemIdentification, :ControlSystemIdentificationLSOptExt)],
       pagesonly = true,
+      draft = false,
       pages = [
             "Home" => "index.md",
             "Identification data" => "iddata.md",
