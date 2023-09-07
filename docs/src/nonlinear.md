@@ -83,7 +83,9 @@ We then simulate some data from the system to use for identification:
 ```@example HW
 using ControlSystemIdentification, ControlSystemsBase
 using ControlSystemsBase.DemoSystems: resonant
-using Random, Plots
+using LowLevelParticleFilters
+using LeastSquaresOptim
+using Random, Plots, LinearAlgebra
 
 # Generate some data from the system
 Random.seed!(1)
@@ -119,7 +121,7 @@ p_guess = [1.4, 1.4, 5.1, 0.25] # Initial guess for the parameters
 R1 = Diagonal([0.1, 0.1, 0.1, 0.1])
 R2 = 100*Diagonal(0.5^2 * ones(ny))
 
-model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, p_guess, R1, R2, nu)
+model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p_guess, x0_guess, R1, R2, nu)
 ```
 
 We can then test how the model performs on the data, and compare with the model corresponding to our initial guess
