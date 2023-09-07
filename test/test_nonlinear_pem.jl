@@ -96,3 +96,5 @@ simplot(model, d)
 model2 = ControlSystemIdentification.nonlinear_pem(d, model; R2 = 1000R2, optimize_x0 = false)
 @test model2.res.ssr <= model.res.ssr
 @test model2.x0 == model.x0
+
+display(model2) # For coverage purposes

@@ -24,7 +24,7 @@ data = readdlm("/tmp/DATAUNIF.csv", ',')[2:end, 1:4]
 makedocs(
       sitename = "ControlSystemIdentification Documentation",
       doctest = false,
-      modules = [ControlSystemIdentification],
+      modules = [ControlSystemIdentification, Base.get_extension(ControlSystemIdentification, :ControlSystemIdentificationLSOptExt)],
       pagesonly = true,
       pages = [
             "Home" => "index.md",

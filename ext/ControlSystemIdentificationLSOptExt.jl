@@ -33,6 +33,14 @@ struct NonlinearPredictionErrorModel{UKF,P,X0}
     Ts::Any
 end
 
+function Base.show(io::IO, model::NonlinearPredictionErrorModel)
+    println(io, "NonlinearPredictionErrorModel")
+    println(io, "  p: ", model.p)
+    println(io, "  x0: ", model.x0)
+    println(io, "  Ts: ", model.Ts)
+    println(io, "  ny = $(model.ukf.ny), nu = $(model.ukf.nu), nx = $(model.ukf.nx)")
+end
+
 
 """
     nonlinear_pem(

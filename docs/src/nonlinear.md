@@ -1,3 +1,8 @@
+```@setup HW
+using LeastSquaresOptim
+```
+
+
 # Identification of nonlinear models
 
 This package supports two forms of nonlinear system identification.
