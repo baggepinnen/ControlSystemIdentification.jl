@@ -7,14 +7,15 @@ A frequent property of control systems is the presence of _delays_, either due t
 ```@example DELAY
 using DelimitedFiles, Plots
 using ControlSystemIdentification, ControlSystemsBase
+gr(fmt=:png) # hide
 
-τ = 2.0 # Delay in seconds
+τ  = 2.0 # Delay in seconds
 Ts = 0.1 # Sampling time
-P = c2d(tf(1, [1, 0.5, 1])*delay(τ), Ts) # Dynamics is given by a simple second-order system with input delay
+P  = c2d(tf(1, [1, 0.5, 1])*delay(τ), Ts) # Dynamics is given by a simple second-order system with input delay
 
-u = sin.(0.1 .* (0:Ts:30).^2) # An interesting input signal
+u   = sin.(0.1 .* (0:Ts:30).^2) # An interesting input signal
 res = lsim(P, u')
-d = iddata(res)
+d   = iddata(res)
 plot(d)
 ```
 
@@ -181,4 +182,4 @@ figsim = simplot(model3, decho, zeros(ss(model3).nx), sysname="ARX")
 simplot!(model4, decho, zeros(model4.nx), ploty=false, plotu=false, sysname="Subspace")
 ```
 
-Keep in mind that we do not add any disturbance in our simualtions here, and estimating 24:th order models is likely going to be a challenging task in practice.
+Keep in mind that we do not add any disturbance in our simulations here, and estimating 24:th order models is likely going to be a challenging task in practice.

@@ -586,7 +586,7 @@ Nonlinear Prediction-Error Method (PEM).
 This method attempts to find the optimal vector of parameters, ``p``, and the initial condition ``x_0``, that minimizes the sum of squared one-step prediction errors. The prediction is performed using an Unscented Kalman Filter (UKF) and the optimization is performed using a Gauss-Newton method. 
 
 !!! info "Requires LeastSquaresOptim.jl"
-This function is available only if LeastSquaresOptim.jl is manually installed and loaded by the user.
+    This function is available only if LeastSquaresOptim.jl is manually installed and loaded by the user.
 
 # Arguments:
 - `d`: Identification data

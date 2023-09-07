@@ -188,6 +188,12 @@ ControlSystemIdentification.n4sid
 ControlSystemIdentification.newpem
 ControlSystemIdentification.era
 ControlSystemIdentification.okid
+ControlSystemIdentification.predictiondata
+ControlSystemIdentification.observer_predictor
+ControlSystemIdentification.observer_controller
+ControlSystemIdentification.prediction_error
+ControlSystemIdentification.prediction_error_filter
+ControlSystemIdentification.noise_model
 ```
 
 ## Video tutorial
