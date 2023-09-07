@@ -115,9 +115,9 @@ welchplot
 end
 
 
-_process_simplotargs(sys::LTISystem, d::AbstractIdData, x0 = :estimate) = sys, d, get_x0(x0, sys, d)
+_process_simplotargs(sys, d::AbstractIdData, x0 = :estimate) = sys, d, get_x0(x0, sys, d)
 
-_process_simplotargs(d::AbstractIdData, sys::LTISystem, x0 = :estimate) = _process_simplotargs(sys, d, x0) # sort arguments
+_process_simplotargs(d::AbstractIdData, sys, x0 = :estimate) = _process_simplotargs(sys, d, x0) # sort arguments
 
 # function _process_simplotargs(d::AbstractIdData, systems::LTISystem...) 
 #     map(systems) do sys

@@ -561,3 +561,7 @@ function modal_form(sys; C1 = false)
     end
     sysm, T, E
 end
+
+
+"This function is available only if LeastSquaresOptim.jl is manually loaded by the user."
+function nonlinear_pem end
