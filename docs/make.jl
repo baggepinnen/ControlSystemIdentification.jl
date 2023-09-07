@@ -3,8 +3,8 @@ using Documenter, ControlSystemIdentification, ControlSystemsBase, DelimitedFile
 # ENV["JULIA_DEBUG"]=Documenter # Enable this for debugging
 
 using Plots
-
 gr(fmt=:png)
+using LeastSquaresOptim
 
 
 # Run this code here to make sure the tutorial can access the file, not sure why it does not work from within the tutorial
