@@ -181,4 +181,66 @@ figsim = simplot(model3, decho, zeros(ss(model3).nx), sysname="ARX")
 simplot!(model4, decho, zeros(model4.nx), ploty=false, plotu=false, sysname="Subspace")
 ```
 
-Keep in mind that we do not add any disturbance in our simualtions here, and estimating 24:th order models is likely going to be a challenging task in practice.
+## Case study: influence of one-sample delay
+The following example investigates the influence of an unexpected _single sample_ delay in the estimation of a model for a double-mass system with the velocity of one of the masses as output. The system is available as one of the demo systems in ControlSystems.jl, and its frequency response looks like follows
+```@example DELAY
+P = DemoSystems.double_mass_model(outputs=2) |> minreal
+bp = bodeplot(P, lab="Continuous-time system without delay")
+```
+
+We now create a discrete-time equivalent to the system, with a one sample delay (0.01s)
+```@example DELAY
+Ts = 0.01
+Pd = c2d(P*delay(Ts), Ts)
+bodeplot!(bp, Pd, lab="Discrete-time system with delay")
+```
+Not much changes in the Bode plot, except for at the very highest frequencies, which is exactly what we expect from a one-sample delay.
+
+We now generate some dataset to use for identification
+```@example DELAY
+u = sign.(repeat(randn(100), inner=5))
+res = lsim(Pd, u')
+plot(res, plotu=true)
+```
+
+
+The first model we'll estimate is an ARX model, i.e., a discrete-time transfer function. The discrete-time order of the true system _without_ delay is 3, so we estimate a third-order model without delay
+```@example DELAY
+d = iddata(res)
+model_arx = arx(d, 3, 3)
+bodeplot!(bp, model_arx, lab="ARX model")
+```
+As we can see, the fit is terrible! The least-squares estimation that underpins the [`arx`](@ref) estimator tries to find a model that relates the last three outputs and inputs to the current output, but this is not possible due to the extra delay, in this case the result is catastrophic due to the "shortsightedness" of the [`arx`](@ref) function, it only looks at the immediate past and future, i.e., high-frequency properties.
+
+If we specify that we have a delay (1 sample delay implies causality, 2 samples delay implies causality + one sample pure delay), we indeed get what we would expect:
+```@example DELAY
+model_arx_2 = arx(d, 3, 3, inputdelay=2)
+bodeplot!(bp, model_arx_2, lab="ARX model with delay")
+```
+
+We can compare the models also in simulation, the model oblivious to the delay does no better here:
+```@example DELAY
+plot(res, lab="Data")
+simplot!(model_arx, d, ploty=false, sysname="ARX model")
+simplot!(model_arx_2, d, ploty=false, sysname="ARX model with delay")
+```
+
+For comparison, we also estimate a model using subspace identification ([`subspaceid`](@ref)), which uses an internal prediction horizon that is much longer than the [`arx`](@ref) method. We compare two cases, one where we explicitly tell [`subspaceid`](@ref) to focus on simulation, and one where the focus is on shorter-term prediction
+```@example DELAY
+model_sim = subspaceid(d, 3, focus=:simulation)
+model_pred = subspaceid(d, 3, focus=:prediction)
+bodeplot(P, lab="Continuous-time system without delay")
+bodeplot!(model_sim, lab="Simulation model")
+bodeplot!(model_pred, lab="Prediction model", legend=:bottomleft)
+```
+
+We see that although the result is not perfect, we do have one state variable to little after all, the fit is much better. This also carries over to the time domain:
+```@example DELAY
+plot(res, lab="Data")
+simplot!(model_sim, d, ploty=false, sysname="Simulation model")
+simplot!(model_pred, d, ploty=false, sysname="Prediction model")
+```
+
+Try increasing the internal prediction horizon of the [`subspaceid`](@ref) method by setting `r = 30` and you'll get an even better fit.
+
+What's the takeaway here? When fitting linear black-box models like we did here, we can simply handle the delay by increasing the model order by one for each sample of delay. However, if we are fitting parametric models from first principles and using "short-sighted" methods, we must explicitly take care of the delay in order to not suffer from poor fit. A short-sighted method is any method that tries to fit either local differences (like ARX), or that tries to fit derivatives (the finite-difference approximation to a derivative is a difference).
