@@ -116,6 +116,11 @@ The user can choose to minimize either prediction errors or simulation errors, w
 
 The result of the identification with [`newpem`](@ref) is a custom type with extra fields for the identified Kalman gain and noise covariance matrices.
 
+
+## Gray-box identification
+For estimation of linear or nonlinear models with fixed structure, see [`ControlSystemIdentification.nonlinear_pem`](@ref).
+
+
 ### Usage example
 Below, we generate a system and simulate it forward in time. We then try to estimate a model based on the input and output sequences using the function [`newpem`](@ref).
 ```@example ss

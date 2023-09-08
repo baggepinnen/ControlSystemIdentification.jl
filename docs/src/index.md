@@ -30,6 +30,8 @@ or in the form of transfer functions
 Y(z) = \dfrac{B(z)}{A(z)}U(z)
 ```
 
+We also have capabilities for estimation of nonlinear Hammerstein-Wiener models and linear/nonlinear gray-box identification of models in continuous or discrete time.
+
 This package is implemented in the free and open-source programming language [Julia](https://julialang.org/).
 
 If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](

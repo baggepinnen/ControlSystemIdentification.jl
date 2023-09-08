@@ -7,10 +7,10 @@ using LeastSquaresOptim
 # Identification of nonlinear models
 
 This package supports two forms of nonlinear system identification.
-- Parameter estimation in a known nonlinear model structure ``x⁺ = f(x, u, p)`` where `p` is a vector of parameters to be estimated.
+- Parameter estimation in a known model structure (linear or nonlinear) ``x⁺ = f(x, u, p)`` where `p` is a vector of parameters to be estimated.
 - Estimation of Hammerstein-Wiener models, i.e., linear systems with static nonlinear functions on the input and/or output.
 
-## Parameter estimation in a known nonlinear model structure
+## Parameter estimation in a known model structure
 Parameter estimation in differential equations can be performed by forming a one-step ahead predictor of the output, and minimizing the prediction error. This procedure is packaged in the function [`nonlinear_pem`](@ref) which is available as a package extension, available if the user manually installs and loads [LeastSquaresOptim.jl](https://github.com/matthieugomez/LeastSquaresOptim.jl).
 
 The procedure to use this function is as follows
@@ -49,7 +49,7 @@ The dynamics are given by
 ```
 where $h_i$ are the tank levels and $a_i, A_i$ are the cross-sectional areas of outlets and tanks respectively.
 
-We start by defining the dynamics in continuous time, and discretize them using the integrator [SeeToDee.Rk4](https://github.com/baggepinnen/SeeToDee.jl) with a sample time of ``T_s = 1`s.
+We start by defining the dynamics in continuous time, and discretize them using the integrator [`SeeToDee.Rk4`](https://baggepinnen.github.io/SeeToDee.jl/dev/api/#SeeToDee.Rk4) with a sample time of ``T_s = 1``s.
 
 
 ```@example HW
