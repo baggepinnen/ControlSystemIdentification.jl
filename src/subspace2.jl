@@ -349,6 +349,7 @@ function subspaceid(
 
     if scaleU
         B ./= CU
+        D ./= CU
     end
 
     # 5. If noise model, form Xh from (10.123) and estimate noise contributions using (10.124)

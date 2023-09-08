@@ -1,5 +1,6 @@
 using ControlSystemIdentification, ControlSystemsBase
 using ControlSystemsBase: isdiscrete
+using LinearAlgebra, Random, Test
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =
     maximum(abs, log10.(abs2.(freqresp(model, wtest))) - log10.(abs2.(freqresp(G, wtest))))
@@ -166,6 +167,14 @@ end
         @test kf.C == res.C
 
     end
+
+    # Test u scaling
+    G2 = c2d(DemoSystems.resonant() + 1, 0.02)
+    u = randn(1, 1000)
+    d2 = iddata(lsim(G2, u))
+    res2 = subspaceid(d2, nx, focus=:simulation, scaleU = true)
+    @test res2.sys.D[] ≈ 1 rtol=1e-8
+    @test dcgain(res2.sys)[] ≈ dcgain(G2)[] rtol=1e-8
 
     m = 1; l = 1; r = 1
     a = -0.9; b = 1
