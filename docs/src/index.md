@@ -62,14 +62,15 @@ using PrettyTables, Markdown
 header = ["Estimation method", "SIMO", "MISO", "Disturbance models", "Nonlinearities", "Custom loss", "Time domain", "Frequency domain", "Multiple dataset"]
 
 data = [
-    "newpem"            "🟢" "🟢" "🟢" "🟢" "🟢" "🟢" "🟥" "🟥"
-    "subspaceid"        "🟢" "🟢" "🟢" "🟥" "🟢" "🟢" "🟢" "🟥"
-    "arx"               "🟥" "🟢" "🟥" "🔶" "🟢" "🟢" "🟥" "🟢"
-    "arxar"             "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🟥"
-    "plr"               "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🔶"
-    "era/okid"          "🟢" "🟢" "🟥" "🟥" "🟥" "🟢" "🟥" "🟢"
-    "impulseest"        "🟥" "🟢" "🟥" "🟥" "🟢" "🟢" "🟥" "🟥"
-    "tfest"             "🟥" "🟥" "🟢" "🟥" "🟢" "🟢" "🟢" "🟥"
+    "`newpem`"            "🟢" "🟢" "🟢" "🟢" "🟢" "🟢" "🟥" "🟥"
+    "`subspaceid`"        "🟢" "🟢" "🟢" "🟥" "🟢" "🟢" "🟢" "🟥"
+    "`nonlinear_pem`"     "🟢" "🟢" "🔶" "🟢" "🟥" "🟢" "🟥" "🟥"
+    "`arx`"               "🟥" "🟢" "🟥" "🔶" "🟢" "🟢" "🟥" "🟢"
+    "`arxar`"             "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🟥"
+    "`plr`"               "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🔶"
+    "`era/okid`"          "🟢" "🟢" "🟥" "🟥" "🟥" "🟢" "🟥" "🟢"
+    "`impulseest`"        "🟥" "🟢" "🟥" "🟥" "🟢" "🟢" "🟥" "🟥"
+    "`tfest`"             "🟥" "🟥" "🟢" "🟥" "🟢" "🟢" "🟢" "🟥"
 ]
 
 io = IOBuffer()
@@ -86,7 +87,7 @@ tab_algos # hide
 - Several methods are listed as 🟥 on **nonlinearities**, but it is oftentimes possible to handle known input nonlinearities by adding nonlinearly transformed versions of the input to the dataset. Known output nonlinearities that are invertible can be handled by similarly applying the inverse nonlinearity to the data before estimation. Only [`newpem`](@ref) has explicit methods for estimating parameters of nonlinearities. [`arx`](@ref) is listed as 🔶, since with the correct `estimator` option that promotes sparsity, it is possible to find the most appropriate nonlinearity among a set of candidates. However, no explicit support for this is provided.
 - **Custom loss functions** are sometimes supported explicitly, such as for [`newpem`](@ref), but often supported by providing a custom `estimator` for methods that solve a problem on the form ``\operatorname{argmin}_w \sum_i \operatorname{loss}(e_i) \quad \forall e_i \in \{e = y - Aw\}``. The default estimator in these cases is always `\`, i.e., to solve a least-squares problem. Useful alternatives are, e.g., [`TotalLeastSquares.tls`](https://github.com/baggepinnen/TotalLeastSquares.jl) and `TotalLeastSquares.irls`. This can be useful to increase robustness w.r.t. noise etc.
 - In specific situations it is possible to use any method with **multiple datasets** by simply concatenating two datasets like `[d1 d2]`. This is only recommended if the state of the system in the end of the first dataset is very close to the state of the system in the beginning of the second dataset, for example, if all experiments start and end at rest in the origin.
-- Some methods estimate explicit **disturbance models**, such as [`plr`](@ref) and [`arxar`](@ref), whereas other methods estimate observers with an *implicit* disturbance model, such as [`newpem`](@ref) and [`subspaceid`](@ref). All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance).
+- Some methods estimate explicit **disturbance models**, such as [`plr`](@ref) and [`arxar`](@ref), whereas other methods estimate observers with an *implicit* disturbance model, such as [`newpem`](@ref) and [`subspaceid`](@ref). All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). [`nonlinear_pem`](@ref) is listed as 🔶 since it allows for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.
 
 ## Other resources
 - For estimation of linear **time-varying** models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
