@@ -28,7 +28,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
   </thead>
   <tbody>
     <tr>
-      <td style = "text-align: right;">`newpem`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>newpem</code></p></div></td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
@@ -39,7 +39,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟥</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`subspaceid`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>subspaceid</code></p></div></td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
@@ -50,7 +50,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟥</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`nonlinear_pem`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>nonlinear_pem</code></p></div></td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🔶</td>
@@ -61,7 +61,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟥</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`arx`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>arx</code></p></div></td>
       <td style = "text-align: right;">🟥</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟥</td>
@@ -72,7 +72,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟢</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`arxar`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>arxar</code></p></div></td>
       <td style = "text-align: right;">🟥</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
@@ -83,7 +83,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟥</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`plr`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>plr</code></p></div></td>
       <td style = "text-align: right;">🟥</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
@@ -94,7 +94,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🔶</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`era/okid`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>era/okid</code></p></div></td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟥</td>
@@ -105,7 +105,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟢</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`impulseest`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>impulseest</code></p></div></td>
       <td style = "text-align: right;">🟥</td>
       <td style = "text-align: right;">🟢</td>
       <td style = "text-align: right;">🟥</td>
@@ -116,7 +116,7 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
       <td style = "text-align: right;">🟥</td>
     </tr>
     <tr>
-      <td style = "text-align: right;">`tfest`</td>
+      <td style = "text-align: right;"><div class="markdown"><p><code>tfest</code></p></div></td>
       <td style = "text-align: right;">🟥</td>
       <td style = "text-align: right;">🟥</td>
       <td style = "text-align: right;">🟢</td>
@@ -128,4 +128,4 @@ Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</e
     </tr>
   </tbody>
 </table>
-<h4 id="Comments"><a class="docs-heading-anchor" href="#Comments">Comments</a><a id="Comments-1"></a><a class="docs-heading-anchor-permalink" href="#Comments" title="Permalink"></a></h4><ul><li>All methods can estimate <strong>SISO</strong> systems, i.e., systems with a single input and a single output.</li><li>Missing from the comparison is whether an algorithm estimates a <strong>transfer function or a statespace system</strong>, this is because one can without loss convert one to the other by simply calling <code>tf/ss</code>. One notable exception is for non-causal transfer functions which cannot be represented as statespace systems, but those do not appear very often.</li><li>Several methods are listed as 🟥 on <strong>nonlinearities</strong>, but it is oftentimes possible to handle known input nonlinearities by adding nonlinearly transformed versions of the input to the dataset. Known output nonlinearities that are invertible can be handled by similarly applying the inverse nonlinearity to the data before estimation. Only <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a> has explicit methods for estimating parameters of nonlinearities. <a href="tf/#ControlSystemIdentification.arx"><code>arx</code></a> is listed as 🔶, since with the correct <code>estimator</code> option that promotes sparsity, it is possible to find the most appropriate nonlinearity among a set of candidates. However, no explicit support for this is provided.</li><li><strong>Custom loss functions</strong> are sometimes supported explicitly, such as for <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a>, but often supported by providing a custom <code>estimator</code> for methods that solve a problem on the form <span>$\operatorname{argmin}_w \sum_i \operatorname{loss}(e_i) \quad \forall e_i \in \{e = y - Aw\}$</span>. The default estimator in these cases is always <code>\</code>, i.e., to solve a least-squares problem. Useful alternatives are, e.g., <a href="https://github.com/baggepinnen/TotalLeastSquares.jl"><code>TotalLeastSquares.tls</code></a> and <code>TotalLeastSquares.irls</code>. This can be useful to increase robustness w.r.t. noise etc.</li><li>In specific situations it is possible to use any method with <strong>multiple datasets</strong> by simply concatenating two datasets like <code>[d1 d2]</code>. This is only recommended if the state of the system in the end of the first dataset is very close to the state of the system in the beginning of the second dataset, for example, if all experiments start and end at rest in the origin.</li><li>Some methods estimate explicit <strong>disturbance models</strong>, such as <a href="tf/#ControlSystemIdentification.plr"><code>plr</code></a> and <a href="tf/#ControlSystemIdentification.arxar"><code>arxar</code></a>, whereas other methods estimate observers with an <em>implicit</em> disturbance model, such as <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a> and <a href="ss/#ControlSystemIdentification.subspaceid"><code>subspaceid</code></a>. All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). <a href="@ref"><code>nonlinear_pem</code></a> is listed as 🔶 since it allows for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.</li></ul><h2 id="Other-resources"><a class="docs-heading-anchor" href="#Other-resources">Other resources</a><a id="Other-resources-1"></a><a class="docs-heading-anchor-permalink" href="#Other-resources" title="Permalink"></a></h2><ul><li>For estimation of linear <strong>time-varying</strong> models (LTV), see <a href="https://github.com/baggepinnen/LTVModels.jl">LTVModels.jl</a>.</li><li>For estimation of linear and nonlinear <strong>grey-box models in continuous time</strong>, see <a href="https://docs.sciml.ai/DiffEqParamEstim/stable/">DifferentialEquations.jl (parameter estimation)</a></li><li>Estimation of <strong>nonlinear black-box models in continuous time</strong> <a href="https://github.com/JuliaDiffEq/DiffEqFlux.jl/">DiffEqFlux.jl</a> and <a href="https://docs.sciml.ai/DataDrivenDiffEq/stable/">DataDrivenDiffEq.jl</a></li><li>For more advanced <strong>spectral estimation</strong>, cross coherence, etc., see <a href="https://github.com/baggepinnen/LPVSpectral.jl">LPVSpectral.jl</a></li><li>This package interacts well with <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl">MonteCarloMeasurements.jl</a>. See <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl">example file</a>.</li><li><strong>State estimation</strong> is facilitated by <a href="https://github.com/baggepinnen/LowLevelParticleFilters.jl">LowLevelParticleFilters.jl</a>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="iddata/">Identification data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Monday 11 September 2023 08:02">Monday 11 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+<h4 id="Comments"><a class="docs-heading-anchor" href="#Comments">Comments</a><a id="Comments-1"></a><a class="docs-heading-anchor-permalink" href="#Comments" title="Permalink"></a></h4><ul><li>All methods can estimate <strong>SISO</strong> systems, i.e., systems with a single input and a single output.</li><li>Missing from the comparison is whether an algorithm estimates a <strong>transfer function or a statespace system</strong>, this is because one can without loss convert one to the other by simply calling <code>tf/ss</code>. One notable exception is for non-causal transfer functions which cannot be represented as statespace systems, but those do not appear very often.</li><li>Several methods are listed as 🟥 on <strong>nonlinearities</strong>, but it is oftentimes possible to handle known input nonlinearities by adding nonlinearly transformed versions of the input to the dataset. Known output nonlinearities that are invertible can be handled by similarly applying the inverse nonlinearity to the data before estimation. Only <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a> has explicit methods for estimating parameters of nonlinearities. <a href="tf/#ControlSystemIdentification.arx"><code>arx</code></a> is listed as 🔶, since with the correct <code>estimator</code> option that promotes sparsity, it is possible to find the most appropriate nonlinearity among a set of candidates. However, no explicit support for this is provided.</li><li><strong>Custom loss functions</strong> are sometimes supported explicitly, such as for <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a>, but often supported by providing a custom <code>estimator</code> for methods that solve a problem on the form <span>$\operatorname{argmin}_w \sum_i \operatorname{loss}(e_i) \quad \forall e_i \in \{e = y - Aw\}$</span>. The default estimator in these cases is always <code>\</code>, i.e., to solve a least-squares problem. Useful alternatives are, e.g., <a href="https://github.com/baggepinnen/TotalLeastSquares.jl"><code>TotalLeastSquares.tls</code></a> and <code>TotalLeastSquares.irls</code>. This can be useful to increase robustness w.r.t. noise etc.</li><li>In specific situations it is possible to use any method with <strong>multiple datasets</strong> by simply concatenating two datasets like <code>[d1 d2]</code>. This is only recommended if the state of the system in the end of the first dataset is very close to the state of the system in the beginning of the second dataset, for example, if all experiments start and end at rest in the origin.</li><li>Some methods estimate explicit <strong>disturbance models</strong>, such as <a href="tf/#ControlSystemIdentification.plr"><code>plr</code></a> and <a href="tf/#ControlSystemIdentification.arxar"><code>arxar</code></a>, whereas other methods estimate observers with an <em>implicit</em> disturbance model, such as <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a> and <a href="ss/#ControlSystemIdentification.subspaceid"><code>subspaceid</code></a>. All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). <a href="@ref"><code>nonlinear_pem</code></a> is listed as 🔶 since it allows for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.</li></ul><h2 id="Other-resources"><a class="docs-heading-anchor" href="#Other-resources">Other resources</a><a id="Other-resources-1"></a><a class="docs-heading-anchor-permalink" href="#Other-resources" title="Permalink"></a></h2><ul><li>For estimation of linear <strong>time-varying</strong> models (LTV), see <a href="https://github.com/baggepinnen/LTVModels.jl">LTVModels.jl</a>.</li><li>For estimation of linear and nonlinear <strong>grey-box models in continuous time</strong>, see <a href="https://docs.sciml.ai/DiffEqParamEstim/stable/">DifferentialEquations.jl (parameter estimation)</a></li><li>Estimation of <strong>nonlinear black-box models in continuous time</strong> <a href="https://github.com/JuliaDiffEq/DiffEqFlux.jl/">DiffEqFlux.jl</a> and <a href="https://docs.sciml.ai/DataDrivenDiffEq/stable/">DataDrivenDiffEq.jl</a></li><li>For more advanced <strong>spectral estimation</strong>, cross coherence, etc., see <a href="https://github.com/baggepinnen/LPVSpectral.jl">LPVSpectral.jl</a></li><li>This package interacts well with <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl">MonteCarloMeasurements.jl</a>. See <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl">example file</a>.</li><li><strong>State estimation</strong> is facilitated by <a href="https://github.com/baggepinnen/LowLevelParticleFilters.jl">LowLevelParticleFilters.jl</a>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="iddata/">Identification data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 0.27.25 on <span class="colophon-date" title="Wednesday 13 September 2023 05:43">Wednesday 13 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
