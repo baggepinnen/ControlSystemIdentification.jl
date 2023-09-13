@@ -14,7 +14,7 @@ Ts = 0.1 # Sampling time
 P  = c2d(tf(1, [1, 0.5, 1])*delay(τ), Ts) # Dynamics is given by a simple second-order system with input delay
 
 u   = sin.(0.1 .* (0:Ts:30).^2) # An interesting input signal
-res = lsim(P, u')
+res = lsim(P, u', x0=[0.5; 0; zeros(20)])
 d   = iddata(res)
 plot(d)
 ```
@@ -158,15 +158,14 @@ bodeplot([G, model, model2])
 It may thus be possible to approximate a system with internal delays using a model that has an input delay only.
 
 
-For completeness, we construct an example where this is not quite possible. The system in the example below can be thought of as an echo chamber, where the input passes through a resonant channel before it reaches the output, and 45% of the output energy is fed back at the input through the same channel (the echo)
-    
+For completeness, we construct an example where this is not quite possible. The system in the example below can be thought of as an echo chamber, where the input passes through a resonant channel before it reaches the output. 60% of the output energy is fed back at the input through the same channel (the echo), causing an interesting impulse response:    
 ```@example DELAY
-ref = sign.(sin.(0.02 .* (0:Ts:150).^2)) # An interesting reference signal
-Pc = feedback(tf(1, [1, 1, 1]), tf(0.6, [1, 1, 1])*delay(τ)) # Feed 60% of the output back at the input with a delay of 2 seconds (like an echo)
+ref = sign.(sin.(0.02 .* (0:Ts:100).^2)) # An interesting reference signal
+Pc = feedback(tf(100, [1, 10, 100]), -tf(60, [1, 10, 100])*delay(τ)) # Feed 60% of the output back at the input with a delay of 2 seconds (like an echo)
 Pd = c2d(Pc, Ts)
 res = lsim(Pd, ref')
 decho = iddata(res)
-plot(bodeplot(Pd), pzmap(Pd), plot(decho))
+plot(bodeplot(Pd, lab=""), pzmap(Pd), plot(impulse(Pd, 10), title="Impulse response"), plot(decho))
 ```
 
 The model-selection plot below indicates that we need to reach model orders of 24 to get a good fit
