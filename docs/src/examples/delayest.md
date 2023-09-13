@@ -173,12 +173,14 @@ The model-selection plot below indicates that we need to reach model orders of 2
 find_nanb(decho, 3:30, 5:30, xrotation=90, size=(800, 300), margin=5Plots.mm, xtickfont=6)
 ```
 
-trying to estimate a 4:th order model with input delay of 20 samples does not work at all this time, but fitting a 24:th order model does
+trying to estimate a 4:th order model with input delay of 20 samples does not work at all this time, but fitting a 24:th order model does, and fitting a 4:th order model using subspace identification with a long internal prediction horizon works reasonably well
 ```@example DELAY
-model3 = arx(decho, 5, 5, inputdelay=τ_samples)
+model3 = arx(decho, 4, 4, inputdelay=τ_samples)
 model4 = subspaceid(decho, 24)
-figsim = simplot(model3, decho, zeros(ss(model3).nx), sysname="ARX")
-simplot!(model4, decho, zeros(model4.nx), ploty=false, plotu=false, sysname="Subspace")
+model5 = subspaceid(decho, 4, r=50)
+figsim = simplot(model3, decho, zeros(ss(model3).nx), sysname="ARX 4")
+simplot!(model4, decho, zeros(model4.nx), ploty=false, plotu=false, sysname="Subspace 24")
+simplot!(model5, decho, zeros(model5.nx), ploty=false, plotu=false, sysname="Subspace 4")
 ```
 
 Keep in mind that we do not add any disturbance in our simulations here, and estimating 24:th order models is likely going to be a challenging task in practice.
