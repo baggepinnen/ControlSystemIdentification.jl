@@ -86,7 +86,7 @@ Plot a Wlch peridogram of the input and output timeseries. See also [`specplot`]
 Additional arguments are passed along to `DSP.welch_pgram`.
 """
 welchplot
-@recipe function specplot(p::Welchplot)
+@recipe function welchplot(p::Welchplot)
     d = p.args[1]
     d isa ControlSystemIdentification.AbstractIdData || throw(ArgumentError("Expected AbstractIdData"))
     ny = d.ny
