@@ -40,6 +40,8 @@ If you are new to this package, start your journey through the documentation by 
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Fdz2Fsm1aTY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 ```
 
+See also the [YouTube playlist](https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&si=AiOZVhBVwYReDrAm) with tutorials using this package.
+
 ## Installation
 Install [Julia](https://julialang.org/) from the [download](https://julialang.org/downloads/) page. Then, in the Julia REPL, type
 ```julia
@@ -89,6 +91,7 @@ tab_algos # hide
 - Some methods estimate explicit **disturbance models**, such as [`plr`](@ref) and [`arxar`](@ref), whereas other methods estimate observers with an *implicit* disturbance model, such as [`newpem`](@ref) and [`subspaceid`](@ref). All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). [`ControlSystemIdentification.nonlinear_pem`](@ref) is listed as 🔶 since it allows for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.
 
 ## Other resources
+- [YouTube playlist](https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&si=AiOZVhBVwYReDrAm) with tutorials using this package.
 - For estimation of linear **time-varying** models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
 - For estimation of linear and nonlinear **grey-box models in continuous time**, see [DifferentialEquations.jl (parameter estimation)](https://docs.sciml.ai/DiffEqParamEstim/stable/)
 - Estimation of **nonlinear black-box models in continuous time** [DiffEqFlux.jl](https://github.com/JuliaDiffEq/DiffEqFlux.jl/) and [DataDrivenDiffEq.jl](https://docs.sciml.ai/DataDrivenDiffEq/stable/)

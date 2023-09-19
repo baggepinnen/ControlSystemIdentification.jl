@@ -203,8 +203,13 @@ ControlSystemIdentification.prediction_error_filter
 ControlSystemIdentification.noise_model
 ```
 
-## Video tutorial
-A video tutorial performing statespace estimation is available here:
+## Video tutorials
+Video tutorials performing statespace estimation are available here:
+
+```@raw html
+<iframe style="height: 315px; width: 560px" src="https://www.youtube.com/embed/LEZL7UjS2sY?si=u19Q1iIveG6Per3W" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+```
+
 ```@raw html
 <iframe style="height: 315px; width: 560px" src="https://www.youtube.com/embed/z8o83UORuqQ" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 ```
