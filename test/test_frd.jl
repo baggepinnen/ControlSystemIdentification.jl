@@ -1,4 +1,5 @@
-using ControlSystemIdentification
+using ControlSystemIdentification, Random, ControlSystemsBase, Test, Statistics, Plots
+
 Random.seed!(1)
 ##
 T           = 100000
@@ -23,8 +24,14 @@ k = coherence(d)
 @test mean(k.r) > 0.98
 
 k = coherence(dn)
+kcorr = coherence(dn, method=:corr, σ=0.01)
+
 @test all(k.r[1:10] .> 0.9)
 @test k.r[end-1] > 0.5
+
+@test all(kcorr.r[1:10] .> 0.9)
+@test kcorr.r[end-1000] > 0.3 # This series is much longer than with Welch method
+
 i = findfirst(k.w .> ωn)
 @test mean(k.r[i .+ (-2:5)]) < 0.6
 G, N = tfest(dn, 0.02)
