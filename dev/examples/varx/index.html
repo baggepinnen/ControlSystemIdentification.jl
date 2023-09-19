@@ -26,27 +26,27 @@ plot(
     simplot(d, model1, title=&quot;Simulation subspaceid&quot;, layout=2),
     simplot(d, model2, x0, title=&quot;Simulation PEM&quot;, layout=2),
     titlefontsize=10,
-)</code></pre><img src="f4c3e8f9.svg" alt="Example block output"/><p>The simulation indicates that the fit is close to 100%, i.e., the general linear model fit the VARX model perfectly, it does not however have exactly the same structure as the original VARX model. </p><p>The estimated models on statespace form can be converted to MIMO transfer functions (polynomial models) by calling <code>tf</code>:</p><pre><code class="language-julia hljs">using ControlSystemsBase: tf
+)</code></pre><img src="21d5ccf3.svg" alt="Example block output"/><p>The simulation indicates that the fit is close to 100%, i.e., the general linear model fit the VARX model perfectly, it does not however have exactly the same structure as the original VARX model. </p><p>The estimated models on statespace form can be converted to MIMO transfer functions (polynomial models) by calling <code>tf</code>:</p><pre><code class="language-julia hljs">using ControlSystemsBase: tf
 tf(model2.sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">TransferFunction{Discrete{Float64}, ControlSystemsBase.SisoRational{Float64}}
 Input 1 to output 1
-    0.35870399938303577z^3 + 0.3344611738717777z^2 - 0.45923534277341455z - 9.266268308216752e-13
------------------------------------------------------------------------------------------------------
-1.0z^4 - 0.21405749442586852z^3 - 0.21846717187521164z^2 + 0.0653336470030158z - 0.023645118449362016
+  -0.9507317828080496z^3 + 0.17596785300781348z^2 - 0.4446632581535457z - 2.8092805859358805e-13
+---------------------------------------------------------------------------------------------------
+1.0z^4 - 0.5324243043262215z^3 + 0.7107631204145898z^2 - 0.16675803586875862z + 0.08479284172588328
 
 Input 1 to output 2
-    -2.278701181282192z^3 + 0.31766784515817775z^2 - 0.09823118587885783z + 1.848278474714249e-13
------------------------------------------------------------------------------------------------------
-1.0z^4 - 0.21405749442586852z^3 - 0.21846717187521164z^2 + 0.0653336470030158z - 0.023645118449362016
+   0.5472778611357759z^3 - 0.24236532817749523z^2 + 0.07549833925915231z - 6.19226891984681e-14
+---------------------------------------------------------------------------------------------------
+1.0z^4 - 0.5324243043262215z^3 + 0.7107631204145898z^2 - 0.16675803586875862z + 0.08479284172588328
 
 Input 2 to output 1
-     0.92890631125754z^3 - 0.06404999798581157z^2 - 0.23323564290161816z - 7.670600266074246e-14
------------------------------------------------------------------------------------------------------
-1.0z^4 - 0.21405749442586852z^3 - 0.21846717187521164z^2 + 0.0653336470030158z - 0.023645118449362016
+   -1.1749214073533545z^3 + 0.3831154234451112z^2 - 0.47890568570477643z - 3.161360062620133e-14
+---------------------------------------------------------------------------------------------------
+1.0z^4 - 0.5324243043262215z^3 + 0.7107631204145898z^2 - 0.16675803586875862z + 0.08479284172588328
 
 Input 2 to output 2
-   0.06929046699135555z^3 - 0.11306349207779864z^2 + 0.06037492678473794z + 8.615226587682656e-13
------------------------------------------------------------------------------------------------------
-1.0z^4 - 0.21405749442586852z^3 - 0.21846717187521164z^2 + 0.0653336470030158z - 0.023645118449362016
+  -0.9382742467033031z^3 + 0.16593956136357202z^2 - 0.21140749264361167z + 1.2731482534888983e-13
+---------------------------------------------------------------------------------------------------
+1.0z^4 - 0.5324243043262215z^3 + 0.7107631204145898z^2 - 0.16675803586875862z + 0.08479284172588328
 
 Sample Time: 1.0 (seconds)
 Discrete-time transfer function model</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>The statespace model</p><p class="math-container">\[\begin{aligned}
