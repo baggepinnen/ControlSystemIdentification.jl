@@ -161,7 +161,7 @@ end
         data::InputOutputData,
         nx = :auto;
         verbose = false,
-        r = nx === :auto ? min(length(data) ÷ 20, 20) : nx + 10, # the maximal prediction horizon used
+        r = nx === :auto ? min(length(data) ÷ 20, 50) : nx + 10, # the maximal prediction horizon used
         s1 = r, # number of past outputs
         s2 = r, # number of past inputs
         W = :MOESP,
@@ -207,7 +207,7 @@ function subspaceid(
     data::InputOutputData,
     nx = :auto;
     verbose = false,
-    r = nx === :auto ? min(length(data) ÷ 20, 20) : nx + 10, # the maximal prediction horizon used
+    r = nx === :auto ? min(length(data) ÷ 20, 50) : 2nx + 10, # the maximal prediction horizon used
     s1 = r, # number of past outputs
     s2 = r, # number of past inputs
     γ = nothing, # discarded, aids switching from n4sid
@@ -634,11 +634,13 @@ end
 # display(current())
 # ##
 """
-    find_similarity_transform(sys1, sys2)
+    find_similarity_transform(sys1, sys2, method = :obsv)
 
 Find T such that `ControlSystemsBase.similarity_transform(sys1, T) == sys2`
 
 Ref: Minimal state-space realization in linear system theory: an overview, B. De Schutter
+
+If `method == :obsv`, the observability matrices of `sys1` and `sys2` are used to find `T`, whereas `method == :ctrb` uses the controllability matrices.
 
 ```jldoctest
 julia> T = randn(3,3);

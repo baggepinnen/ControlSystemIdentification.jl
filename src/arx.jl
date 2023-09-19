@@ -314,6 +314,8 @@ Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using gene
 - `iterations = 10`: maximum number of iterations.
 - `verbose = false`: if true, more information is printed
 
+See also [`plr`](@ref), [`arx`](@ref).
+
 # Example:
 ```
 julia> N = 500 
@@ -493,7 +495,7 @@ ys = simulate(Gp, d) # simulation includes only system output
 function arxar_predictor(G, H)
     Ts = G.Ts
     A = denvec(G[1,1])[]
-    H2 = ss(minreal(H*tf(1,[1,0],1))) # is good idea
+    H2 = ss(minreal(H*tf(1,[1,0],H.Ts))) # is good idea
 
     Ge = ss(G)
     Hs = ss(H2)
@@ -541,7 +543,7 @@ Perform pseudo-linear regression to estimate a model on the form
 `Ay = Bu + Cw`
 The residual sequence is estimated by first estimating a high-order arx model, whereafter the estimated residual sequence is included in a second estimation problem. The return values are the estimated system model, and the estimated noise model. `G` and `Gn` will always have the same denominator polynomial.
 
-`armax` is an alias for `plr`. See also [`pem`](@ref), [`ar`](@ref), [`arx`](@ref)
+`armax` is an alias for `plr`. See also [`pem`](@ref), [`ar`](@ref), [`arx`](@ref) and [`arxar`](@ref)
 """
 function plr(d::AbstractIdData, na, nb, nc; initial_order = 20, method = :ls)
     d.ny == 1 || throw(ArgumentError("arx only supports single output."))
