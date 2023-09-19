@@ -186,13 +186,16 @@ To generate C-code for, e.g., simulating a system, see [SymbolicControlSystems.j
 
 ## Statespace API
 
+```@index
+Pages   = ["ss.md"]
+```
+
 ```@docs
+ControlSystemIdentification.newpem
 ControlSystemIdentification.subspaceid
 ControlSystemIdentification.n4sid
-ControlSystemIdentification.newpem
 ControlSystemIdentification.era
 ControlSystemIdentification.okid
-ControlSystemIdentification.predictiondata
 ControlSystemIdentification.observer_predictor
 ControlSystemIdentification.observer_controller
 ControlSystemIdentification.prediction_error
