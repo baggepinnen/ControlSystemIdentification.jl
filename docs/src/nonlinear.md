@@ -11,22 +11,21 @@ This package supports two forms of nonlinear system identification.
 - Estimation of Hammerstein-Wiener models, i.e., linear systems with static nonlinear functions on the input and/or output.
 
 ## Parameter estimation in a known model structure
-Parameter estimation in differential equations can be performed by forming a one-step ahead predictor of the output, and minimizing the prediction error. This procedure is packaged in the function [`nonlinear_pem`](@ref) which is available as a package extension, available if the user manually installs and loads [LeastSquaresOptim.jl](https://github.com/matthieugomez/LeastSquaresOptim.jl).
+Parameter estimation in differential equations can be performed by forming a one-step ahead predictor of the output, and minimizing the prediction error. This procedure is packaged in the function [`ControlSystemIdentification.nonlinear_pem`](@ref) which is available as a package extension, available if the user manually installs and loads [LeastSquaresOptim.jl](https://github.com/matthieugomez/LeastSquaresOptim.jl).
 
 The procedure to use this function is as follows
 1. The dynamics is specified on the form ``x_{k+1} = f(x_k, u_k, p, t)`` or ``ẋ = f(x, u, p, t)`` where ``x`` is the state, ``u`` the input,  `p` is a vector of parameters to be estimated and ``t`` is time.
 2. If the dynamics is in continuous time (a differential equation or differential-algebraic equation), use the package [SeeToDee.jl](https://github.com/baggepinnen/SeeToDee.jl) to _discretize_ it. If the dynamics is already in discrete time, skip this step.
 3. Define the measurement function ``y = h(x, u, p, t)`` that maps the state and input to the measured output.
 4. Specify covariance properties of the dynamics noise and measurement noise, similar to how one would do when building a Kalman filter for a linear system.
-5. Perform the estimation using [`nonlinear_pem`](@ref).
+5. Perform the estimation using [`ControlSystemIdentification.nonlinear_pem`](@ref).
 
 
-Internally, [`nonlinear_pem`](@ref) constructs an Unscented Kalman filter (UKF) from the package [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) in order to perform state estimation along the provided data trajectory. An optimization problem is then solved in order to find the parameters (and optionally initial condition) that minimizes the prediction errors. This procedure is somewhat different from simply finding the parameters that make a pure simulation of the system match the data, notably, the prediction-error approach can usually handle very poor initial guesses, unstable systems and even chaotic systems. To learn more about the prediction-error method, see the tutorial [Properties of the Prediction-Error Method](@ref).
+Internally, [`ControlSystemIdentification.nonlinear_pem`](@ref) constructs an Unscented Kalman filter (UKF) from the package [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) in order to perform state estimation along the provided data trajectory. An optimization problem is then solved in order to find the parameters (and optionally initial condition) that minimizes the prediction errors. This procedure is somewhat different from simply finding the parameters that make a pure simulation of the system match the data, notably, the prediction-error approach can usually handle very poor initial guesses, unstable systems and even chaotic systems. To learn more about the prediction-error method, see the tutorial [Properties of the Prediction-Error Method](@ref).
 
 ```@docs
 ControlSystemIdentification.nonlinear_pem
 ```
-
 
 ### Example: Quad tank
 
@@ -118,7 +117,7 @@ We package the experimental data into an [`iddata`](@ref) object as usual. Final
 
 Choosing the covariance matrices can be non-trivial, see the blog post [How to tune a Kalman filter](https://juliahub.com/pluto/editor.html?id=ad9ecbf9-bf83-45e7-bbe8-d2e5194f2240) for some background. Here, we pick some value for ``R_1`` that seems reasonable, and pick a deliberately large value for ``R_2``. Choosing a large covariance of the measurement noise will lead to the state estimator trusting the measurements less, which in turns leads to a smaller feedback correction. This will make the algorithm favor a model that is good at simulation, rather than focusing exclusively on one-step prediction.
 
-Finally, we call the function [`nonlinear_pem`](@ref) to perform the estimation.
+Finally, we call the function [`ControlSystemIdentification.nonlinear_pem`](@ref) to perform the estimation.
 ```@example HW
 d = iddata(Y, U, Ts)
 x0_guess = [2.5, 1.5, 1, 2] # Guess for the initial condition

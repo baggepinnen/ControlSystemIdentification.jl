@@ -35,7 +35,6 @@ coherenceplot!(dn, subplot=3)
 plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
 plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 ```
-![window](https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/figs/bodecoher.png?raw=true)
 
 The left figure displays the Bode magnitude of the true system, together with the estimate (noisy), and the middle figure illustrates the estimated noise model. The right figure displays the coherence function ([`coherenceplot`](@ref)), which is close to 1 everywhere except for at the resonance peak of the noise `log10(sqrt(0.3)) = -0.26`.
 
@@ -100,15 +99,19 @@ plot(plot(S1,title="Standard Spectrogram"),plot(S2,title="AR Spectrogram")) # Re
 ![window](https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/figs/ar_spectrogram.svg?raw=true)
 
 
+```@index
+pages = "freq.md"
+```
+- [`ControlSystemIdentification.welchplot`](@ref)
+- [`ControlSystemIdentification.specplot`](@ref)
+- [`ControlSystemIdentification.coherenceplot`](@ref)
+- [`ControlSystemIdentification.autocorplot`](@ref)
+- [`ControlSystemIdentification.crosscorplot`](@ref)
+
 
 ```@docs
 ControlSystemIdentification.tfest
 ControlSystemIdentification.coherence
 ControlSystemIdentification.laguerre_oo
 ControlSystemIdentification.model_spectrum
-ControlSystemIdentification.welchplot
-ControlSystemIdentification.specplot
-ControlSystemIdentification.coherenceplot
-ControlSystemIdentification.autocorplot
-ControlSystemIdentification.crosscorplot
 ```
