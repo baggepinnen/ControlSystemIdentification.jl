@@ -45,7 +45,7 @@ export iddata,
     InputOutputFreqData
 
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace,
-    pem, newpem, prediction_error, predict, simulate, noise_model, estimate_x0
+    pem, newpem, prediction_error, prediction_error_filter, predictiondata, predict, simulate, noise_model, estimate_x0
 export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
 export getARXregressor,
     getARregressor,

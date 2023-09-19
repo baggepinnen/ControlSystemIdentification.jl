@@ -434,7 +434,7 @@ end
 The result of statespace model estimation using the `n4sid` method.
 
 # Fields:
-- `sys`: estimated model in the form of a [`StateSpace`](@ref) object
+- `sys`: estimated model in the form of a `StateSpace` object
 - `Q`: estimated covariance matrix of the states
 - `R`: estimated covariance matrix of the measurements
 - `S`: estimated cross covariance matrix between states and measurements

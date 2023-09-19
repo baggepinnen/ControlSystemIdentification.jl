@@ -7,7 +7,7 @@ Represents frequency-response data. `w` holds the frequency vector and `r` the r
 - `+-*`
 - `length, vec, sqrt`
 - `plot`
-- [`feedback`](@ref)
+- `feedback`
 - [`freqvec`](@ref)
 - [`tfest`](@ref) to estimate a rational model
 - Indexing in the frequency domain using, e.g., `G[1Hz : 5Hz]`, `G[1rad : 5rad]`
@@ -164,12 +164,16 @@ ControlSystemsBase.c2d(f::FRD, Ts::Real; kwargs...) = FRD(c2d(f.w, Ts; kwargs...
 """
     H, N = tfest(data, σ = 0.05)
 
-Estimate a transfer function model using the Correlogram approach.
+Estimate a transfer function model using the Correlogram approach using the signal model ``y = H(iω)u + n``.
+
 Both `H` and `N` are of type `FRD` (frequency-response data).
 
 - `σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT. A larger `σ` implies less smoothing.
 - `H` = Syu/Suu             Process transfer function
-- `N` = Sy - |Syu|²/Suu     Noise PSD
+- `N` = Sy - |Syu|²/Suu     Estimated Noise PSD (also an estimate of the variance of ``H``).
+
+# Extended help
+This estimation method is unbiased if the input ``u`` is uncorrelated with the noise ``n``, but is otherwise biased (e.g., for identification in closed loop).
 """
 function tfest(d::AbstractIdData, σ::Real = 0.05)
     d.nu == 1 || error("Cannot perform tfest on multiple-input data. Consider using time-domain estimation or statespace estimation.")
@@ -200,19 +204,33 @@ end
 
 
 """
-    κ = coherence(d; n = length(d)÷10, noverlap = n÷2, window=hamming)
+    κ² = coherence(d; n = length(d)÷10, noverlap = n÷2, window=hamming, method=:welch)
 
-Calculates the magnitude-squared coherence Function. κ close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
+Calculates the magnitude-squared coherence Function. κ² close to 1 indicates a good explainability of energy in the output signal by energy in the input signal. κ² << 1 indicates that either the system is nonlinear, or a strong noise contributes to the output energy.
 
-- κ: Coherence function (not squared) in the form of an [`FRD`](@ref).
+- κ: Squared coherence function in the form of an [`FRD`](@ref).
+- `method`: `:welch` or `:corr`. `:welch` uses the Welch method to estimate the power spectral density, while `:corr` uses the Correlogram approach . For `method = :corr`, the additional keyword argument `σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT. A larger `σ` implies less smoothing.
 
 See also [`coherenceplot`](@ref)
+
+# Extended help:
+For the signal model ``y = Gu + v``, ``κ²`` is defined as 
+```math
+κ(ω)^2 = \\dfrac{S_{uy}}{S_{uu} S_{yy}} = \\dfrac{|G(iω)|^2S_{uu}^2}{S_{uu} |G(iω)|^2S_{uu}^2} + S_{vv}} = \\dfrac{1}{1 + \\dfrac{S_{vv}}{S_{uu}|G(iω)|^2}}
+```
+from which it is obvious that ``0 ≤ κ² ≤ 1`` and that κ² is close to 1 if the noise energy ``S_{vv}`` is small compared to the output energy due to the input ``S_{uu}|G(iω)|^2``.
 """
-function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
+function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming, method=:welch, σ = 0.05)
     noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     ninputs(d) == 1 || throw(ArgumentError("coherence only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
-    Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
+    if method === :welch
+        Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
+    else
+        Syy0, Suu0, Syu = fft_corr(y, u, σ)
+        Syy = real(Syy0)
+        Suu = real(Suu0)
+    end
     k = @. abs2(Syu) / (Suu * Syy) # [end÷2+1:end]
     Sch = FRD(freqvec(h, k), k)
     return Sch

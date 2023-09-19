@@ -13,9 +13,7 @@ url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectri
 zipfilename = "/tmp/bd.zip"
 cd("/tmp")
 path = Base.download(url, zipfilename)
-@show run(`unzip -o $path`)
-@show pwd()
-@show run(`ls`)
+run(`unzip -o $path`)
 data = readdlm("/tmp/DATAUNIF.csv", ',')[2:end, 1:4]
 
 
@@ -51,7 +49,7 @@ makedocs(
             ],
             "API" => "api.md",
       ],
-      strict = [:example_block],
+      warnonly = [:docs_block, :missing_docs],
       format = Documenter.HTML(prettyurls = haskey(ENV, "CI")),
 )
 

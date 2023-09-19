@@ -145,12 +145,11 @@ yh = predict(sysh, d) # Predict using estimated model
 predplot(sysh, d)     # Plot prediction and true output
 ```
 
-See the [example notebooks](
-https://github.com/JuliaControl/ControlExamples.jl/blob/master/identification_statespace.ipynb) for more plots as well as several examples in the example section of this documentation.
+See the [example notebooks](https://github.com/JuliaControl/ControlExamples.jl/blob/master/identification_statespace.ipynb) for more plots as well as several examples in the example section of this documentation.
 
 ### Arguments
 The algorithm has several options:
-- The optimization is by default started with an initial guess provided by [`subspaceid`](@ref), but this can be overridden by providing an initial guess to [`newpem`](@ref) using the keyword argument [`sys0`](@ref).
+- The optimization is by default started with an initial guess provided by [`subspaceid`](@ref), but this can be overridden by providing an initial guess to [`newpem`](@ref) using the keyword argument `sys0`.
 - `focus` determines the focus of the model fit. The default is `:prediction` which minimizes the prediction error. If this choice produces an unstable model for a stable system, or the simmulation performance is poor, `focus = :simulation` may be a better choice.
 - A regularizer may be provided using the keyword argument `regularizer`.
 - A stable model may be enforced using `stable = true`.
@@ -170,7 +169,7 @@ Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to op
 
 When you **estimate** models, you can sometimes select the "focus" of the estimation, to either focus on `:prediciton` performance or `:simulation` performance. Simulation tends to require accurate low-frequency properties, especially for integrating systems, whereas prediction favors an accurate model for higher frequencies. If there are significant input disturbances affecting the system, or if the system is unstable, prediction focus is generally preferred.
 
-When you **validate** the estimated models, you can simulate them using `lsim` from ControlSystemsBase.jl or using [`simulate`](@ref). You may also convert the model to a [`KalmanFilter`](@ref) from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
+When you **validate** the estimated models, you can simulate them using `lsim` from ControlSystemsBase.jl or using [`simulate`](@ref). You may also convert the model to a `KalmanFilter` from [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl) by calling `KalmanFilter(sys)`, after which you can perform filtering and smoothing etc. with the utilities provided for a `KalmanFilter`.
 
 Furthermore, we have the utility functions below
 - [`predict`](@ref)`(sys, d, x0=zeros; h=1)`: Form predictions using estimated `sys`, this essentially runs a stationary Kalman filter. `h` denotes the prediction horizon.

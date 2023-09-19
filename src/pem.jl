@@ -618,3 +618,4 @@ See [Identification of nonlinear models](file:///home/fredrikb/.julia/dev/Contro
     This function is considered experimental and may change in the future without respecting semantic versioning. This implementation also lacks a number of features associated with good nonlinear PEM implementations, such as regularization and support for multiple datasets.
 """
 function nonlinear_pem end
+export nonlinear_pem

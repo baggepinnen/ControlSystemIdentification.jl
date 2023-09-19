@@ -16,3 +16,4 @@ StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 [compat]
 LowLevelParticleFilters = "3.3.5"
 PrettyTables = "2"
+Documenter = "1"
