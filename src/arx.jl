@@ -572,6 +572,9 @@ function plr(d::AbstractIdData, na, nb, nc; initial_order = 20, method = :ls)
     model, noise_model
 end
 
+"""
+armax is an alias for [`plr`](@ref)
+"""
 const armax = plr
 
 

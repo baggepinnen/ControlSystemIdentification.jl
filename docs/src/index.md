@@ -34,8 +34,7 @@ We also have capabilities for estimation of nonlinear Hammerstein-Wiener models 
 
 This package is implemented in the free and open-source programming language [Julia](https://julialang.org/).
 
-If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](
-https://github.com/JuliaControl/ControlExamples.jl). An introductory video is available below (system identification example starts around 55 minutes)
+If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](https://github.com/JuliaControl/ControlExamples.jl). An introductory video is available below (system identification example starts around 55 minutes)
 
 ```@raw html
 <iframe width="560" height="315" src="https://www.youtube.com/embed/Fdz2Fsm1aTY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>

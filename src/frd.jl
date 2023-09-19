@@ -7,7 +7,7 @@ Represents frequency-response data. `w` holds the frequency vector and `r` the r
 - `+-*`
 - `length, vec, sqrt`
 - `plot`
-- [`feedback`](@ref)
+- `feedback`
 - [`freqvec`](@ref)
 - [`tfest`](@ref) to estimate a rational model
 - Indexing in the frequency domain using, e.g., `G[1Hz : 5Hz]`, `G[1rad : 5rad]`

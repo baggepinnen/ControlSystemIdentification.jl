@@ -39,8 +39,7 @@ plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
 
 The left figure displays the Bode magnitude of the true system, together with the estimate (noisy), and the middle figure illustrates the estimated noise model. The right figure displays the coherence function ([`coherenceplot`](@ref)), which is close to 1 everywhere except for at the resonance peak of the noise `log10(sqrt(0.3)) = -0.26`.
 
-See the [example notebooks](
-https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
+See the [example notebooks](https://github.com/JuliaControl/ControlExamples.jl?files=1) for more details.
 
 ## Parametric estimation
 ### Transfer functions

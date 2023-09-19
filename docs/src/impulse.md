@@ -35,8 +35,7 @@ plot(impulse(sys,50), lab="True system", layout=sys.ny+sys.nu, sp=(1:4)')
 plot!(reshape(H, sys.nu+sys.ny, :)', lab="OKID Estiamte", seriestype=:steppre, l=:dash)
 ```
 
-See the [example notebooks](
-https://github.com/JuliaControl/ControlExamples.jl) for more details.
+See the [example notebooks](https://github.com/JuliaControl/ControlExamples.jl) for more details.
 
 
 ## Estimate model from impulse-response data

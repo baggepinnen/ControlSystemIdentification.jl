@@ -46,7 +46,7 @@ end;
 (; sysh, x0h, opt) = argmin(r->r.opt.minimum, results) # Find the model with the smallest cost
 
 dv = iddatas[2] # We use the second dataset for validation
-yh = simulate(sysh, dv)
+yh = simulate(sysh, dv, x0h)
 output_nonlinearity(yh, nothing) # We need to manually apply the output nonlinearity to the simulation
 plot(dv, lab=["Measured nonlinear output" "Input"], layout=(2,1), xlabel="Time")
 plot!(dv.t, yh', lab="Simulation", sp=1, l=:dash)
