@@ -35,6 +35,7 @@ kcorr = coherence(dn, method=:corr, σ=0.01)
 i = findfirst(k.w .> ωn)
 @test mean(k.r[i .+ (-2:5)]) < 0.6
 G, N = tfest(dn, 0.02)
+G2, N2 = tfest(dn, method=:welch)
 @test ControlSystemsBase.issiso(G) 
 noisemodel = innovation_form(ss(sys), syse = ss(sysn))
 noisemodel.D .*= 0
@@ -52,6 +53,9 @@ coherenceplot!(dn, subplot = 3)
 crosscorplot!(dn, -10:100, subplot = 4)
 plot!(G, subplot = 1, lab = "G Est", alpha = 0.3, title = "Process model")
 plot!(√N, subplot = 2, lab = "N Est", alpha = 0.3, title = "Noise model")
+
+plot!(G2, subplot = 1, lab = "G Est W", alpha = 0.3, title = "Process model")
+plot!(√N2, subplot = 2, lab = "N Est W", alpha = 0.3, title = "Noise model")
 
 
 for op in (+, -, *)
