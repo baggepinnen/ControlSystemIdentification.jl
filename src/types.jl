@@ -137,7 +137,7 @@ Some estimation methods support the use of multiple datasets to estimate a model
 
 Several of the other estimation methods can be made to accept multiple datasets with minor modifications.
 
-In some situations, multiple datasets can also be handled by concatination. For this to be a good idea, the state of the system at the end of one data set must be close to the state at the beginning of the next, e.g., all experiments start and end at the same operating point.
+In some situations, multiple datasets can also be handled by concatenation. For this to be a good idea, the state of the system at the end of one data set must be close to the state at the beginning of the next, e.g., all experiments start and end at the same operating point.
 """
 iddata(
     y::AbstractArray,

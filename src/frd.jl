@@ -221,7 +221,7 @@ See also [`coherenceplot`](@ref)
 # Extended help:
 For the signal model ``y = Gu + v``, ``κ²`` is defined as 
 ```math
-κ(ω)^2 = \\dfrac{S_{uy}}{S_{uu} S_{yy}} = \\dfrac{|G(iω)|^2S_{uu}^2}{S_{uu} |G(iω)|^2S_{uu}^2} + S_{vv}} = \\dfrac{1}{1 + \\dfrac{S_{vv}}{S_{uu}|G(iω)|^2}}
+κ(ω)^2 = \\dfrac{S_{uy}}{S_{uu} S_{yy}} = \\dfrac{|G(iω)|^2S_{uu}^2}{S_{uu} (|G(iω)|^2S_{uu}^2 + S_{vv})} = \\dfrac{1}{1 + \\dfrac{S_{vv}}{S_{uu}|G(iω)|^2}}
 ```
 from which it is obvious that ``0 ≤ κ² ≤ 1`` and that κ² is close to 1 if the noise energy ``S_{vv}`` is small compared to the output energy due to the input ``S_{uu}|G(iω)|^2``.
 """

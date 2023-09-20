@@ -136,7 +136,7 @@ u = (x, t) -> -L * x .+ randn.()
 title = "-Lx + 5sin(t)"
 crosscorplot(generate_data(u, T=500), -5:10, m=:circle)
 ```
-Here, the plot clearly has significant correlation for both positive and negative lag, indicating the presence of feedback. The controller used here is a static P-controller, leading to a one-step correlation backwards in time. With a dynamic contorller (like a PI controller), the effect would be more significant.
+Here, the plot clearly has significant correlation for both positive and negative lag, indicating the presence of feedback. The controller used here is a static P-controller, leading to a one-step correlation backwards in time. With a dynamic controller (like a PI controller), the effect would be more significant.
 
 If we remove the feedback, we get
 ```@example closedloop
