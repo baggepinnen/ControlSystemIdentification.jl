@@ -162,20 +162,21 @@ ControlSystemsBase.c2d(f::FRD, Ts::Real; kwargs...) = FRD(c2d(f.w, Ts; kwargs...
 
 
 """
-    H, N = tfest(data, σ = 0.05)
+    H, N = tfest(data, σ = 0.05, method = :corr)
 
-Estimate a transfer function model using the Correlogram approach using the signal model ``y = H(iω)u + n``.
+Estimate a transfer function model using the Correlogram approach (default) using the signal model ``y = H(iω)u + n``.
 
 Both `H` and `N` are of type `FRD` (frequency-response data).
 
 - `σ` determines the width of the Gaussian window applied to the estimated correlation functions before FFT. A larger `σ` implies less smoothing.
 - `H` = Syu/Suu             Process transfer function
-- `N` = Sy - |Syu|²/Suu     Estimated Noise PSD (also an estimate of the variance of ``H``).
+- `N` = Sy - |Syu|²/Suu     Estimated Noise PSD (also an estimate of the variance of ``H``). Note that a PSD is related to the "noise model" ``N_m`` used in the system identification literature as ``N_{psd} = N_^* N_m``, which can be visualized by plotting `√(N)`.
+- `method`: `:welch` or `:corr`. `:welch` uses the Welch method to estimate the power spectral density, while `:corr` (default) uses the Correlogram approach. If `method = :welch`, the additional keyword arguments `n`, `noverlap` and `window` determine the number of samples per segment (default 10% of data), the number of samples to overlap between segments (default 50%), and the window function to use (default `hamming`), respectively.
 
 # Extended help
 This estimation method is unbiased if the input ``u`` is uncorrelated with the noise ``n``, but is otherwise biased (e.g., for identification in closed loop).
 """
-function tfest(d::AbstractIdData, σ::Real = 0.05)
+function tfest(d::AbstractIdData, σ::Real = 0.05; method = :corr, n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming)
     d.nu == 1 || error("Cannot perform tfest on multiple-input data. Consider using time-domain estimation or statespace estimation.")
     if d.ny > 1
         HNs = [tfest(d[i,1], σ) for i in 1:d.ny]
@@ -184,10 +185,14 @@ function tfest(d::AbstractIdData, σ::Real = 0.05)
         return FRD(HNs[1][1].w, HR), FRD(HNs[1][1].w, NR)
     end
     y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
-    Syy, Suu, Syu = fft_corr(y, u, σ)
+    if method === :welch
+        Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
+    elseif method === :corr
+        Syy, Suu, Syu = fft_corr(y, u, σ)
+    else error("Unknown method $method") end
     w = freqvec(h, Syu)
     H = FRD(w, Syu ./ Suu)
-    N = FRD(w, @.(Syy - abs2(Syu) / Suu) ./ length(y))
+    N = FRD(w, real.(Syy .- abs2.(Syu) ./ Suu) ./ length(y))
     return H, N
 end
 
