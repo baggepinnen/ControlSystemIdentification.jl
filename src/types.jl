@@ -438,10 +438,10 @@ The result of statespace model estimation using the `n4sid` method.
 - `Q`: estimated covariance matrix of the states
 - `R`: estimated covariance matrix of the measurements
 - `S`: estimated cross covariance matrix between states and measurements
-- `K`: kalman observer gain
+- `K`: Kalman observer gain
 - `P`: solution to the Riccatti equation
-- `x`: estimated state trajectory
-- `s`: singular values
+- `x`: estimated state trajectory (`n4sid`) or initial condition (`subspaceid`)
+- `s`: singular value decomposition
 - `fve`: Fraction of variance explained by singular values
 """
 struct N4SIDStateSpace{Tsys,TQ,TR,TS,TK,TP,Tx,Ts,Tfve} <: AbstractPredictionStateSpace{Discrete{Float64}}
