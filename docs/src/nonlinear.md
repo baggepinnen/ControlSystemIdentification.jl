@@ -232,3 +232,12 @@ plot(d.t, [abs.(y); u]', lab=["True nonlinear output" "Input"], seriestype = [:l
 scatter!(d.t, ynn', lab="Measured nonlinear output", sp=1)
 plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
 ```
+
+
+# Video tutorials
+
+Relevant video tutorials are available here:
+
+```@raw html
+<iframe style="height: 315px; width: 560px" src="https://www.youtube.com/embed/GKl8Tz9n2gs?si=-snSBsubTkq17b0x" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+```
