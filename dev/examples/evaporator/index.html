@@ -17,33 +17,33 @@ data = readdlm(path[1:end-3])
 # 	y3: temperature of the outcoming product
 u = data[:, 1:3]&#39;
 y = data[:, 4:6]&#39;
-d = iddata(y, u, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">InputOutput data of length 6305, 3 outputs, 3 inputs, Ts = 1</code></pre><p>The input consists of two heating inputs and one cooling input, while there are 6 outputs from temperature sensors in a cross section of the furnace.</p><p>Before we estimate any model, we inspect the data</p><pre><code class="language-julia hljs">plot(d, layout=6)</code></pre><img src="180fa3b7.svg" alt="Example block output"/><p>We split the data in two, and use the first part for estimation and the second for validation. A model of order around 8 is reasonable (the paper uses 6-13). This system requires the option <code>zeroD=false</code> to be able to capture a direct feedthrough, otherwise the fit will always be rather poor.</p><pre><code class="language-julia hljs">dtrain = d[1:3300] # first experiment ends after 3300 seconds
+d = iddata(y, u, 1)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">InputOutput data of length 6305, 3 outputs, 3 inputs, Ts = 1</code></pre><p>The input consists of two heating inputs and one cooling input, while there are 6 outputs from temperature sensors in a cross section of the furnace.</p><p>Before we estimate any model, we inspect the data</p><pre><code class="language-julia hljs">plot(d, layout=6)</code></pre><img src="c0dada48.svg" alt="Example block output"/><p>We split the data in two, and use the first part for estimation and the second for validation. A model of order around 8 is reasonable (the paper uses 6-13). This system requires the option <code>zeroD=false</code> to be able to capture a direct feedthrough, otherwise the fit will always be rather poor.</p><pre><code class="language-julia hljs">dtrain = d[1:3300] # first experiment ends after 3300 seconds
 dval = d[3301:end]
 
 model,_ = newpem(dtrain, 8, zeroD=false)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">Iter     Function value   Gradient norm
      0     7.896730e+02     2.039439e+02
- * time: 5.888938903808594e-5
+ * time: 9.417533874511719e-5
     50     7.576979e+02     4.949210e+02
- * time: 5.742754936218262
-   100     7.371685e+02     7.425398e+01
- * time: 11.030769109725952
-   150     7.314174e+02     9.083674e+01
- * time: 16.228183031082153
-   200     7.298209e+02     2.378666e+01
- * time: 21.41939902305603
-   250     7.295993e+02     5.326444e+00
- * time: 26.596091985702515
-   300     7.295811e+02     1.044364e+01
- * time: 31.76771903038025
-   350     7.295730e+02     7.496814e+00
- * time: 36.95568609237671
-   400     7.295718e+02     1.771963e-01
- * time: 42.122469902038574
-   450     7.295717e+02     1.684688e-05
- * time: 47.303065061569214</code></pre><pre><code class="language-julia hljs">predplot(model, dval, h=1, layout=d.ny)
-predplot!(model, dval, h=5, ploty=false)</code></pre><img src="4b5e9a57.svg" alt="Example block output"/><p>The figures above show the result of predicting <span>$h={1, 5}$</span> steps into the future.</p><p>We can visualize the estimated model in the frequency domain as well. </p><pre><code class="language-julia hljs">w = exp10.(LinRange(-2, log10(pi/d.Ts), 200))
-sigmaplot(model.sys, w, lab=&quot;PEM&quot;, plotphase=false)</code></pre><img src="04b2bac0.svg" alt="Example block output"/><p>Let&#39;s compare prediction performance to the paper</p><pre><code class="language-julia hljs">ys = predict(model, dval, h=5)
+ * time: 7.270959138870239
+   100     7.371685e+02     7.425405e+01
+ * time: 14.006927967071533
+   150     7.314176e+02     9.023058e+01
+ * time: 20.695648193359375
+   200     7.298206e+02     2.456408e+01
+ * time: 27.21004319190979
+   250     7.295992e+02     5.202347e+00
+ * time: 33.76407718658447
+   300     7.295811e+02     1.278158e+01
+ * time: 40.44402718544006
+   350     7.295731e+02     8.067663e+00
+ * time: 46.98576807975769
+   400     7.295718e+02     3.428440e-01
+ * time: 53.536710023880005
+   450     7.295717e+02     3.022079e-05
+ * time: 60.127525091171265</code></pre><pre><code class="language-julia hljs">predplot(model, dval, h=1, layout=d.ny)
+predplot!(model, dval, h=5, ploty=false)</code></pre><img src="d396d43b.svg" alt="Example block output"/><p>The figures above show the result of predicting <span>$h={1, 5}$</span> steps into the future.</p><p>We can visualize the estimated model in the frequency domain as well. </p><pre><code class="language-julia hljs">w = exp10.(LinRange(-2, log10(pi/d.Ts), 200))
+sigmaplot(model.sys, w, lab=&quot;PEM&quot;, plotphase=false)</code></pre><img src="010f08c6.svg" alt="Example block output"/><p>Let&#39;s compare prediction performance to the paper</p><pre><code class="language-julia hljs">ys = predict(model, dval, h=5)
 ControlSystemIdentification.mse(dval.y-ys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">3×1 Matrix{Float64}:
- 0.057618688662518396
- 0.1563550174535233
- 0.01926955672059677</code></pre><p>The authors got the following errors: [0.24, 0.39, 0.14]</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../glass_furnace/">« Glass furnace</a><a class="docs-footer-nextpage" href="../hair_dryer/">Hair dryer »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.0.1 on <span class="colophon-date" title="Friday 22 September 2023 08:38">Friday 22 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+ 0.057618688542316915
+ 0.15635501739158222
+ 0.019269556576928987</code></pre><p>The authors got the following errors: [0.24, 0.39, 0.14]</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../glass_furnace/">« Glass furnace</a><a class="docs-footer-nextpage" href="../hair_dryer/">Hair dryer »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="auto">Automatic (OS)</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.0.1 on <span class="colophon-date" title="Tuesday 26 September 2023 06:49">Tuesday 26 September 2023</span>. Using Julia version 1.9.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
