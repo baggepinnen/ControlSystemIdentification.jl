@@ -15,11 +15,14 @@ y &= Cx + Du + e
 \end{aligned}
 ```
 using methods such as N4SID or the prediction-error method, 
-or [transfer functions](https://en.wikipedia.org/wiki/Transfer_function) on the form
+[transfer functions](https://en.wikipedia.org/wiki/Transfer_function) on the form
 ```math
 G(z) = \dfrac{B(z)}{A(z)} = \dfrac{b_m z^m + \dots + b_0}{z^n + a_{n-1} z^{n-1} + \dots + a_0}
 ```
-
+as well as generic nonlinear graybox models
+```math
+x^+ = f(x, u)
+```
 
 See the [documentation](https://baggepinnen.github.io/ControlSystemIdentification.jl/stable) for help.
 
