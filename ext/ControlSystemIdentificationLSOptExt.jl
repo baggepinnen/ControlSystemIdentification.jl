@@ -108,6 +108,7 @@ function _inner_pem(
     optimizer,
     λ,
     optimize_x0;
+    autodiff = :forward,
     kwargs...,
 ) where {F,G}
     R1mut = Matrix(R1)
@@ -137,7 +138,7 @@ function _inner_pem(
             x = p_guess,
             f! = residuals!,
             output_length = T * ny,
-            autodiff = :forward,
+            autodiff,
         ),
         optimizer;
         show_trace = true,

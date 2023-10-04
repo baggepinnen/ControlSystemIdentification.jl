@@ -70,6 +70,25 @@ mse(x::AbstractMatrix) = sum(abs2, x, dims=2) ./ size(x, 2)
 rms(x::AbstractMatrix) = sqrt.(mean(abs2.(x), dims = 2))[:]
 sse(x::AbstractMatrix) = sum(abs2, x, dims = 2)[:]
 
+"""
+    fpe(e, d::Int)
+
+Akaike's Final Prediction Error (FPE) criterion for model order selection.
+
+`e` is the prediction errors and `d` is the number of parameters estimated.
+"""
+function fpe(e::AbstractMatrix, d::Int)
+    size(e, 2) > size(e, 1) || throw(ArgumentError("e must have more columns than rows"))
+    N = size(e, 2)
+    d < N || error("fpe ill-defined when d > N")
+    det(sum(e[:, i]*e[:, i]' for i = axes(e, 2))) * (1 + d/N)/(1-d/N)
+end
+function fpe(e::AbstractVector, d::Int)
+    N = length(e)
+    d < N || error("fpe ill-defined when d > N")
+    sum(abs2, e)/N * (1 + d/N)/(1-d/N)
+end
+
 
 """
     modelfit(y, yh)
@@ -81,10 +100,22 @@ Compute the model fit of `yh` to `y` as a percentage, sometimes referred to as t
 ```
 
 An output of 100 indicates a perfect fit, an output of 0 indicates that the fit is no better than the mean if the data. Negative values are possible if the prediction is worse than predicting the mean of the data.
+
+See also [`rms`](@ref), [`sse`](@ref), [`mse`](@ref), [`fpe`](@ref), [`aic`](@ref).
 """
 modelfit(y, yh) = 100 * (1 .- rms(y .- yh) ./ rms(y .- mean(y, dims = 2)))
 modelfit(y::T, yh::T) where {T<:AbstractVector} =
-    100 * (1 .- rms(y .- yh) ./ rms(y .- mean(y)))
+    100 * (1 - rms(y .- yh) / rms(y .- mean(y)))
+
+"""
+    aic(e::AbstractVector, d)
+
+Akaike's Information Criterion (AIC) for model order selection.
+
+`e` is the prediction errors and `d` is the number of parameters estimated.
+
+See also [`fpe`](@ref).
+"""
 aic(x::AbstractVector, d) = log(sse(x)) .+ 2d / size(x, 2)
 
 "See [`modelfit`](@ref)"
