@@ -431,15 +431,16 @@ function _process_res_args(sys, d::AbstractIdData, lags = -min(length(d) ÷ 10, 
 end
 
 """
-    residualplot(model, data)
+    residualplot(model, data; h=1, x0=:estimate)
 
 Plot residual autocorrelation and input-residual correlation.
+- `h` is the prediction horizon, set `h = Inf` for simulation-error analysis.
 """
 residualplot
-@recipe function residualplot(p::Residualplot; h=1)
+@recipe function residualplot(p::Residualplot; h=1, x0=:estimate)
     sys, d, lags = _process_res_args(p.args...)
     lagsac = 1:maximum(lags)
-    yh = isfinite(h) ? predict(sys, d; h) : simulate(sys, d)
+    yh = isfinite(h) ? predict(sys, d, x0; h) : simulate(sys, d, x0)
     e = d.y - yh
     plotattributes[:N] = size(e, 2)
     xc = crosscor(time1(d.u), e', lags, demean = true)

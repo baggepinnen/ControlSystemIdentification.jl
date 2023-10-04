@@ -22,3 +22,10 @@ Gh,_ = tfest(d)
 plot(Gh, plotphase=true)
 
 plot(tfest(d))
+
+model, x0 = newpem(d, 2)
+
+residualplot(model, d)
+residualplot(model, d; x0)
+residualplot(model, d; h=Inf)
+residualplot(model, d; x0, h=Inf)
