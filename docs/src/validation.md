@@ -117,6 +117,11 @@ hline!([serr], lab="Simulation error", l=:dash, legend=:bottomright, ylims=(0, I
 ```@docs
 ControlSystemIdentification.predict
 ControlSystemIdentification.simulate
+ControlSystemIdentification.sse
+ControlSystemIdentification.mse
+ControlSystemIdentification.rms
+ControlSystemIdentification.fpe
+ControlSystemIdentification.aic
 ```
 
 - [`predplot`](@ref)
