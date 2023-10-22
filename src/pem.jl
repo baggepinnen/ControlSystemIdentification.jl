@@ -602,8 +602,8 @@ This method attempts to find the optimal vector of parameters, ``p``, and the in
 - `optimize_x0`: Whether to optimize the initial condition `x0` or not. If `false`, the initial condition is fixed to the value of `x0` and the optimization is performed only on the parameters `p`.
 
 The inner optimizer accepts a number of keyword arguments:
-- `lower`: Lower bounds for the parameters
-- `upper`: Upper bounds for the parameters
+- `lower`: Lower bounds for the parameters and initial condition (if optimized). If `x0` is optimized, this is a vector with layout `[lower_p; lower_x0]`.
+- `upper`: Upper bounds for the parameters and initial condition (if optimized). If `x0` is optimized, this is a vector with layout `[upper_p; upper_x0]`.
 - `x_tol = 1e-8`
 - `f_tol = 1e-8`
 - `g_tol = 1e-8`
