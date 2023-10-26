@@ -154,7 +154,7 @@ We will now move on to defining a *predictor* model. Our predictor will be very 
 To feed the sampled data into the continuous-time simulation, we make use of an interpolator. We also define new functions, `predictor` that contains the pendulum dynamics with the observer correction, a `prediction` function that performs the rollout (we're not using the word simulation to not confuse with the setting above) and a loss function.
 
 ```@example PEM
-y_int = LinearInterpolation(y, tsteps)
+y_int = LinearInterpolation(y, tsteps; extrapolate=true)
 
 function predictor(x, u, p, t)
     g = 9.82
