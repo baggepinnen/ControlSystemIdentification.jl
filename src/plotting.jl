@@ -500,11 +500,16 @@ end
 
 @userplot Find_nanb
 """
-    find_nanb(d::InputOutputData, na, nb)
+    find_nanb(d::InputOutputData, na, nb; logrms = false, method = :aic)
 Plots the RMSE and AIC For model orders up to `na`, `nb`. Useful for model selection. `na` can be either an integer or a range. The same holds for `nb`.
+
+- `logrms`: determines whether or not to plot the base 10 logarithm of the RMS error.
+- `method`: determines whether to use the Akaike Information Criterion (`:aic`) or the Final Prediction Error (`:fpe`) to determine the model order.
+
+If the color scale is hard to read due to a few tiles representing very large errors, avoid drawing those tiles by providing ranges for `na` and `nb` instead of integers, e.g., avoid showing model order smaller than 2 using `find_nanb(d, 3:na, 3:nb)`
 """
 find_nanb
-@recipe function find_nanb(p::Find_nanb; logrms = false)
+@recipe function find_nanb(p::Find_nanb; logrms = false, method = :aic)
     d, na, nb = p.args[1:3]
     d.ny == 1 || throw(ArgumentError("Only one-dimensional outputs supported."))
     y, u = vec(output(d)), time1(input(d))
@@ -515,7 +520,7 @@ find_nanb
         yt, A = getARXregressor(y, u, na, nb)
         e = yt - A * (A \ yt)
         error[i, j, 1] = logrms ? log10.(rms(e)) : rms(e)
-        error[i, j, 2] = aic(e, na + nb)
+        error[i, j, 2] = method === :aic ? aic(e, na + nb) : fpe(e isa AbstractVector ? e : e', na + nb)
     end
     layout --> 2
     seriestype --> :heatmap
@@ -529,7 +534,7 @@ find_nanb
         nb_range, na_range, error[:, :, 1]
     end
     @series begin
-        title := "AIC"
+        title := (method === :aic ? "AIC" : "FPE")
         subplot := 2
         nb_range, na_range, error[:, :, 2]
     end
