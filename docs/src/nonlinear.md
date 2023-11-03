@@ -40,10 +40,10 @@ is $γ_1 k_1u_1$ and the flow to tank 4 is $(1 - γ_1 )k_1u_1$. Tanks 2 and 3 be
 The dynamics are given by
 ```math
 \begin{aligned}
-\dot{h}_1 &= \dfrac{-a_1}{A_1   \sqrt{2g h_1}} + \dfrac{a_3}{A_1 \sqrt{2g h_3}} +     \dfrac{γ_1 k_1}{A_1}   u_1 \\
-\dot{h}_2 &= \dfrac{-a_2}{A_2   \sqrt{2g h_2}} + \dfrac{a_4}{A_2 \sqrt{2g h_4}} +     \dfrac{γ_2 k_2}{A_2}   u_2 \\
-\dot{h}_3 &= \dfrac{-a_3}{A_3 \sqrt{2g h_3}}                         + \dfrac{(1-γ_2) k_2}{A_3}   u_2 \\
-\dot{h}_4 &= \dfrac{-a_4}{A_4 \sqrt{2g h_4}}                          + \dfrac{(1-γ_1) k_1}{A_4}   u_1
+\dot{h}_1 &= \dfrac{-a_1}{A_1}   \sqrt{2g h_1} + \dfrac{a_3}{A_1} \sqrt{2g h_3} +     \dfrac{γ_1 k_1}{A_1}   u_1 \\
+\dot{h}_2 &= \dfrac{-a_2}{A_2}   \sqrt{2g h_2} + \dfrac{a_4}{A_2} \sqrt{2g h_4} +     \dfrac{γ_2 k_2}{A_2}   u_2 \\
+\dot{h}_3 &= \dfrac{-a_3}{A_3} \sqrt{2g h_3}                         + \dfrac{(1-γ_2) k_2}{A_3}   u_2 \\
+\dot{h}_4 &= \dfrac{-a_4}{A_4} \sqrt{2g h_4}                          + \dfrac{(1-γ_1) k_1}{A_4}   u_1
 \end{aligned}
 ```
 where $h_i$ are the tank levels and $a_i, A_i$ are the cross-sectional areas of outlets and tanks respectively.
