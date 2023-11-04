@@ -1,7 +1,8 @@
 using ControlSystemIdentification, SeeToDee, LowLevelParticleFilters
 using LeastSquaresOptim
 using StaticArrays
-
+using LinearAlgebra
+using Test
 
 function quadtank(h, u, p, t)
     k1, k2, g = p[1], p[2], 9.81
@@ -59,6 +60,9 @@ isinteractive() && plot(d)
 
 x00 = 0.5*[2.5, 1.5, 3, 3]
 p0 = [1.4, 1.4, 5.1, 0.25]
+
+
+@test_throws "Initial" ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, Inf*x00, R1, 100R2, nu)
 
 model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, x00, R1, 100R2, nu)
 

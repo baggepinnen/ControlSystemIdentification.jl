@@ -133,6 +133,15 @@ function _inner_pem(
     T = length(yvv)
     ny = size(R2, 1)
 
+    # Test the initial guess to give good error message
+    try
+        xp = discrete_dynamics(x0, uvv[1], p0, 0.0)
+        all(isfinite, xp) || throw(ArgumentError("Initial guess for x0 and p0 produced a non-finite state update ($xp). Improve the initial guess to avoid this error."))
+    catch e
+        @error "Aborting nonlinear PEM due to error in the dynamics update"
+        rethrow()
+    end
+
     res = optimize!(
         LeastSquaresProblem(;
             x = p_guess,
