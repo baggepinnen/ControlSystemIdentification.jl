@@ -62,8 +62,25 @@ function Base.oftype(x::Number, y::AbstractArray)
     y[]
 end
 
+"""
+    rms(x)
+  
+Root mean square of `x`.
+"""
 rms(x::AbstractVector) = sqrt(mean(abs2, x))
+
+"""
+    sse(x)
+
+Sum of squares of `x`.
+"""
 sse(x::AbstractVector) = x ⋅ x
+
+"""
+    mse(x)
+
+Mean square of `x`.
+"""
 mse(x::AbstractVector) = sse(x) / length(x)
 mse(x::AbstractMatrix) = sum(abs2, x, dims=2) ./ size(x, 2)
 
