@@ -130,6 +130,9 @@ ControlSystemIdentification.aic
 - [`autocorplot`](@ref)
 - [`crosscorplot`](@ref)
 - [`modelfit`](@ref)
+- [`rms`](@ref)
+- [`mse`](@ref)
+- [`sse`](@ref)
 
 ## Video tutorials
 
