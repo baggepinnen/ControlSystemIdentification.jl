@@ -114,6 +114,16 @@ hline!([serr], lab="Simulation error", l=:dash, legend=:bottomright, ylims=(0, I
 
 ## Validation API
 
+- [`predplot`](@ref)
+- [`simplot`](@ref)
+- [`coherenceplot`](@ref)
+- [`autocorplot`](@ref)
+- [`crosscorplot`](@ref)
+- [`modelfit`](@ref)
+- [`ControlSystemIdentification.rms`](@ref)
+- [`ControlSystemIdentification.mse`](@ref)
+- [`ControlSystemIdentification.sse`](@ref)
+
 ```@docs
 ControlSystemIdentification.predict
 ControlSystemIdentification.simulate
@@ -124,15 +134,6 @@ ControlSystemIdentification.fpe
 ControlSystemIdentification.aic
 ```
 
-- [`predplot`](@ref)
-- [`simplot`](@ref)
-- [`coherenceplot`](@ref)
-- [`autocorplot`](@ref)
-- [`crosscorplot`](@ref)
-- [`modelfit`](@ref)
-- [`rms`](@ref)
-- [`mse`](@ref)
-- [`sse`](@ref)
 
 ## Video tutorials
 
