@@ -611,7 +611,7 @@ The inner optimizer accepts a number of keyword arguments:
 - `Δ = 10.0`
 - `store_trace = false`
 
-See [Identification of nonlinear models](file:///home/fredrikb/.julia/dev/ControlSystemIdentification/docs/build/nonlinear.html#Identification-of-nonlinear-models) for more details.
+See [Identification of nonlinear models](https://baggepinnen.github.io/ControlSystemIdentification.jl/dev/nonlinear/) for more details.
 
 
 !!! warning "Experimental"
