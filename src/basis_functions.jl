@@ -25,7 +25,7 @@ end
 """
     kautz(a::Vector, h)
 
-Construct a discrete-time Kautz basis with poles at `a` amd sample time `h`.
+Construct a discrete-time Kautz basis with poles at `a` and sample time `h`.
 """
 function kautz(a::AbstractVector, h)
     if maximum(abs, a) > 1
@@ -33,7 +33,7 @@ function kautz(a::AbstractVector, h)
             a = -a
         end
         a = exp.(h .* a)
-        @assert all(<(1) ∘ abs, a) "Including ustable poles does not make sense"
+        @assert all(<(1) ∘ abs, a) "Including unstable poles does not make sense"
     end
     factors = basis_factor.(a)
     Q = factors[1]
@@ -54,6 +54,7 @@ end
 Construct an output orthogonalized Laguerre basis of length `Nq` with poles at `-a`.
 """
 function laguerre_oo(a::Number, Nq)
+    # Ref: "Laguerre Bases for Youla-Parametrized Optimal-Controller Design: Numerical Issues and Solutions" Olle Kjellqvist
     A = diagm(fill(-a, Nq))
     for i = 2:Nq
         A[diagind(A, i-1)] .+= 2a*(-1)^i
@@ -193,6 +194,12 @@ function ControlSystemsBase.freqresp(P::LTISystem, basis::SomeBasis, ω::Abstrac
     Gmat*p
 end
 
+
+"""
+    sum_basis(basis, p::AbstractVector)
+
+Form a linear combination of the systems in `basis` with coefficients `p`.
+"""
 function sum_basis(basis::AbstractVector, p::AbstractVector)
     out = ss(p[1]*basis[1])
     for i in 2:length(p)
@@ -211,7 +218,11 @@ function sum_basis(basis::AbstractStateSpace, p::AbstractVector)
     end
 end
 
+"""
+    basis_responses(basis::AbstractVector, ω; inverse = false)
 
+Compute the frequency-response of each system in an LTI-system basis.
+"""
 function basis_responses(basis::AbstractVector, ω; inverse=false)
     inverse && (basis = inv.(basis))
     Gs = freqresp.(basis, Ref(ω))
