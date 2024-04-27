@@ -181,6 +181,11 @@ d = iddata(yn, un, 1)
     @test mean(ControlSystemIdentification.nrmse(y, yh)) > 97
 
 
+    sysh, x0h, opt = ControlSystemIdentification.newpem(d, nx, show_every=100, safe=true, h=3)
+    @test iszero(sysh.D)
+    @test Optim.minimum(opt) < 30
+    @test freqresptest(sys, sysh) < 0.4
+
     # Non-zero D
 
     sysh, x0h, opt = ControlSystemIdentification.newpem(d, nx, show_every=10, zeroD = false, safe=true)
@@ -299,4 +304,56 @@ d = iddata(yn, un, 1)
 @test sysh.C * x0h ≈ sys.C * x0 atol = 0.1
 @test Optim.minimum(opt) < 1e-3*T # Should depend on system gramian, but too lazy to figure out
 
+end
+
+
+@testset "structured_pem" begin
+    @info "Testing structured_pem"
+    constructor = function (p)
+        Mα, Mq, Mδe, Zα, Zq, Zδe = p
+        V = 30.2
+        A = [
+            Mq Mα
+            (1+Zq / V) Zα/V
+        ]
+        B = [Mδe; Zδe / V]
+        return ss(A, B, I, 0)
+    end
+
+    # True Parameters
+    Mα_true = -83.17457223750834
+    Mq_true = -4.0485957994781785
+    Mδe_true = -80.71377329163104
+    Zα_true = -115.91677356408941
+    Zq_true = -0.573560626095269
+    Zδe_true = 32.13261325199936
+
+    Ts = 0.01
+    t = 0:Ts:10
+
+    p_true = [Mα_true, Mq_true, Mδe_true, Zα_true, Zq_true, Zδe_true]
+    p0 = [Mα_true, Mq_true, Mδe_true, Zα_true, Zq_true, Zδe_true] .* 1.3
+
+    P_true = constructor(p_true)
+    u = sign.(sin.((1 / 3 * t)')) .+ 0.2 .* randn.()
+    res_true = lsim(P_true, u, t)
+    d = iddata(res_true)
+
+    nx = 2
+    function regularizer(p, _)
+        sum(abs2, p.K)
+    end
+
+    res = ControlSystemIdentification.structured_pem(d, nx; focus=:prediction, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300)
+    p_est = res.res.minimizer.p
+    @test norm(p_est - p_true) < 1e-6
+
+    # res = ControlSystemIdentification.structured_pem(d, nx; focus=:prediction, p0=0.98p_true, constructor, regularizer, show_trace = true, show_every = 1, iterations=300000, h=6, optimizer=NelderMead())
+    # p_est = res.res.minimizer.p
+    # @test norm(p_est - p_true)/norm(p_true) < 1e-2 # Severe convergence problems here, but it does eventually converge using NelderMead The test is deactivated since it takes a long time
+
+    res = ControlSystemIdentification.structured_pem(d, nx; focus=:simulation, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300)
+    p_est = res.res.minimizer.p
+    @test norm(p_est - p_true) < 1e-6
+    
 end

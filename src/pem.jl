@@ -676,7 +676,7 @@ function structured_pem(
     focus = :prediction,
     p0,
     x0 = nothing,
-    K0 = focus == :prediction ? zeros(nx, d.ny) : zeros(0,0),
+    K0 = focus == :prediction ? 1e-10randn(nx, d.ny) : zeros(0,0), # Small random value used to not suffer loss of state dimension in observer_predictor when K0 is zero
     constructor,
     h = 1,
     metric::F = abs2,
@@ -708,7 +708,7 @@ function structured_pem(
         x0i::Vector{T} = if h == 1 || focus === :simulation
             T.(estimate_x0(sys0, d, min(length(d), 10nx)))
         else
-            T.(estimate_x0(prediction_error_filter(PredictionStateSpace(sys0, K, 0, 0); h), pd, min(length(pd), 10nx)))
+            T.(estimate_x0(prediction_error_filter(PredictionStateSpace(sys0, K0, 0, 0); h), pd, min(length(pd), 10nx)))
         end
     else
         length(x0) == nx || throw(ArgumentError("x0 must have length $nx"))
@@ -719,7 +719,7 @@ function structured_pem(
         sysi, Ki, x0 = inner_constructor(p, constructor, d.Ts)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
         Pyh = ControlSystemsBase.observer_predictor(syso; h)
-        yh, _ = lsim(Pyh, pd; x0)
+        yh, _ = lsim(Pyh, pd; x0=Vector(x0))
         yh .= metric.(yh .- d.y)
         c1 = sum(yh)
         c1 + regularizer(p, syso)
@@ -730,7 +730,6 @@ function structured_pem(
         y .= metric.(y .- d.y)
         sum(y) + regularizer(p, syssim)
     end
-    local res, sys_opt, K_opt, x0_opt
     res = Optim.optimize(
         pred ? predloss : simloss,
         p0ca,
