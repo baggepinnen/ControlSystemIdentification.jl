@@ -622,6 +622,7 @@ function nonlinear_pem end
 # ==============================================================================
 ## Structured PEM
 # ==============================================================================
+using ChainRules
 using ForwardDiffChainRules
 @ForwardDiff_frule LinearAlgebra.exp!(x1::AbstractMatrix{<:ForwardDiff.Dual}) true
 
