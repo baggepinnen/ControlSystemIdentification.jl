@@ -86,7 +86,7 @@ end
 """
     nonlinear_pem(d, model::NonlinearPredictionErrorModel; x0, R1, R2, kwargs...)
 
-Nonlinear Prediction-Error Method initialized with a model resulting from a previous call to `nonlinear_pem`. Parameters `x0, R1, R2` can be modified to refine the optimization. Calling `nonlinear_pem` repeatedly may be beneficial when the first call uses a small `R2` for large amounts of measurement feedback, this makes it easier to find a good model when the initial parameter guess is poor. A second call can use a larger `R2` to improve the simulation performance of the estimated model.
+Nonlinear Prediction-Error Method initialized with a model resulting from a previous call to `nonlinear_pem`. Parameters `x0, R1, R2` can be modified to refine the optimization. Calling `nonlinear_pem` repeatedly may be beneficial when the first call uses a small `R2` for large amounts of measurement feedback, this makes it easier to find a good model when the initial parameter guess is poor. A second call can use a larger `R2` to improve the simulation performance of the estimated model. Alternatively, `R1` may start large and then be reduced to improve the parameter estimates. These two appraoches are equivalent for linear systems, but may behave differently for nonlinear systems.
 """
 function nonlinear_pem(d::AbstractIdData, model::NonlinearPredictionErrorModel; x0 = model.x0, R1=model.ukf.R1, R2=model.ukf.R2, kwargs...)
     nonlinear_pem(d, model.ukf.dynamics, model.ukf.measurement, model.p, x0, R1, R2, model.ukf.nu; kwargs...)

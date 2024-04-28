@@ -45,7 +45,7 @@ export iddata,
     InputOutputFreqData
 
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace,
-    pem, newpem, prediction_error, prediction_error_filter, predictiondata, predict, simulate, noise_model, estimate_x0
+    pem, newpem, structured_pem, prediction_error, prediction_error_filter, predictiondata, predict, simulate, noise_model, estimate_x0
 export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
 export getARXregressor,
     getARregressor,
@@ -156,7 +156,7 @@ x0h[2] == x0[2] # Should be exact equality
 norm(x0-x0h)    # Should be small
 ```
 """
-function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx))
+function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_time_constant(sys)); fixed = fill(NaN, sys.nx), focus=:prediction)
     d.ny == sys.ny || throw(ArgumentError("Number of outputs of system and data do not match"))
     d.nu == sys.nu || throw(ArgumentError("Number of inputs of system and data do not match"))
     T = ControlSystemsBase.numeric_type(sys)
@@ -165,7 +165,7 @@ function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_tim
     nx,p,N = sys.nx, sys.ny, length(d)
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
-    if sys isa AbstractPredictionStateSpace && !iszero(sys.K)
+    if focus === :prediction && sys isa AbstractPredictionStateSpace && !iszero(sys.K)
         ε, _ = lsim(prediction_error_filter(sys), predictiondata(d))
         y = y - ε # remove influence of innovations
     end 
