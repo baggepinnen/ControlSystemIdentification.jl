@@ -332,10 +332,10 @@ end
     t = 0:Ts:10
 
     p_true = [Mα_true, Mq_true, Mδe_true, Zα_true, Zq_true, Zδe_true]
-    p0 = [Mα_true, Mq_true, Mδe_true, Zα_true, Zq_true, Zδe_true] .* 1.3
+    p0 = [Mα_true, Mq_true, Mδe_true, Zα_true, Zq_true, Zδe_true] .* 1.2
 
     P_true = constructor(p_true)
-    u = sign.(sin.((1 / 3 * t)')) .+ 0.2 .* randn.()
+    u = sign.(sin.((1 / 3 * t)')) .+ sign.(sin.((1 / 2 * t)'))
     res_true = lsim(P_true, u, t)
     d = iddata(res_true)
 
