@@ -34,13 +34,13 @@ We also have capabilities for estimation of nonlinear Hammerstein-Wiener models 
 
 This package is implemented in the free and open-source programming language [Julia](https://julialang.org/).
 
-If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](https://github.com/JuliaControl/ControlExamples.jl). An introductory video is available below (system identification example starts around 55 minutes)
+If you are new to this package, start your journey through the documentation by learning about [Identification data](@ref). Examples are provided in the Examples section and in the form of jupyter notebooks [here](https://github.com/JuliaControl/ControlExamples.jl). An introductory video series using this package is available below
 
 ```@raw html
-<iframe width="560" height="315" src="https://www.youtube.com/embed/Fdz2Fsm1aTY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://www.youtube.com/embed/RnuHqkP4QTw?si=F2STrE4QG_6vpUtN" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
 ```
 
-See also the [YouTube playlist](https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&si=AiOZVhBVwYReDrAm) with tutorials using this package.
+See also the [YouTube playlist](https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&si=AiOZVhBVwYReDrAm) with the entire video series.
 
 ## Installation
 Install [Julia](https://julialang.org/) from the [download](https://julialang.org/downloads/) page. Then, in the Julia REPL, type
@@ -65,6 +65,7 @@ header = ["Estimation method", "SIMO", "MISO", "Disturbance models", "Nonlineari
 data = [
     md"`newpem`"            "🟢" "🟢" "🟢" "🟢" "🟢" "🟢" "🟥" "🟥"
     md"`subspaceid`"        "🟢" "🟢" "🟢" "🟥" "🟢" "🟢" "🟢" "🟥"
+    md"`structured_pem`"    "🟢" "🟢" "🔶" "🟥" "🟢" "🟢" "🟥" "🟥"
     md"`nonlinear_pem`"     "🟢" "🟢" "🔶" "🟢" "🟥" "🟢" "🟥" "🟥"
     md"`arx`"               "🟥" "🟢" "🟥" "🔶" "🟢" "🟢" "🟥" "🟢"
     md"`arxar`"             "🟥" "🟢" "🟢" "🟥" "🟢" "🟢" "🟥" "🟥"
@@ -88,7 +89,7 @@ tab_algos # hide
 - Several methods are listed as 🟥 on **nonlinearities**, but it is oftentimes possible to handle known input nonlinearities by adding nonlinearly transformed versions of the input to the dataset. Known output nonlinearities that are invertible can be handled by similarly applying the inverse nonlinearity to the data before estimation. Only [`newpem`](@ref) has explicit methods for estimating parameters of nonlinearities. [`arx`](@ref) is listed as 🔶, since with the correct `estimator` option that promotes sparsity, it is possible to find the most appropriate nonlinearity among a set of candidates. However, no explicit support for this is provided.
 - **Custom loss functions** are sometimes supported explicitly, such as for [`newpem`](@ref), but often supported by providing a custom `estimator` for methods that solve a problem on the form ``\operatorname{argmin}_w \sum_i \operatorname{loss}(e_i) \quad \forall e_i \in \{e = y - Aw\}``. The default estimator in these cases is always `\`, i.e., to solve a least-squares problem. Useful alternatives are, e.g., [`TotalLeastSquares.tls`](https://github.com/baggepinnen/TotalLeastSquares.jl) and `TotalLeastSquares.irls`. This can be useful to increase robustness w.r.t. noise etc.
 - In specific situations it is possible to use any method with **multiple datasets** by simply concatenating two datasets like `[d1 d2]`. This is only recommended if the state of the system in the end of the first dataset is very close to the state of the system in the beginning of the second dataset, for example, if all experiments start and end at rest in the origin.
-- Some methods estimate explicit **disturbance models**, such as [`plr`](@ref) and [`arxar`](@ref), whereas other methods estimate observers with an *implicit* disturbance model, such as [`newpem`](@ref) and [`subspaceid`](@ref). All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). [`ControlSystemIdentification.nonlinear_pem`](@ref) is listed as 🔶 since it allows for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.
+- Some methods estimate explicit **disturbance models**, such as [`plr`](@ref) and [`arxar`](@ref), whereas other methods estimate observers with an *implicit* disturbance model, such as [`newpem`](@ref) and [`subspaceid`](@ref). All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). [`structured_pem`](@ref) and [`ControlSystemIdentification.nonlinear_pem`](@ref) are listed as 🔶 since they allow for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.
 
 ## Other resources
 - [YouTube playlist](https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&si=AiOZVhBVwYReDrAm) with tutorials using this package.

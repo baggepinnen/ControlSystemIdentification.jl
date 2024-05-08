@@ -10,7 +10,7 @@ y &= Cx + Du + e
 
 This package estimates models in discrete time, but they may be converted to continuous-time models using the function [`d2c`](https://juliacontrol.github.io/ControlSystems.jl/stable/lib/synthesis/#ControlSystemsBase.d2c) from [ControlSystemsBase.jl](https://github.com/JuliaControl/ControlSystems.jl).
 
-There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref), [`newpem`](@ref) and [`era`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas [`n4sid`](@ref) is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl) and ins generally slightly more accurate but also more computationally expensive. If unsure which method to use, try [`subspaceid`](@ref) first (unless the data comes from closed-loop operation, use [`newpem`](@ref) in this case).
+There exist several methods for identification of statespace models, [`subspaceid`](@ref), [`n4sid`](@ref), [`newpem`](@ref), [`structured_pem`](@ref) and [`era`](@ref). [`subspaceid`](@ref) is the most comprehensive algorithm for subspace-based identification whereas [`n4sid`](@ref) is an older implementation. [`newpem`](@ref) solves the prediction-error problem using an iterative optimization method (from Optim.jl) and is generally slightly more accurate but also more computationally expensive. While `newpem` estimates an unstructured model (black box), [`structured_pem`](@ref) allows you to estimate a statespace model with a predefined structure (gray box). If unsure which method to use, try [`subspaceid`](@ref) first (unless the data comes from closed-loop operation, use [`newpem`](@ref) in this case).
 
 ## Subspace-based identification using `n4sid` and `subspaceid`
 In this example we will estimate a statespace model using the [`subspaceid`](@ref) method. This function returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `sys.sys`.
@@ -118,7 +118,7 @@ The result of the identification with [`newpem`](@ref) is a custom type with ext
 
 
 ## Gray-box identification
-For estimation of linear or nonlinear models with fixed structure, see [`ControlSystemIdentification.nonlinear_pem`](@ref).
+For estimation of linear or nonlinear models with _fixed structure_, see [`structured_pem`](@ref) and [`ControlSystemIdentification.nonlinear_pem`](@ref).
 
 
 ### Usage example
@@ -150,7 +150,7 @@ See the [example notebooks](https://github.com/JuliaControl/ControlExamples.jl/b
 ### Arguments
 The algorithm has several options:
 - The optimization is by default started with an initial guess provided by [`subspaceid`](@ref), but this can be overridden by providing an initial guess to [`newpem`](@ref) using the keyword argument `sys0`.
-- `focus` determines the focus of the model fit. The default is `:prediction` which minimizes the prediction error. If this choice produces an unstable model for a stable system, or the simmulation performance is poor, `focus = :simulation` may be a better choice.
+- `focus` determines the focus of the model fit. The default is `:prediction` which minimizes the prediction error. If this choice produces an unstable model for a stable system, or the simulation performance is poor, `focus = :simulation` may be a better choice.
 - A regularizer may be provided using the keyword argument `regularizer`.
 - A stable model may be enforced using `stable = true`.
 - The ``D`` matrix may be forced to be zero using `zeroD = true`.
@@ -192,6 +192,7 @@ Pages   = ["ss.md"]
 
 ```@docs
 ControlSystemIdentification.newpem
+ControlSystemIdentification.structured_pem
 ControlSystemIdentification.subspaceid
 ControlSystemIdentification.n4sid
 ControlSystemIdentification.era
