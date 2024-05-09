@@ -102,8 +102,6 @@ era(ds, 2, 50, 50, round(Int, 10/Ts), p=1, λ=1, smooth=true) # Should be identi
 
 
 ## Prediction-error method (PEM)
-!!! note "Note"
-    The old function [`pem`](@ref) is "soft deprecated" in favor of [`newpem`](@ref) which is more general and much more performant.
 
 The prediction-error method is a simple but powerful algorithm for identification of discrete-time LTI systems on state-space form:
 ```math
@@ -116,9 +114,10 @@ The user can choose to minimize either prediction errors or simulation errors, w
 
 The result of the identification with [`newpem`](@ref) is a custom type with extra fields for the identified Kalman gain and noise covariance matrices.
 
-
-## Gray-box identification
-For estimation of linear or nonlinear models with _fixed structure_, see [`structured_pem`](@ref) and [`ControlSystemIdentification.nonlinear_pem`](@ref).
+Three distinct flavors of PEM exist in this package:
+- [`newpem`](@ref): Linear black-box model estimation (unstructured models)
+- [`structured_pem`](@ref): Linear structured model estimation (user-defined structure/gray box)
+- [`nonlinear_pem`](@ref): Nonlinear gray-box model estimation (e.g., ODE parameter estimation)
 
 
 ### Usage example
@@ -162,7 +161,8 @@ See the docstring of [`newpem`](@ref) for additional arguments and more details.
 ### Internals
 Internally, [Optim.jl](https://github.com/JuliaNLSolvers/Optim.jl) is used to optimize the system parameters, using automatic differentiation to calculate gradients (and Hessians where applicable). Optim solver options can be controlled by passing keyword arguments to [`newpem`](@ref), and by passing a manually constructed solver object. The default solver is [`BFGS()`](http://julianlsolvers.github.io/Optim.jl/stable/#algo/lbfgs/)
 
-
+## Gray-box identification
+For estimation of linear or nonlinear models with _fixed structure_, see [`structured_pem`](@ref) (linear) and [`ControlSystemIdentification.nonlinear_pem`](@ref).
 
 
 ## Filtering, prediction and simulation
