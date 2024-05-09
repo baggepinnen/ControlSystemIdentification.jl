@@ -117,7 +117,7 @@ The result of the identification with [`newpem`](@ref) is a custom type with ext
 Three distinct flavors of PEM exist in this package:
 - [`newpem`](@ref): Linear black-box model estimation (unstructured models)
 - [`structured_pem`](@ref): Linear structured model estimation (user-defined structure/gray box)
-- [`nonlinear_pem`](@ref): Nonlinear gray-box model estimation (e.g., ODE parameter estimation)
+- [`ControlSystemIdentification.nonlinear_pem`](@ref): Nonlinear gray-box model estimation (e.g., ODE parameter estimation)
 
 
 ### Usage example

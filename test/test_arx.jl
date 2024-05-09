@@ -1,4 +1,4 @@
-using ControlSystemIdentification, MonteCarloMeasurements, ControlSystemsBase
+using ControlSystemIdentification, MonteCarloMeasurements, ControlSystemsBase, Test
 unsafe_comparisons(true)
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) =
@@ -151,7 +151,7 @@ Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic = true)
 
 ## with inputdelay
 G1 =  tf([0.3,0, 1], [1, -0.5, 0], 1)
-u = randn(1,N)
+u = @.(sin(t') + sign(sin(2t')))
 y = lsim(G1, u, t)[1][:]
 d = iddata(y, u, 1)
 na, nb, inputdelay = 1,3,0
