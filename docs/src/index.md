@@ -30,7 +30,15 @@ or in the form of transfer functions
 Y(z) = \dfrac{B(z)}{A(z)}U(z)
 ```
 
-We also have capabilities for estimation of nonlinear Hammerstein-Wiener models and linear/nonlinear gray-box identification of models in continuous or discrete time.
+We also have capabilities for estimation of nonlinear Hammerstein-Wiener models and linear/nonlinear gray-box identification of models in continuous or discrete time, i.e., models on the form
+```math
+\begin{aligned}
+x^+ &= f_d(x, u, p, t) + w \quad \text{Discrete time}\\
+\dot x &= f_c(x, u, p, t) + w \quad \text{Continuous time}\\
+y &= h(x, u, p, t) + e
+\end{aligned}
+```
+where $p$ are the parameters of the nonlinear system.
 
 This package is implemented in the free and open-source programming language [Julia](https://julialang.org/).
 
