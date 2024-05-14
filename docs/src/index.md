@@ -94,8 +94,6 @@ tab_algos # hide
 ## Other resources
 - [YouTube playlist](https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&si=AiOZVhBVwYReDrAm) with tutorials using this package.
 - For estimation of linear **time-varying** models (LTV), see [LTVModels.jl](https://github.com/baggepinnen/LTVModels.jl).
-- For estimation of linear and nonlinear **grey-box models in continuous time**, see [DifferentialEquations.jl (parameter estimation)](https://docs.sciml.ai/DiffEqParamEstim/stable/)
-- Estimation of **nonlinear black-box models in continuous time** [DiffEqFlux.jl](https://github.com/JuliaDiffEq/DiffEqFlux.jl/) and [DataDrivenDiffEq.jl](https://docs.sciml.ai/DataDrivenDiffEq/stable/)
 - For more advanced **spectral estimation**, cross coherence, etc., see [LPVSpectral.jl](https://github.com/baggepinnen/LPVSpectral.jl)
 - This package interacts well with [MonteCarloMeasurements.jl](https://github.com/baggepinnen/MonteCarloMeasurements.jl). See [example file](https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl).
 - **State estimation** is facilitated by [LowLevelParticleFilters.jl](https://github.com/baggepinnen/LowLevelParticleFilters.jl).
