@@ -4,7 +4,7 @@ import ControlSystemsBase: feedback
     FRD(w, r)
 
 Represents frequency-response data. `w` holds the frequency vector and `r` the response. Methods defined on this type include
-- `+-*`
+- `+,-,*`
 - `length, vec, sqrt`
 - `plot`
 - `feedback`
@@ -16,7 +16,7 @@ If `r` represents a MIMO frequency response, the dimensions are `ny × nu × nω
 
 An object `frd::FRD` can be plotted using `plot(frd, hz=false)` if `using Plots` has been called.
 """
-struct FRD{WT<:AbstractVector,RT<:AbstractArray} <: LTISystem{Continuous}
+struct FRD{WT<:AbstractVector{<:Real},RT<:AbstractArray} <: LTISystem{Continuous}
     w::WT
     r::RT
 end
