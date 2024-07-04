@@ -155,7 +155,7 @@ To customize the implementation of the nonlinear prediction-error method, see a 
 
 
 ## Identifying parameters in a ModelingToolkit model
-The following shows how to use [`nonlinear_pem`](@ref) to estimate the parameters of an ModelingToolkit model. This example is a continuation of that above, and we'll reuse the data generated previously.
+The following shows how to use `nonlinear_pem` to estimate the parameters of an ModelingToolkit model. This example is a continuation of the quadruple-tank example above, and we'll reuse the same data generated previously.
 
 !!! warning
     ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v9.23, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
