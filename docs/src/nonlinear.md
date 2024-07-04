@@ -153,6 +153,82 @@ hopefully, the estimated parameters are close to the true ones.
 
 To customize the implementation of the nonlinear prediction-error method, see a lower-level interface being used in the tutorial [in the documentation of LowLevelParticleFilters.jl](https://baggepinnen.github.io/LowLevelParticleFilters.jl/stable/parameter_estimation/#Using-an-optimizer) which also provides the UKF.
 
+
+## Identifying parameters in a ModelingToolkit model
+The following shows how to use [`nonlinear_pem`](@ref) to estimate the parameters of an ModelingToolkit model. This example is a continuation of that above, and we'll reuse the data generated previously.
+
+!!! warning
+    ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v9.23, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
+
+When we define the MTK model, we give defaults for all parameters. We then specify the inputs and outputs of this model, since they are arrays in this example, we call `collect` to turn them into scalars. To obtain a dynamics function on the form ``\dot x = f(x, u, p, t)`` from MTK, we call `ModelingToolkit.generate_control_function`. This returns two versions of this function, where the other one operates in place. This function also returns the state variables chosen, the parameters of the model as well as a simplified system with inputs and outputs. The function returned from `ModelingToolkit.generate_control_function` expects all the parameters of the system to be provided, but we only want to optimize a few of them. We thus wrap this function in `discrete_dynamics_mtk` in order to insert the optimized parameters into a parameter array that contains also the non-optimized parameters. We make use of the function `similar` to ensure that the final parameter array has the correct type (Dual numbers for AD will be used).
+
+For good performance, we wrap all the glue code in a function `estimate_model_mtk` so that we avoid the use of too many global variables.
+
+```julia
+using ModelingToolkit
+using ModelingToolkit: D_nounits as D
+t = ModelingToolkit.t_nounits
+ssqrt(x) = √(max(x, zero(x)) + 1e-3) # For numerical robustness at x = 0
+@register_symbolic ssqrt(x)
+
+@mtkmodel QuadtankModel begin
+    @parameters begin
+        k1 = 1.4
+        k2 = 1.4
+        g = 9.81
+        A = 5.1
+        a = 0.03
+        γ = 0.25
+    end
+    begin
+        A1 = A2 = A3 = A4 = A
+        a1 = a3 = a2 = a4 = a
+        γ1 = γ2 = γ
+    end
+    @variables begin
+        h(t)[1:4] = 0
+        u(t)[1:2] = 0
+    end
+    @equations begin
+        D(h[1]) ~ -a1/A1 * ssqrt(2g*h[1]) + a3/A1*ssqrt(2g*h[3]) +     γ1*k1/A1 * u[1]
+        D(h[2]) ~ -a2/A2 * ssqrt(2g*h[2]) + a4/A2*ssqrt(2g*h[4]) +     γ2*k2/A2 * u[2]
+        D(h[3]) ~ -a3/A3*ssqrt(2g*h[3])                          + (1-γ2)*k2/A3 * u[2]
+        D(h[4]) ~ -a4/A4*ssqrt(2g*h[4])                          + (1-γ1)*k1/A4 * u[1]
+    end
+end
+
+@named mtkmodel = QuadtankModel()
+mtkmodel = complete(mtkmodel)
+inputs = [collect(mtkmodel.u);]
+outputs = [collect(mtkmodel.h[1:2]);]
+
+function estimate_model_mtk(mtkmodel, inputs, outputs) # A wrapper function to avoid using global variables
+    (f_oop, f_ip), statevars, p, io_sys = ModelingToolkit.generate_control_function(mtkmodel, inputs; outputs)
+    continuous_dynamics = f_oop
+    inner_discrete_dynamics = SeeToDee.Rk4(continuous_dynamics, Ts, supersample=2)
+
+    tunable_p = [mtkmodel.k1, mtkmodel.k2, mtkmodel.A, mtkmodel.γ] # Provided in the same order as p_guess
+    tunable_indices = [findfirst(isequal(pi), p) for pi in tunable_p] # Figure out what indices of the parameter array correspond to our tunable parameters
+    p0 = [ModelingToolkit.defaults(io_sys)[pi] for pi in p]
+    full_p = deepcopy(p0)
+    output_indices = [findfirst(isequal(yi), statevars) for yi in outputs] # Figure out what indices of the state array correspond to our outputs
+
+    function discrete_dynamics_wrapper(x, u, p, t)
+        opt_p = similar(p, length(full_p)) # Create an array of correct length and element type to host the full parameter vector
+        opt_p .= full_p # Write all the initial parameters into this new array
+        opt_p[tunable_indices] .= p # Overwrite the tunable parameters with the optimization variable
+        inner_discrete_dynamics(x, u, opt_p, t) # Call the discretized dynamics function from MTK
+    end
+
+    mtk_measurement(x,u,p,t) = x[output_indices]
+
+    model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics_wrapper, mtk_measurement, p_guess, x0_guess, R1, R2, nu)
+end
+
+estimate_model_mtk(mtkmodel, inputs, outputs)
+```
+This should result in a similar final cost value as when the dynamics was implemented manually above. 
+
 ## Hammerstein-Wiener estimation
 
 
