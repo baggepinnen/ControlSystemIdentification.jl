@@ -210,16 +210,20 @@ function newpem(
     else
         T.(zeroD ? [trivec(A); vec(B); vec(C); vec(x0i)] : [trivec(A); vec(B); vec(C); vec(D); vec(x0i)])
     end
-    if output_nonlinearity !== nothing && nlp !== nothing
+    if (output_nonlinearity !== nothing || input_nonlinearity !== nothing) && nlp !== nothing 
        p0 = [p0; nlp]
     end
     D0 = zeros(T, ny, nu)
+    du = nothing
     function predloss(p)
         sysi, Ki, x0, nlpi = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
         pdi = if input_nonlinearity === nothing
             pd
         else
-            du = similar(p, size(d.u)) .= d.u
+            if du === nothing
+                du = similar(p, size(d.u))
+            end
+            du .= d.u
             predictiondata(iddata(d.y, input_nonlinearity(du, nlpi), d.Ts))
         end
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
@@ -241,7 +245,10 @@ function newpem(
         di = if input_nonlinearity === nothing
             d
         else
-            du = similar(p, size(d.u)) .= d.u
+            if du === nothing
+                du = similar(p, size(d.u))
+            end
+            du .= d.u
             iddata(d.y, input_nonlinearity(du, nlpi), d.Ts)
         end
         y, _ = lsim(syssim, di; x0)
