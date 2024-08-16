@@ -52,6 +52,7 @@ using Optim, Optim.LineSearches
         optimizer = BFGS(
             linesearch = LineSearches.BackTracking(),
         ),
+        autodiff = :forward,
         store_trace = true,
         show_trace  = true,
         show_every  = 50,
@@ -87,6 +88,7 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 - `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
 - `focus`: `prediction` or `:simulation`. If `:simulation`, the `K` matrix will be zero.
 - `optimizer`: One of Optim's optimizers
+- `autodiff`: Whether or not to use forward-mode AD to compute gradients. `:forward` (default) for forward-mode AD, or `:finite` for finite differences.
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
 - `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
@@ -171,6 +173,7 @@ function newpem(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.BackTracking(),
     ),
+    autodiff = :forward,
     store_trace = true,
     show_trace = true,
     show_every = 50,
@@ -216,7 +219,8 @@ function newpem(
         pdi = if input_nonlinearity === nothing
             pd
         else
-            predictiondata(iddata(d.y, input_nonlinearity(copy(d.u), nlpi), d.Ts))
+            du = similar(p, size(d.u)) .= d.u
+            predictiondata(iddata(d.y, input_nonlinearity(du, nlpi), d.Ts))
         end
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
         Pyh = ControlSystemsBase.observer_predictor(syso; h)
@@ -237,7 +241,8 @@ function newpem(
         di = if input_nonlinearity === nothing
             d
         else
-            iddata(d.y, input_nonlinearity(copy(d.u), nlpi), d.Ts)
+            du = similar(p, size(d.u)) .= d.u
+            iddata(d.y, input_nonlinearity(du, nlpi), d.Ts)
         end
         y, _ = lsim(syssim, di; x0)
         @views if output_nonlinearity !== nothing
@@ -256,8 +261,8 @@ function newpem(
             optimizer,
             Optim.Options(;
                 store_trace, show_trace, show_every, iterations, allow_f_increases,
-                time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
-            autodiff = :forward,
+                time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit);
+            autodiff,
         )
         sys_opt::StateSpace{Discrete{T}, T}, K_opt::Matrix{T}, x0_opt, nlp = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
     catch err
