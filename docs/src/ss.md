@@ -197,6 +197,7 @@ ControlSystemIdentification.subspaceid
 ControlSystemIdentification.n4sid
 ControlSystemIdentification.era
 ControlSystemIdentification.okid
+ControlSystemIdentification.predictiondata
 ControlSystemIdentification.observer_predictor
 ControlSystemIdentification.observer_controller
 ControlSystemIdentification.prediction_error
