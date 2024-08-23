@@ -42,6 +42,7 @@ using Optim, Optim.LineSearches
         nx;
         zeroD  = true,
         focus  = :prediction,
+        h      = 1,
         stable = true,
         sys0   = subspaceid(d, nx; zeroD, focus, stable),
         metric = abs2,
@@ -87,6 +88,7 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 - `stable` if true, stability of the estimated system will be enforced by eigenvalue reflection using [`schur_stab`](@ref) with `ϵ=1/100` (default). If `stable` is a real value, the value is used instead of the default `ϵ`.
 - `sys0`: Initial guess, if non provided, [`subspaceid`](@ref) is used as initial guess.
 - `focus`: `prediction` or `:simulation`. If `:simulation`, the `K` matrix will be zero.
+- `h`: Prediction horizon for the prediction error filter. Large values of `h` makes the problem computationally expensive. As `h` approaches infinity, the problem approaches the `focus = :simulation` case.
 - `optimizer`: One of Optim's optimizers
 - `autodiff`: Whether or not to use forward-mode AD to compute gradients. `:forward` (default) for forward-mode AD, or `:finite` for finite differences.
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
