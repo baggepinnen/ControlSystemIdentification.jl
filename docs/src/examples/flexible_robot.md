@@ -39,8 +39,9 @@ dtrain = d[1:end÷2]
 dval = d[end÷2:end]
 
 # A model of order 4 is reasonable, a double-mass model. We estimate two models, one using subspace-based identification and one using the prediction-error method
+using Optim
 model_ss = subspaceid(dtrain, 4, focus=:prediction)
-model_pem, _ = newpem(dtrain, 4; sys0 = model_ss, focus=:prediction)
+model_pem, x0_pem = newpem(dtrain, 4; focus=:prediction, optimizer=NelderMead(), iterations=1000000, show_every=50000)
 
 predplot(model_ss, dval, h=1)
 predplot!(model_ss, dval, h=5, ploty=false)
@@ -63,7 +64,7 @@ We can also investigate how well the models predict for various prediction horiz
 using Statistics
 hs = [1:40; 45:5:80]
 perrs_pem = map(hs) do h
-    yh = predict(model_pem, d; h)
+    yh = predict(model_pem, d, x0_pem; h)
     ControlSystemIdentification.rms(d.y - yh) |> mean
 end
 perrs_ss = map(hs) do h
@@ -78,5 +79,12 @@ plot!(hs, perrs_ss, lab="Prediction errors Subspace")
 hline!([serr_pem], lab="Simulation error PEM", l=:dash, c=1, ylims=(0, Inf))
 hline!([serr_ss], lab="Simulation error Subspace", l=:dash, c=2, legend=:bottomright, ylims=(0, Inf))
 ```
-We see that the prediction-error model does slightly better at prediction few-step predictions (indeed, this is what PEM optimizes), while the model identified using `subspaceid` does better in open loop.
+We see that the prediction-error model does well at prediction few-step predictions (indeed, this is what PEM optimizes), while the model identified using `subspaceid` does better in open loop.
 The simulation performance can be improved upon further by asking for `focus=:prediction` when the models are estimated.
+
+```
+function fun(m)
+    yh = predict(m, d; h=1)
+    ControlSystemIdentification.rms(d.y - yh) |> mean
+end
+```
