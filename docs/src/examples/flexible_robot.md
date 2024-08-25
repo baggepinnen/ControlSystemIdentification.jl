@@ -41,7 +41,7 @@ dval = d[end÷2:end]
 # A model of order 4 is reasonable, a double-mass model. We estimate two models, one using subspace-based identification and one using the prediction-error method
 using Optim
 model_ss = subspaceid(dtrain, 4, focus=:prediction)
-model_pem, x0_pem = newpem(dtrain, 4; focus=:prediction, optimizer=NelderMead(), iterations=500000, show_every=50000)
+model_pem, x0_pem = newpem(dtrain, 4; focus=:prediction, optimizer=NelderMead(), iterations=100000, show_every=50000)
 
 predplot(model_ss, dval, h=1)
 predplot!(model_ss, dval, h=5, ploty=false)
