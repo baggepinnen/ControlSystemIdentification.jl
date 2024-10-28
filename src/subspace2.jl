@@ -233,6 +233,7 @@ function subspaceid(
     t0 = max(s1,s2)+1
     s = s1*p + s2*m
     N = t - r + 1 - t0
+    verbose && @info "Estimating with r = $r, s1 = $s1, s2 = $s2, stability constraint = $stable, zeroD = $zeroD, focus = $focus, scaleU = $scaleU"
 
     @views @inbounds function hankel(u::AbstractArray, t0, r)
         d = size(u, 2)
