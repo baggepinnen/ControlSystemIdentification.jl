@@ -110,7 +110,7 @@ end
 
 function arx(ds::AbstractVector{<:AbstractIdData}, na, nb; inputdelay = ones(Int, size(nb)), λ = 0, estimator = \)
     allequal(sampletime(d) for d in ds) || throw(ArgumentError("All data sets must have the same sample time"))
-    yA = getARXregressor.(ds, na, nb; inputdelay)
+    yA = [getARXregressor(d, na, nb; inputdelay) for d in ds]
     y_train = reduce(vcat, first.(yA))
     A = reduce(vcat, last.(yA))
     w = ls(A, y_train, λ, estimator) |> vec

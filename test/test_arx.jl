@@ -160,3 +160,20 @@ Gest = arx(d, na, nb, inputdelay = inputdelay)
 
 Gests = arx(d, na, nb, inputdelay = inputdelay, stochastic = true)
 @test compareTFs(G1, Gests)
+
+## Multiple data sets
+Gest = arx([d, d], na, nb; inputdelay)
+
+# From https://github.com/baggepinnen/ControlSystemIdentification.jl/issues/161
+N  = 20000    # Number of time steps
+t  = 1:N
+Δt = 1        # Sample time
+u  = randn(2, N) # A random control input
+G  = ssrand(1, size(u, 1), size(u, 1); Ts=Δt)
+y  = lsim(G, u, t)[1][:]
+d  = iddata(y, u, Δt)
+na = 2
+nb = [3, 3]
+
+Gest = arx([d, d], na, nb, inputdelay=[0,0])  
+@test freqresptest(G, Gest, 0.0001)
