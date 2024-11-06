@@ -1,4 +1,4 @@
-ENV["GKSwstype"] = 322 # workaround for gr segfault on GH actions
+ENV["GKSwstype"] = 100 # workaround for gr segfault on GH actions
 using Documenter, ControlSystemIdentification, ControlSystemsBase, DelimitedFiles
 # ENV["JULIA_DEBUG"]=Documenter # Enable this for debugging
 
@@ -56,3 +56,5 @@ makedocs(
 deploydocs(
       repo = "github.com/baggepinnen/ControlSystemIdentification.jl.git",
 )
+
+cd(@__DIR__)

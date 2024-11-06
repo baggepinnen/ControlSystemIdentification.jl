@@ -16,6 +16,7 @@ There exist several methods for identification of statespace models, [`subspacei
 In this example we will estimate a statespace model using the [`subspaceid`](@ref) method. This function returns an object of type [`N4SIDStateSpace`](@ref) where the model is accessed as `sys.sys`.
 ```@example ss
 using ControlSystemIdentification, ControlSystemsBase, Plots
+using DisplayAs # hide
 gr(fmt=:png) # hide
 Ts = 0.1
 G  = c2d(DemoSystems.resonant(), Ts)
@@ -91,6 +92,7 @@ f2 = bodeplot([G, meanmodel], lab=["True" "" "Combined estimate" ""], l=2)
 bodeplot!(models, lab="Individual estimates", c=:black, alpha=0.5, legend=:bottomleft)
 
 plot(f1, f2)
+DisplayAs.PNG(current()) # hide
 ```
 
 The procedure shown above is equivalent to calling [`era`](@ref) directly with a vector of data sets, in which case the averaging of the impulse responses is done internally.
