@@ -21,6 +21,7 @@ plot!(impulse(sys,50), lab="True system", l=:dash)
 MIMO example
 ```@example
 using ControlSystemIdentification, ControlSystemsBase, Plots
+using DisplayAs # hide
 T = 200
 h = 1
 t = 0:h:T-h
@@ -33,6 +34,7 @@ d  = iddata(res)
 H = okid(d, sys.nx)
 plot(impulse(sys,50), lab="True system", layout=sys.ny+sys.nu, sp=(1:4)')
 plot!(reshape(H, sys.nu+sys.ny, :)', lab="OKID Estiamte", seriestype=:steppre, l=:dash)
+DisplayAs.PNG(current()) # hide
 ```
 
 See the [example notebooks](https://github.com/JuliaControl/ControlExamples.jl) for more details.

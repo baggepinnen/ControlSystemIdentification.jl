@@ -1,6 +1,7 @@
 ```@setup HW
 using ControlSystemIdentification
 using LeastSquaresOptim
+using DisplayAs
 ```
 
 
@@ -111,6 +112,7 @@ plot(
     plot(U', title="Inputs", lab=["u1" "u2"]),
     plot(Y', title="Outputs", lab=["y1" "y2"]),
 )
+DisplayAs.PNG(current()) # hide
 ```
 
 We package the experimental data into an [`iddata`](@ref) object as usual. Finally, we specify the covariance matrices for the dynamics noise and measurement noise as well as a guess for the initial condition. Since we can measure the level in the first two tanks, we use the true initial condition for those tanks, but we pretend that we are quite off when guessing the initial condition for the last two tanks. 
@@ -136,11 +138,13 @@ simplot(model, d, layout=2)
 x_guess = LowLevelParticleFilters.rollout(discrete_dynamics, x0_guess, u, p_guess)[1:end-1]
 y_guess = measurement.(x_guess, u, 0, 0)
 plot!(reduce(hcat, y_guess)', lab="Initial guess")
+DisplayAs.PNG(current()) # hide
 ```
 
 We can also perform a residual analysis to see if the model is able to capture the dynamics of the system
 ```@example HW
 residualplot(model, d)
+DisplayAs.PNG(current()) # hide
 ```
 
 since we are using simulated data here, the residuals are white and there's nothing to worry about. In practice, one should always inspect the residuals to see if there are any systematic errors in the model.
@@ -268,6 +272,7 @@ The example below identifies a model of a resonant system where the sign of the 
 using ControlSystemIdentification, ControlSystemsBase
 using ControlSystemsBase.DemoSystems: resonant
 using Random, Plots
+using DisplayAs # hide
 
 # Generate some data from the system
 Random.seed!(1)
@@ -307,6 +312,7 @@ output_nonlinearity(yh, nothing) # We need to manually apply the output nonlinea
 plot(d.t, [abs.(y); u]', lab=["True nonlinear output" "Input"], seriestype = [:line :steps], layout=(2,1), xlabel="Time")
 scatter!(d.t, ynn', lab="Measured nonlinear output", sp=1)
 plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
+DisplayAs.PNG(current()) # hide
 ```
 
 

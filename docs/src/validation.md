@@ -7,6 +7,7 @@ Generate some test data:
 ```@example validation
 using ControlSystemIdentification, ControlSystemsBase, Random
 using ControlSystemIdentification: newpem
+using DisplayAs # hide
 Random.seed!(1)
 T          = 200
 nx         = 2
@@ -50,6 +51,7 @@ bodeplot!((getindex.(res,1)),                     ω, link = :none, balance=fals
 bodeplot!(innovation_form.(getindex.(res,1)),     ω, link = :none, balance=false, plotphase=false, subplot=4, linewidth=2*[4 3 2 1])
 bodeplot!(sys,                                    ω, link = :none, balance=false, plotphase=false, subplot=3, lab="True", l=(:black, :dash), legend = :bottomleft, title="System model")
 bodeplot!(innovation_form(ss(sys),syse=ss(sysn)), ω, link = :none, balance=false, plotphase=false, subplot=4, lab="True", l=(:black, :dash), ylims=(0.1, 100), legend = :bottomleft, title="Noise model")
+DisplayAs.PNG(current()) # hide
 ```
 
 In the figure, simulation output is compared to the true model on the top left and prediction on top right. The system models and noise models are visualized in the bottom plots. All models capture the system dynamics reasonably well, but struggle slightly with capturing the gain of the noise dynamics.

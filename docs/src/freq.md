@@ -6,6 +6,7 @@ Frequency-domain estimation refers to estimation of linear systems using frequen
 Non-parametric estimation refers to the estimation of a model without a fixed number of parameters. Instead, the number of estimated parameters typically grows with the size of the data. This form of estimation can be useful to gain an initial understanding of the system, before selecting model orders etc. for a more standard parametric model. We provide non-parametric estimation of transfer functions through spectral estimation. To illustrate, we once again simulate some data:
 ```@example npfreq
 using ControlSystemIdentification, ControlSystemsBase, Plots
+using DisplayAs # hide
 gr(fmt=:png) # hide
 T          = 100000
 h          = 1
@@ -34,6 +35,7 @@ bodeplot([sys,sysn], exp10.(range(-3, stop=log10(pi), length=200)), layout=(1,3)
 coherenceplot!(dn, subplot=3)
 plot!(G, subplot=1, lab="G Est", alpha=0.3, title="Process model")
 plot!(√N, subplot=2, lab="N Est", alpha=0.3, title="Noise model")
+DisplayAs.PNG(current()) # hide
 ```
 
 The left figure displays the Bode magnitude of the true system, together with the estimate (noisy), and the middle figure illustrates the estimated noise model. The right figure displays the coherence function ([`coherenceplot`](@ref)), which is close to 1 everywhere except for at the resonance peak of the noise `log10(sqrt(0.3)) = -0.26`.
