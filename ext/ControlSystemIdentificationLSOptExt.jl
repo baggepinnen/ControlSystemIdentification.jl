@@ -9,7 +9,7 @@ using LeastSquaresOptim
 using StaticArrays
 using LinearAlgebra
 using ForwardDiff
-using LowLevelParticleFilters.Distributions: MvNormal
+using LowLevelParticleFilters: SimpleMvNormal
 
 
 """
@@ -116,7 +116,7 @@ function _inner_pem(
     function get_ukf(px0::Vector{T}) where {T}
         pᵢ = px0[1:length(p0)]
         x0i = optimize_x0 ? px0[x0inds] : x0
-        UnscentedKalmanFilter(discrete_dynamics, measurement, R1, R2, MvNormal(T.(x0i), R1mut); ny, nu, p=pᵢ)
+        UnscentedKalmanFilter(discrete_dynamics, measurement, R1, R2, SimpleMvNormal(T.(x0i), R1mut); ny, nu, p=pᵢ)
     end
 
     function residuals!(ϵ, px0)
