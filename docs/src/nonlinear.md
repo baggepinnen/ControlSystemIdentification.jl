@@ -73,7 +73,7 @@ end
 measurement(x,u,p,t) = SA[x[1], x[2]]
 
 Ts = 1.0
-discrete_dynamics = SeeToDee.Rk4(quadtank, Ts, supersample=2)
+discrete_dynamics = SeeToDee.ForwardEuler(quadtank, Ts) # Use Heun, Rk3 or Rk4 if dynamics is more complex or sample rate is lower, ForwardEuler is fastest and higher-order methods do not provide any noticeable improvement in this particular case
 ```
 The output from this system is the water level in the first two tanks, i.e., ``y = [x_1, x_2]``.
 
@@ -209,7 +209,7 @@ outputs = [collect(mtkmodel.h[1:2]);]
 function estimate_model_mtk(mtkmodel, inputs, outputs) # A wrapper function to avoid using global variables
     (f_oop, f_ip), statevars, p, io_sys = ModelingToolkit.generate_control_function(mtkmodel, inputs; outputs)
     continuous_dynamics = f_oop
-    inner_discrete_dynamics = SeeToDee.Rk4(continuous_dynamics, Ts, supersample=2)
+    inner_discrete_dynamics = SeeToDee.Rk4(continuous_dynamics, Ts)
 
     tunable_p = [mtkmodel.k1, mtkmodel.k2, mtkmodel.A, mtkmodel.γ] # Provided in the same order as p_guess
     tunable_indices = [findfirst(isequal(pi), p) for pi in tunable_p] # Figure out what indices of the parameter array correspond to our tunable parameters
