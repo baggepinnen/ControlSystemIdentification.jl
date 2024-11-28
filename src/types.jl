@@ -163,6 +163,7 @@ iddata(res::ControlSystemsBase.SimResult) = iddata(res.y, res.u, res.t[2]-res.t[
 
 output(d::AbstractIdData)                        = d.y
 input(d::AbstractIdData)                         = d.u
+input(d::OutputData)                             = fill(eltype(d.y)[], length(d)) # Return empty input array
 LowLevelParticleFilters.state(d::AbstractIdData) = d.x
 output(d::AbstractArray)                         = d
 input(d::AbstractArray)                          = d

@@ -7,6 +7,7 @@ using ControlSystemIdentification: Sec
     @test d isa ControlSystemIdentification.OutputData
     @test length(d) == T
     @test output(d) == y
+    @test length(input(d)) == T
     @test !hasinput(d)
     @test ControlSystemIdentification.time2(y) == y
     @test sampletime(d) == 1
