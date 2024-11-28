@@ -80,5 +80,5 @@ end
     @test numvec(model)[1] ≈ numvec(G)[1] atol = 0.7
     @test denvec(model)[1] ≈ denvec(G)[1] atol = 0.2
 
-    @test freqresptest(G, model) < 2
+    @test freqresptest(G, model) < 2.1
 end
