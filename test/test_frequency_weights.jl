@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystemsBase, Statistics, Random
+using ControlSystemIdentification, ControlSystemsBase, Statistics, Random, Test
 Random.seed!(0)
 wtest = exp10.(LinRange(-3, log10(pi), 30))
 freqresptest(G, model) = quantile(
@@ -37,12 +37,12 @@ d = iddata(y1 + y2, e, h)
 
 # P = mt_pgram(vec(d.y), fs=1/h)
 
-H1 = Bandstop(0.9 * f1, 1.1 * f1, fs = d.fs)
-H2 = Bandstop(0.9 * f2, 1.1 * f2, fs = d.fs)
+H1 = Bandstop(0.9 * f1, 1.1 * f1)
+H2 = Bandstop(0.9 * f2, 1.1 * f2)
 
 
-Gf1 = arx(d, 2, 2, estimator = weighted_estimator(H1))
-Gf2 = arx(d, 2, 2, estimator = weighted_estimator(H2))
+Gf1 = arx(d, 2, 2, estimator = weighted_estimator(H1, fs=d.fs))
+Gf2 = arx(d, 2, 2, estimator = weighted_estimator(H2, fs=d.fs))
 
 
 @test norm(poles(G1) - poles(Gf1)) / norm(poles(G1)) < 0.05
@@ -69,8 +69,8 @@ d = iddata(y1 + y2, e, h)
 # d.y .+= 0.1 .* randn.()
 
 
-H1 = Bandstop(0.5 * f1, 1.2 * f1, fs = 1 / h)
-H2 = Bandstop(0.9 * f2, 1.5 * f2, fs = 1 / h)
+H1 = Bandstop(0.5 * f1, 1.2 * f1)
+H2 = Bandstop(0.9 * f2, 1.5 * f2)
 
 
 Gf1 = n4sid(d, 2, Wf = H1)
