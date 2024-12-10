@@ -79,9 +79,9 @@ function n4sid(
     if Wf === nothing
         s = svd(Zi)
     else
-        W = frequency_weight(Wf, size(Zi, 1))
+        W = frequency_weight(Wf, size(Zi, 1), fs=1/sampletime(data))
         s = svd!(W \ Zi)
-        estimator = weighted_estimator(Wf)
+        estimator = weighted_estimator(Wf, fs=1/sampletime(data))
     end
     if r === :auto
         r = sum(s.S .> sqrt(s.S[1] * s.S[end]))

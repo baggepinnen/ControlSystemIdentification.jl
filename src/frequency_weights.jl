@@ -1,13 +1,13 @@
-function get_frequencyweight_tf(responsetype::FilterType)
+function get_frequencyweight_tf(responsetype::FilterType; fs)
     designmethod = Butterworth(2)
-    digitalfilter(responsetype, designmethod)
+    digitalfilter(responsetype, designmethod; fs)
 end
 
 get_frequencyweight_tf(G::FilterCoefficients) = G
 
-function frequency_weight(system, N)
+function frequency_weight(system, N; fs=2)
     ω = range(0, stop = pi, length = N)
-    G = get_frequencyweight_tf(system)
+    G = get_frequencyweight_tf(system; fs)
     Φ = DSP.freqresp(G, ω)
     acf = irfft(abs2.(Φ), 2length(Φ) - 1)[1:end÷2+1]
     n = length(acf)
@@ -32,7 +32,7 @@ function frequency_weight(system, N)
     Symmetric(W)
 end
 
-weighted_estimator(H::FilterType) = (A, y) -> wls(A, y, frequency_weight(H, size(y, 1)))
+weighted_estimator(H::FilterType; fs=2) = (A, y) -> wls(A, y, frequency_weight(H, size(y, 1); fs))
 
 """
     prefilter(d::AbstractIdData, responsetype::FilterType)
