@@ -1,11 +1,11 @@
 # Fitting parameters in a ModelingToolkit model
-The following example demonstrates how to fit the parameters in a ModelingToolkit model using the function [`nonlinear_pem`](@ref). The nonlinear prediction-error method (PEM) uses a state estimator (Unscented Kalman Filter) underneath the hood to estimate the state of the system given the available measurements. This offers a very robust way of fitting parameters of a dynamical system, even when the model is imperfect and we cannot measure the entire state vector. This example is a continuation of the quadruple-tank example from [Example: Quad tank](@ref).
+The following example demonstrates how to fit the parameters in a ModelingToolkit model using the function [`ControlSystemIdentification.nonlinear_pem`](@ref). The nonlinear prediction-error method (PEM) uses a state estimator (Unscented Kalman Filter) underneath the hood to estimate the state of the system given the available measurements. This offers a very robust way of fitting parameters of a dynamical system, even when the model is imperfect and we cannot measure the entire state vector. This example is a continuation of the quadruple-tank example from [Example: Quad tank](@ref).
 
 The steps taken in this example are:
 1. Define the ModelingToolkit model.
 2. Obtain functions for the dynamics and the output of the system.
 3. Generate some data to use for the estimation.
-4. Specify properties of the prediction-error method and estimate the parameters using [`nonlinear_pem`](@ref).
+4. Specify properties of the prediction-error method and estimate the parameters using [`ControlSystemIdentification.nonlinear_pem`](@ref).
 
 ## Define the model
 
@@ -126,7 +126,7 @@ plot(
 ![id data](https://baggepinnen.github.io/ControlSystemIdentification.jl/stable/nonlinear/31701faf.png)
 
 ## Perform estimation
-We package the input and output data arrays `Y` and `U` into an [`iddata`](@ref) object and define some initial guesses for the parameters and the initial state. We also define the covariance matrices for the process and measurement noise. These matrices allow us to specify how much we "trust" the model and how much we trust the measurements. We finally call [`nonlinear_pem`](@ref) to estimate the parameters.
+We package the input and output data arrays `Y` and `U` into an [`iddata`](@ref) object and define some initial guesses for the parameters and the initial state. We also define the covariance matrices for the process and measurement noise. These matrices allow us to specify how much we "trust" the model and how much we trust the measurements. We finally call [`ControlSystemIdentification.nonlinear_pem`](@ref) to estimate the parameters.
 ```julia
 d = iddata(Y, U, Ts)
 x0_guess = [2.5, 1.5, 1, 2]     # Guess for the initial condition (initial state)
