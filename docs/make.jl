@@ -46,6 +46,7 @@ makedocs(
                   "Hair dryer" => "examples/hair_dryer.md",
                   "VARX model" => "examples/varx.md",
                   "Nonlinear belt drive" => "examples/hammerstein_wiener.md",
+                  "Fit parameters of ModelingToolkit model" => "examples/modelingtoolkit.md",
             ],
             "API" => "api.md",
       ],

@@ -30,7 +30,7 @@ or in the form of transfer functions
 Y(z) = \dfrac{B(z)}{A(z)}U(z)
 ```
 
-We also have capabilities for estimation of nonlinear Hammerstein-Wiener models and linear/nonlinear gray-box identification of models in continuous or discrete time, i.e., models on the form
+We also have capabilities for estimation of nonlinear Hammerstein-Wiener models and linear/nonlinear gray-box identification of models in continuous or discrete time, i.e., parameter fitting of models on the form
 ```math
 \begin{aligned}
 x^+ &= f_d(x, u, p, t) + w \quad \text{Discrete time}\\
