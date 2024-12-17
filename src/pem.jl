@@ -648,6 +648,14 @@ function inner_constructor(p, constructor, Ts)
     return sys, p.K, p.x0
 end
 
+function inner_regularizer(regularizer, p, P, simres)
+    if hasmethod(regularizer, typeof((p, P, simres)))
+        regularizer(p, P, simres)
+    else
+        regularizer(p, P)
+    end
+end
+
 """
     structured_pem(
         d,
@@ -659,7 +667,7 @@ end
         constructor,
         h = 1,
         metric::F = abs2,
-        regularizer::RE = (p, P) -> 0,
+        regularizer::RE = (p, P, simresult) -> 0,
         optimizer = BFGS(
             # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
             linesearch = LineSearches.BackTracking(),
@@ -734,16 +742,18 @@ function structured_pem(
         sysi, Ki, x0 = inner_constructor(p, constructor, d.Ts)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
         Pyh = ControlSystemsBase.observer_predictor(syso; h)
-        yh, _ = lsim(Pyh, pd; x0=Vector(x0))
+        simres = lsim(Pyh, pd; x0=Vector(x0))
+        yh = simres.y 
         yh .= metric.(yh .- d.y)
         c1 = sum(yh)
-        c1 + regularizer(p, syso)
+        c1 + inner_regularizer(regularizer, p, syso, simres)
     end
     function simloss(p)
         syssim, _, x0 = inner_constructor(p, constructor, d.Ts)
-        y, _ = lsim(syssim, d; x0)
+        simres = lsim(syssim, d; x0)
+        y = simres.y 
         y .= metric.(y .- d.y)
-        sum(y) + regularizer(p, syssim)
+        sum(y) + inner_regularizer(regularizer, p, syssim, simres)
     end
     res = Optim.optimize(
         pred ? predloss : simloss,
