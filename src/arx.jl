@@ -73,7 +73,8 @@ end
 
 Fit a transfer Function to data using an ARX model and equation error minimization.
 
-- `nb` and `na` are the number of coefficients of the numerator and denominator polynomials.
+The ARX abbreviation is for "AutoRegressive model with eXogenous input".
+- `nb` and `na` are the number of coefficients of the numerator and denominator polynomials, respectively.
 Input delay can be added via `inputdelay = d`, which corresponds to an additional delay of `z^-d`.
 An `inputdelay = 0` results in a direct term.
 The highest order of the B polynomial is given by `nb + inputdelay - 1`.  `λ > 0` can be provided for L₂ regularization.
@@ -224,6 +225,8 @@ end
 
 Estimate an AR transfer function `G = 1/A`, the AR process is defined as `A(z⁻¹)y(t) = e(t)`
 
+The AR abbreviation is for "AutoRegressive model".
+
 # Arguments:
 - `d`: IdData, see [`iddata`](@ref)
 - `na`: order of the model
@@ -297,7 +300,10 @@ end
 """
     G, H, e = arxar(d::InputOutputData, na::Int, nb::Union{Int, Vector{Int}}, nd::Int)
 
-Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalized least-squares method. For more information see Söderström - Convergence properties of the generalized least squares identification method, 1974. 
+Estimate the ARXAR model `Ay = Bu + v`, where `v = He` and `H = 1/D`, using generalized least-squares method. 
+
+The ARXAR abbreviation stands for "bivariate parametric autoregressive model with exogenous input".
+For more information see Söderström - Convergence properties of the generalized least squares identification method, 1974. 
 
 # Arguments:
 - `d`: iddata
@@ -576,6 +582,8 @@ end
 
 """
 armax is an alias for [`plr`](@ref)
+
+The ARMAX abbreviation means "AutoRegressive Moving-Average model with eXogenous input.".
 """
 const armax = plr
 
@@ -832,6 +840,8 @@ end
 
 Fit arma models using Singular Spectrum Analysis (SSA).
 A low-rank factorization (svd or robust svd) is performed on the data in order to decompose the signal and the noise. The noise is then used as input to fit an arma model.
+
+See also [`arma`](@ref).
 
 # Arguments:
 - `d`:  iddata
