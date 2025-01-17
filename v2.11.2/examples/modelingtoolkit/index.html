@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Fit parameters of ModelingToolkit model · ControlSystemIdentification Documentation</title><meta name="title" content="Fit parameters of ModelingToolkit model · ControlSystemIdentification Documentation"/><meta property="og:title" content="Fit parameters of ModelingToolkit model · ControlSystemIdentification Documentation"/><meta property="twitter:title" content="Fit parameters of ModelingToolkit model · ControlSystemIdentification Documentation"/><meta name="description" content="Documentation for ControlSystemIdentification Documentation."/><meta property="og:description" content="Documentation for ControlSystemIdentification Documentation."/><meta property="twitter:description" content="Documentation for ControlSystemIdentification Documentation."/><script data-outdated-warner src="../../assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="../.."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="../../assets/documenter.js"></script><script src="../../search_index.js"></script><script src="../../siteinfo.js"></script><script src="../../../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="../../assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="../../assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href="../../">ControlSystemIdentification Documentation</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li><a class="tocitem" href="../../">Home</a></li><li><a class="tocitem" href="../../iddata/">Identification data</a></li><li><a class="tocitem" href="../../ss/">State-space estimation</a></li><li><a class="tocitem" href="../../tf/">Transfer-function estimation</a></li><li><a class="tocitem" href="../../impulse/">Impulse-response estimation</a></li><li><a class="tocitem" href="../../freq/">Frequency-domain estimation</a></li><li><a class="tocitem" href="../../validation/">Validation</a></li><li><a class="tocitem" href="../../nonlinear/">Nonlinear identification</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="../temp/">Temperature control</a></li><li><a class="tocitem" href="../closed_loop_id/">Identification in closed loop</a></li><li><a class="tocitem" href="../unstable_systems/">Identification of unstable systems</a></li><li><a class="tocitem" href="../delayest/">Delay estimation</a></li><li><a class="tocitem" href="../ballandbeam/">Ball and beam</a></li><li><a class="tocitem" href="../flexible_robot/">Flexible robot arm</a></li><li><a class="tocitem" href="../glass_furnace/">Glass furnace</a></li><li><a class="tocitem" href="../evaporator/">Evaporator</a></li><li><a class="tocitem" href="../hair_dryer/">Hair dryer</a></li><li><a class="tocitem" href="../varx/">VARX model</a></li><li><a class="tocitem" href="../hammerstein_wiener/">Nonlinear belt drive</a></li><li class="is-active"><a class="tocitem" href>Fit parameters of ModelingToolkit model</a><ul class="internal"><li><a class="tocitem" href="#Define-the-model"><span>Define the model</span></a></li><li><a class="tocitem" href="#Obtain-dynamics-functions"><span>Obtain dynamics functions</span></a></li><li><a class="tocitem" href="#Simulate-measurement-data"><span>Simulate measurement data</span></a></li><li><a class="tocitem" href="#Perform-estimation"><span>Perform estimation</span></a></li></ul></li></ul></li><li><a class="tocitem" href="../../api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li><a class="is-disabled">Examples</a></li><li class="is-active"><a href>Fit parameters of ModelingToolkit model</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Fit parameters of ModelingToolkit model</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/baggepinnen/ControlSystemIdentification.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/docs/src/examples/modelingtoolkit.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><h1 id="Fitting-parameters-in-a-ModelingToolkit-model"><a class="docs-heading-anchor" href="#Fitting-parameters-in-a-ModelingToolkit-model">Fitting parameters in a ModelingToolkit model</a><a id="Fitting-parameters-in-a-ModelingToolkit-model-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting-parameters-in-a-ModelingToolkit-model" title="Permalink"></a></h1><p>The following example demonstrates how to fit the parameters in a ModelingToolkit model using the function <a href="../../nonlinear/#ControlSystemIdentification.nonlinear_pem"><code>ControlSystemIdentification.nonlinear_pem</code></a>. The nonlinear prediction-error method (PEM) uses a state estimator (Unscented Kalman Filter) underneath the hood to estimate the state of the system given the available measurements. This offers a very robust way of fitting parameters of a dynamical system, even when the model is imperfect and we cannot measure the entire state vector. This example is a continuation of the quadruple-tank example from <a href="../../nonlinear/#Example:-Quad-tank">Example: Quad tank</a>.</p><p>The steps taken in this example are:</p><ol><li>Define the ModelingToolkit model.</li><li>Obtain functions for the dynamics and the output of the system.</li><li>Generate some data to use for the estimation.</li><li>Specify properties of the prediction-error method and estimate the parameters using <a href="../../nonlinear/#ControlSystemIdentification.nonlinear_pem"><code>ControlSystemIdentification.nonlinear_pem</code></a>.</li></ol><h2 id="Define-the-model"><a class="docs-heading-anchor" href="#Define-the-model">Define the model</a><a id="Define-the-model-1"></a><a class="docs-heading-anchor-permalink" href="#Define-the-model" title="Permalink"></a></h2><p>When we define the MTK model, we give defaults for all parameters:</p><pre><code class="language-julia hljs">using ControlSystemIdentification, ModelingToolkit, LeastSquaresOptim, SeeToDee, LowLevelParticleFilters, LinearAlgebra, Random, Plots # Load the
+using ModelingToolkit: D_nounits as D
+t = ModelingToolkit.t_nounits
+ssqrt(x) = √(max(x, zero(x)) + 1e-3) # For numerical robustness at x = 0
+@register_symbolic ssqrt(x)
+
+@mtkmodel QuadtankModel begin
+    @parameters begin
+        k1 = 1.4
+        k2 = 1.4
+        g = 9.81
+        A = 5.1
+        a = 0.03
+        γ = 0.25
+    end
+    begin
+        A1 = A2 = A3 = A4 = A
+        a1 = a3 = a2 = a4 = a
+        γ1 = γ2 = γ
+    end
+    @variables begin
+        h(t)[1:4] = 0
+        u(t)[1:2] = 0
+    end
+    @equations begin
+        D(h[1]) ~ -a1/A1 * ssqrt(2g*h[1]) + a3/A1*ssqrt(2g*h[3]) +     γ1*k1/A1 * u[1]
+        D(h[2]) ~ -a2/A2 * ssqrt(2g*h[2]) + a4/A2*ssqrt(2g*h[4]) +     γ2*k2/A2 * u[2]
+        D(h[3]) ~ -a3/A3*ssqrt(2g*h[3])                          + (1-γ2)*k2/A3 * u[2]
+        D(h[4]) ~ -a4/A4*ssqrt(2g*h[4])                          + (1-γ1)*k1/A4 * u[1]
+    end
+end
+
+@named mtkmodel = QuadtankModel()</code></pre><p class="math-container">\[\begin{align}
+\frac{\mathrm{d} h\left( t \right)_{1}}{\mathrm{d}t} &amp;= \frac{a ssqrt\left( 2 g h\left( t \right)_{3} \right)}{A} + \frac{\mathtt{k1} u\left( t \right)_{1} \gamma}{A} + \frac{ - a ssqrt\left( 2 g h\left( t \right)_{1} \right)}{A} \\
+\frac{\mathrm{d} h\left( t \right)_{2}}{\mathrm{d}t} &amp;= \frac{\mathtt{k2} u\left( t \right)_{2} \gamma}{A} + \frac{ - a ssqrt\left( 2 g h\left( t \right)_{2} \right)}{A} + \frac{a ssqrt\left( 2 g h\left( t \right)_{4} \right)}{A} \\
+\frac{\mathrm{d} h\left( t \right)_{3}}{\mathrm{d}t} &amp;= \frac{\mathtt{k2} u\left( t \right)_{2} \left( 1 - \gamma \right)}{A} + \frac{ - a ssqrt\left( 2 g h\left( t \right)_{3} \right)}{A} \\
+\frac{\mathrm{d} h\left( t \right)_{4}}{\mathrm{d}t} &amp;= \frac{\mathtt{k1} u\left( t \right)_{1} \left( 1 - \gamma \right)}{A} + \frac{ - a ssqrt\left( 2 g h\left( t \right)_{4} \right)}{A}
+\end{align}\]</p><h2 id="Obtain-dynamics-functions"><a class="docs-heading-anchor" href="#Obtain-dynamics-functions">Obtain dynamics functions</a><a id="Obtain-dynamics-functions-1"></a><a class="docs-heading-anchor-permalink" href="#Obtain-dynamics-functions" title="Permalink"></a></h2><p>We then specify the inputs and outputs of this model, since they are arrays in this example, we call <code>collect</code> to turn them into scalars. To obtain a dynamics function on the form</p><p class="math-container">\[\dot x = f(x, u, p, t)\]</p><p>from MTK, we call <code>ModelingToolkit.generate_control_function</code>. This example assumes that the system model has an external input, <span>$u$</span>. If your example does not have this, you may leave this argument empty. This returns two versions of this function, where the second one operates in place (modifying its first argument). This function also returns the state variables chosen, the parameters of the model as well as a simplified system with inputs and outputs. The function returned from <code>ModelingToolkit.generate_control_function</code> expects all the parameters of the system to be provided, but we only want to optimize a few of them. We thus wrap this function in <code>discrete_dynamics_mtk</code> in order to insert the optimized parameters into a parameter array that contains also the non-optimized parameters. We make use of the function <code>similar</code> to ensure that the final parameter array has the correct type (Dual numbers for AD will be used).</p><p>For good performance, we wrap all the glue code in a function <code>get_mtk_dynamics</code> so that we avoid the use of too many global variables.</p><pre><code class="language-julia hljs">mtkmodel = complete(mtkmodel)
+inputs = [collect(mtkmodel.u);]
+outputs = [collect(mtkmodel.h[1:2]);]
+tunable_p = [mtkmodel.k1, mtkmodel.k2, mtkmodel.A, mtkmodel.γ] # Provided in the same order as p_guess
+
+function get_mtk_dynamics(mtkmodel, inputs, outputs, tunable_p) # A wrapper function to avoid using global variables
+
+    (f_oop, f_ip), statevars, p, io_sys = ModelingToolkit.generate_control_function(mtkmodel, inputs; outputs, split=false)
+
+    continuous_dynamics = f_oop # This is ẋ = f(x, u, p, t)
+    inner_discrete_dynamics = SeeToDee.Rk4(continuous_dynamics, Ts::Float64) # x⁺ = f(x, u, p, t)
+    tunable_indices = [findfirst(isequal(pi), p) for pi in tunable_p] # Figure out what indices of the parameter array correspond to our tunable parameters
+    p0 = [ModelingToolkit.defaults(io_sys)[pi] for pi in p]
+    full_p = deepcopy(p0)
+    output_indices = [findfirst(isequal(yi), statevars) for yi in outputs] # Figure out what indices of the state array correspond to our outputs
+
+    function discrete_dynamics_wrapper(x, u, p, t)
+        opt_p = similar(p, length(full_p)) # Create an array of correct length and element type to host the full parameter vector
+        opt_p .= full_p # Write all the initial parameters into this new array
+        opt_p[tunable_indices] .= p # Overwrite the tunable parameters with the optimization variable
+        inner_discrete_dynamics(x, u, opt_p, t) # Call the discretized dynamics function from MTK
+    end
+
+    mtk_measurement(x,u,p,t) = x[output_indices]
+
+    discrete_dynamics_wrapper, mtk_measurement
+end
+
+Ts = 1.0    # Sample interval used for discretization
+discrete_dynamics, measurement = get_mtk_dynamics(mtkmodel, inputs, outputs, tunable_p)</code></pre><h2 id="Simulate-measurement-data"><a class="docs-heading-anchor" href="#Simulate-measurement-data">Simulate measurement data</a><a id="Simulate-measurement-data-1"></a><a class="docs-heading-anchor-permalink" href="#Simulate-measurement-data" title="Permalink"></a></h2><p>We generate some data to use for the estimation by simulating the system</p><pre><code class="language-julia hljs">ny = 2      # Dimension of measurements
+nu = 2      # Dimension of inputs
+p_true = [1.6, 1.6, 4.9, 0.2] # True parameters
+
+Random.seed!(1)
+# Generate input signal
+Tperiod = 200
+tvec = 0:Ts:1000
+u1 = vcat.(0.25 .* sign.(sin.(2pi/Tperiod .* (tvec ./ 40).^2)) .+ 0.25)
+u2 = vcat.(0.25 .* sign.(sin.(2pi/Tperiod .* (tvec ./ 40).^2 .+ pi/2)) .+ 0.25)
+u  = vcat.(u1,u2)
+u = [u; 0 .* u[1:100]]
+x0 = [2.5, 1.5, 3.2, 2.8] # Initial state
+x = LowLevelParticleFilters.rollout(discrete_dynamics, x0, u, p_true; Ts)[1:end-1] # Simulate
+y = measurement.(x, u, 0, 0) # Generate measured outputs
+y = [y .+ 0.5randn(ny) for y in y] # Add some measurement noise
+Y = reduce(hcat, y) # Go from vector of vectors to a matrix
+U = reduce(hcat, u) # Go from vector of vectors to a matrix
+plot(
+    plot(reduce(hcat, x)&#39;, title=&quot;States&quot;, lab=[&quot;h1&quot; &quot;h2&quot; &quot;h3&quot; &quot;h4&quot;]),
+    plot(U&#39;, title=&quot;Inputs&quot;, lab=[&quot;u1&quot; &quot;u2&quot;]),
+    plot(Y&#39;, title=&quot;Outputs&quot;, lab=[&quot;y1&quot; &quot;y2&quot;]),
+)</code></pre><p><img src="https://baggepinnen.github.io/ControlSystemIdentification.jl/stable/nonlinear/31701faf.png" alt="id data"/></p><h2 id="Perform-estimation"><a class="docs-heading-anchor" href="#Perform-estimation">Perform estimation</a><a id="Perform-estimation-1"></a><a class="docs-heading-anchor-permalink" href="#Perform-estimation" title="Permalink"></a></h2><p>We package the input and output data arrays <code>Y</code> and <code>U</code> into an <a href="../../iddata/#ControlSystemIdentification.iddata"><code>iddata</code></a> object and define some initial guesses for the parameters and the initial state. We also define the covariance matrices for the process and measurement noise. These matrices allow us to specify how much we &quot;trust&quot; the model and how much we trust the measurements. We finally call <a href="../../nonlinear/#ControlSystemIdentification.nonlinear_pem"><code>ControlSystemIdentification.nonlinear_pem</code></a> to estimate the parameters.</p><pre><code class="language-julia hljs">d = iddata(Y, U, Ts)
+x0_guess = [2.5, 1.5, 1, 2]     # Guess for the initial condition (initial state)
+p_guess  = [1.4, 1.4, 5.1, 0.25] # Initial guess for the parameters
+
+R1 = Diagonal([0.1, 0.1, 0.1, 0.1]) # This controls how much we trust the model (covariance of the process noise)
+R2 = 100*Diagonal(0.5^2 * ones(ny)) # This controls how much we trust the measurements (covariance of the measurement noise)
+
+model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p_guess, x0_guess, R1, R2, nu)</code></pre><pre><code class="nohighlight hljs">NonlinearPredictionErrorModel
+  p: [1.6130151977611773, 1.5995448472434575, 4.887899044534598, 0.20437506116084214]
+  x0: [2.5590156863624642, 1.674133802252665, 2.890730509103397, 2.114949939609547]
+  Ts: 1.0
+  ny = 2, nu = 2, nx = 4</code></pre><p>The estimated parameters are now available as <code>model.p</code> and they should be close to the true values <code>p_true = [1.6, 1.6, 4.9, 0.2]</code>.</p><p>We may visualize how well the model performs by simulating it and comparing the results to the measured data:</p><pre><code class="language-julia hljs">simplot(model, d, layout=2)</code></pre><p><img src="https://baggepinnen.github.io/ControlSystemIdentification.jl/stable/nonlinear/4a1309fc.png" alt="result"/></p><p>The fitting should be quite fast:</p><pre><code class="language-julia hljs">using BenchmarkTools
+@btime ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p_guess, x0_guess, R1, R2, nu)</code></pre><pre><code class="nohighlight hljs">101.731 ms (873689 allocations: 97.10 MiB)</code></pre><div class="admonition is-warning"><header class="admonition-header">Warning</header><div class="admonition-body"><p>ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v9.58, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.</p></div></div></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hammerstein_wiener/">« Nonlinear belt drive</a><a class="docs-footer-nextpage" href="../../api/">API »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Friday 17 January 2025 06:27">Friday 17 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>

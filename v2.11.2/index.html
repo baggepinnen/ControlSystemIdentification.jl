@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/><title>Home · ControlSystemIdentification Documentation</title><meta name="title" content="Home · ControlSystemIdentification Documentation"/><meta property="og:title" content="Home · ControlSystemIdentification Documentation"/><meta property="twitter:title" content="Home · ControlSystemIdentification Documentation"/><meta name="description" content="Documentation for ControlSystemIdentification Documentation."/><meta property="og:description" content="Documentation for ControlSystemIdentification Documentation."/><meta property="twitter:description" content="Documentation for ControlSystemIdentification Documentation."/><script data-outdated-warner src="assets/warner.js"></script><link href="https://cdnjs.cloudflare.com/ajax/libs/lato-font/3.0.0/css/lato-font.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/juliamono/0.050/juliamono.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/fontawesome.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/solid.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/brands.min.css" rel="stylesheet" type="text/css"/><link href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css" rel="stylesheet" type="text/css"/><script>documenterBaseURL="."</script><script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" data-main="assets/documenter.js"></script><script src="search_index.js"></script><script src="siteinfo.js"></script><script src="../versions.js"></script><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-mocha.css" data-theme-name="catppuccin-mocha"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-macchiato.css" data-theme-name="catppuccin-macchiato"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-frappe.css" data-theme-name="catppuccin-frappe"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/catppuccin-latte.css" data-theme-name="catppuccin-latte"/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-dark.css" data-theme-name="documenter-dark" data-theme-primary-dark/><link class="docs-theme-link" rel="stylesheet" type="text/css" href="assets/themes/documenter-light.css" data-theme-name="documenter-light" data-theme-primary/><script src="assets/themeswap.js"></script></head><body><div id="documenter"><nav class="docs-sidebar"><div class="docs-package-name"><span class="docs-autofit"><a href>ControlSystemIdentification Documentation</a></span></div><button class="docs-search-query input is-rounded is-small is-clickable my-2 mx-auto py-1 px-2" id="documenter-search-query">Search docs (Ctrl + /)</button><ul class="docs-menu"><li class="is-active"><a class="tocitem" href>Home</a><ul class="internal"><li><a class="tocitem" href="#Installation"><span>Installation</span></a></li><li><a class="tocitem" href="#Algorithm-overview"><span>Algorithm overview</span></a></li><li><a class="tocitem" href="#Other-resources"><span>Other resources</span></a></li></ul></li><li><a class="tocitem" href="iddata/">Identification data</a></li><li><a class="tocitem" href="ss/">State-space estimation</a></li><li><a class="tocitem" href="tf/">Transfer-function estimation</a></li><li><a class="tocitem" href="impulse/">Impulse-response estimation</a></li><li><a class="tocitem" href="freq/">Frequency-domain estimation</a></li><li><a class="tocitem" href="validation/">Validation</a></li><li><a class="tocitem" href="nonlinear/">Nonlinear identification</a></li><li><span class="tocitem">Examples</span><ul><li><a class="tocitem" href="examples/temp/">Temperature control</a></li><li><a class="tocitem" href="examples/closed_loop_id/">Identification in closed loop</a></li><li><a class="tocitem" href="examples/unstable_systems/">Identification of unstable systems</a></li><li><a class="tocitem" href="examples/delayest/">Delay estimation</a></li><li><a class="tocitem" href="examples/ballandbeam/">Ball and beam</a></li><li><a class="tocitem" href="examples/flexible_robot/">Flexible robot arm</a></li><li><a class="tocitem" href="examples/glass_furnace/">Glass furnace</a></li><li><a class="tocitem" href="examples/evaporator/">Evaporator</a></li><li><a class="tocitem" href="examples/hair_dryer/">Hair dryer</a></li><li><a class="tocitem" href="examples/varx/">VARX model</a></li><li><a class="tocitem" href="examples/hammerstein_wiener/">Nonlinear belt drive</a></li><li><a class="tocitem" href="examples/modelingtoolkit/">Fit parameters of ModelingToolkit model</a></li></ul></li><li><a class="tocitem" href="api/">API</a></li></ul><div class="docs-version-selector field has-addons"><div class="control"><span class="docs-label button is-static is-size-7">Version</span></div><div class="docs-selector control is-expanded"><div class="select is-fullwidth is-size-7"><select id="documenter-version-selector"></select></div></div></div></nav><div class="docs-main"><header class="docs-navbar"><a class="docs-sidebar-button docs-navbar-link fa-solid fa-bars is-hidden-desktop" id="documenter-sidebar-button" href="#"></a><nav class="breadcrumb"><ul class="is-hidden-mobile"><li class="is-active"><a href>Home</a></li></ul><ul class="is-hidden-tablet"><li class="is-active"><a href>Home</a></li></ul></nav><div class="docs-right"><a class="docs-navbar-link" href="https://github.com/baggepinnen/ControlSystemIdentification.jl" title="View the repository on GitHub"><span class="docs-icon fa-brands"></span><span class="docs-label is-hidden-touch">GitHub</span></a><a class="docs-navbar-link" href="https://github.com/baggepinnen/ControlSystemIdentification.jl/blob/master/docs/src/index.md" title="Edit source on GitHub"><span class="docs-icon fa-solid"></span></a><a class="docs-settings-button docs-navbar-link fa-solid fa-gear" id="documenter-settings-button" href="#" title="Settings"></a><a class="docs-article-toggle-button fa-solid fa-chevron-up" id="documenter-article-toggle-button" href="javascript:;" title="Collapse all docstrings"></a></div></header><article class="content" id="documenter-page"><p style="text-align:center">
+
+<img src="https://avatars.githubusercontent.com/u/10605979?s=400&u=7b2efdd404c4db3b3f067f04c305d40c025a8961&v=4" alt="JuliaControl logo">
+
+<br> 
+
+<a class="github-button" href="https://github.com/baggepinnen/ControlSystemIdentification.jl" data-color-scheme="no-preference: light; light: light; dark: dark;" data-icon="octicon-star" data-show-count="true" aria-label="Star baggepinnen/ControlSystemIdentification.jl on GitHub">Star</a>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+</p> <h1 id="ControlSystemIdentification"><a class="docs-heading-anchor" href="#ControlSystemIdentification">ControlSystemIdentification</a><a id="ControlSystemIdentification-1"></a><a class="docs-heading-anchor-permalink" href="#ControlSystemIdentification" title="Permalink"></a></h1><p><a href="https://github.com/baggepinnen/ControlSystemIdentification.jl/actions"><img src="https://github.com/baggepinnen/ControlSystemIdentification.jl/workflows/CI/badge.svg" alt="CI"/></a> <a href="https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl"><img src="https://codecov.io/gh/baggepinnen/ControlSystemIdentification.jl/branch/master/graph/badge.svg" alt="codecov"/></a></p><p>System identification for <a href="https://github.com/JuliaControl/ControlSystems.jl/">ControlSystems.jl</a>. </p><p>System identification is the process of estimating a dynamical model from data. This packages estimates primarily linear time-invariant (LTI) models, in the form of statespace systems</p><p class="math-container">\[\begin{aligned}
+x^+ &amp;= Ax + Bu + Ke\\
+y &amp;= Cx + Du + e
+\end{aligned}\]</p><p>or in the form of transfer functions</p><p class="math-container">\[Y(z) = \dfrac{B(z)}{A(z)}U(z)\]</p><p>We also have capabilities for estimation of nonlinear Hammerstein-Wiener models and linear/nonlinear gray-box identification of models in continuous or discrete time, i.e., parameter fitting of models on the form</p><p class="math-container">\[\begin{aligned}
+x^+ &amp;= f_d(x, u, p, t) + w \quad \text{Discrete time}\\
+\dot x &amp;= f_c(x, u, p, t) + w \quad \text{Continuous time}\\
+y &amp;= h(x, u, p, t) + e
+\end{aligned}\]</p><p>where <span>$p$</span> are the parameters of the nonlinear system.</p><p>This package is implemented in the free and open-source programming language <a href="https://julialang.org/">Julia</a>.</p><p>If you are new to this package, start your journey through the documentation by learning about <a href="iddata/#Identification-data">Identification data</a>. Examples are provided in the Examples section and in the form of jupyter notebooks <a href="https://github.com/JuliaControl/ControlExamples.jl">here</a>. An introductory video series using this package is available below</p><iframe width="560" height="315" src="https://www.youtube.com/embed/RnuHqkP4QTw?si=F2STrE4QG_6vpUtN" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe><p>See also the <a href="https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&amp;si=AiOZVhBVwYReDrAm">YouTube playlist</a> with the entire video series.</p><h2 id="Installation"><a class="docs-heading-anchor" href="#Installation">Installation</a><a id="Installation-1"></a><a class="docs-heading-anchor-permalink" href="#Installation" title="Permalink"></a></h2><p>Install <a href="https://julialang.org/">Julia</a> from the <a href="https://julialang.org/downloads/">download</a> page. Then, in the Julia REPL, type</p><pre><code class="language-julia hljs">using Pkg
+Pkg.add(&quot;ControlSystemIdentification&quot;)</code></pre><p><em>Optional:</em> To work with linear systems and plot Bode plots etc., also install the control toolbox <a href="https://github.com/JuliaControl/ControlSystems.jl">ControlSystems.jl</a> package which this package builds upon, as well as the plotting package</p><pre><code class="language-julia hljs">Pkg.add([&quot;ControlSystemIdentification&quot;, &quot;ControlSystemsBase&quot;, &quot;Plots&quot;])</code></pre><h2 id="Algorithm-overview"><a class="docs-heading-anchor" href="#Algorithm-overview">Algorithm overview</a><a id="Algorithm-overview-1"></a><a class="docs-heading-anchor-permalink" href="#Algorithm-overview" title="Permalink"></a></h2><p>The following table indicates which estimation algorithms are applicable in different scenarios. A green circle (🟢) indicates that a particular method is well suited for the situation, an orange diamond (🔶) indicates that a match is possible, but somehow not ideal, while a red square (🟥) indicates that a method in its standard form is ill suited for the situation. The table is not exhaustive, and is intended to give a rough overview of the applicability of different algorithms.</p><table>
+  <thead>
+    <tr class = "header headerLastRow">
+      <th style = "text-align: right;">Estimation method</th>
+      <th style = "text-align: right;">SIMO</th>
+      <th style = "text-align: right;">MISO</th>
+      <th style = "text-align: right;">Disturbance models</th>
+      <th style = "text-align: right;">Nonlinearities</th>
+      <th style = "text-align: right;">Custom loss</th>
+      <th style = "text-align: right;">Time domain</th>
+      <th style = "text-align: right;">Frequency domain</th>
+      <th style = "text-align: right;">Multiple dataset</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>newpem</code></p></div></td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>subspaceid</code></p></div></td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>structured_pem</code></p></div></td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🔶</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>nonlinear_pem</code></p></div></td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🔶</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>arx</code></p></div></td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🔶</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>arxar</code></p></div></td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>plr</code></p></div></td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🔶</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>era/okid</code></p></div></td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>impulseest</code></p></div></td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+    <tr>
+      <td style = "text-align: right;"><div class="markdown"><p><code>tfest</code></p></div></td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟢</td>
+      <td style = "text-align: right;">🟥</td>
+    </tr>
+  </tbody>
+</table>
+<h4 id="Comments"><a class="docs-heading-anchor" href="#Comments">Comments</a><a id="Comments-1"></a><a class="docs-heading-anchor-permalink" href="#Comments" title="Permalink"></a></h4><ul><li>All methods can estimate <strong>SISO</strong> systems, i.e., systems with a single input and a single output.</li><li>Missing from the comparison is whether an algorithm estimates a <strong>transfer function or a statespace system</strong>, this is because one can without loss convert one to the other by simply calling <code>tf/ss</code>. One notable exception is for non-causal transfer functions which cannot be represented as statespace systems, but those do not appear very often.</li><li>Several methods are listed as 🟥 on <strong>nonlinearities</strong>, but it is oftentimes possible to handle known input nonlinearities by adding nonlinearly transformed versions of the input to the dataset. Known output nonlinearities that are invertible can be handled by similarly applying the inverse nonlinearity to the data before estimation. Only <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a> has explicit methods for estimating parameters of nonlinearities. <a href="tf/#ControlSystemIdentification.arx"><code>arx</code></a> is listed as 🔶, since with the correct <code>estimator</code> option that promotes sparsity, it is possible to find the most appropriate nonlinearity among a set of candidates. However, no explicit support for this is provided.</li><li><strong>Custom loss functions</strong> are sometimes supported explicitly, such as for <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a>, but often supported by providing a custom <code>estimator</code> for methods that solve a problem on the form <span>$\operatorname{argmin}_w \sum_i \operatorname{loss}(e_i) \quad \forall e_i \in \{e = y - Aw\}$</span>. The default estimator in these cases is always <code>\</code>, i.e., to solve a least-squares problem. Useful alternatives are, e.g., <a href="https://github.com/baggepinnen/TotalLeastSquares.jl"><code>TotalLeastSquares.tls</code></a> and <code>TotalLeastSquares.irls</code>. This can be useful to increase robustness w.r.t. noise etc.</li><li>In specific situations it is possible to use any method with <strong>multiple datasets</strong> by simply concatenating two datasets like <code>[d1 d2]</code>. This is only recommended if the state of the system in the end of the first dataset is very close to the state of the system in the beginning of the second dataset, for example, if all experiments start and end at rest in the origin.</li><li>Some methods estimate explicit <strong>disturbance models</strong>, such as <a href="tf/#ControlSystemIdentification.plr"><code>plr</code></a> and <a href="tf/#ControlSystemIdentification.arxar"><code>arxar</code></a>, whereas other methods estimate observers with an <em>implicit</em> disturbance model, such as <a href="ss/#ControlSystemIdentification.newpem"><code>newpem</code></a> and <a href="ss/#ControlSystemIdentification.subspaceid"><code>subspaceid</code></a>. All methods that estimate disturbance models are able to account for input disturbance (also referred to as dynamic disturbance or load disturbance). <a href="ss/#ControlSystemIdentification.structured_pem"><code>structured_pem</code></a> and <a href="nonlinear/#ControlSystemIdentification.nonlinear_pem"><code>ControlSystemIdentification.nonlinear_pem</code></a> are listed as 🔶 since they allow for the estimation of a disturbance model, but the user has to encode the model in the dynamics manually.</li></ul><h2 id="Other-resources"><a class="docs-heading-anchor" href="#Other-resources">Other resources</a><a id="Other-resources-1"></a><a class="docs-heading-anchor-permalink" href="#Other-resources" title="Permalink"></a></h2><ul><li><a href="https://youtube.com/playlist?list=PLC0QOsNQS8ha6SwaNOZDXyG9Bj8MPbF-q&amp;si=AiOZVhBVwYReDrAm">YouTube playlist</a> with tutorials using this package.</li><li>For estimation of linear <strong>time-varying</strong> models (LTV), see <a href="https://github.com/baggepinnen/LTVModels.jl">LTVModels.jl</a>.</li><li>For more advanced <strong>spectral estimation</strong>, cross coherence, etc., see <a href="https://github.com/baggepinnen/LPVSpectral.jl">LPVSpectral.jl</a></li><li>This package interacts well with <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl">MonteCarloMeasurements.jl</a>. See <a href="https://github.com/baggepinnen/MonteCarloMeasurements.jl/blob/master/examples/controlsystems.jl">example file</a>.</li><li><strong>State estimation</strong> is facilitated by <a href="https://github.com/baggepinnen/LowLevelParticleFilters.jl">LowLevelParticleFilters.jl</a>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-nextpage" href="iddata/">Identification data »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Friday 17 January 2025 06:27">Friday 17 January 2025</span>. Using Julia version 1.11.2.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
