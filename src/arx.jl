@@ -551,7 +551,7 @@ function plr(d::AbstractIdData, na, nb, nc; initial_order = 20, method = :ls)
     all(nb .<= na) || throw(DomainError(nb, "nb must be <= na"))
     na >= 1 || throw(ArgumentError("na must be positive"))
     # na -= 1
-    y_train, A = getARXregressor(y, u, initial_order, initial_order)
+    y_train, A = getARXregressor(y, u, initial_order, fill(initial_order, d.nu))
     w1 = A \ y_train
     yhat = A * w1
     ehat = yhat - y_train

@@ -35,6 +35,17 @@
     @test freqresptest(G, Gwtls) < sqrt(eps())
     @test freqresptest(G, Gplr) < sqrt(eps())
 
+    ## MISO
+    G = tf(0.8, [1, -0.9], 1)
+    G = [G 2G]
+    u = randn(2,N)
+    y = lsim(G, u, t)[1]
+    e = randn(1,N)
+    yn = y + e
+    na, nb, nc = 1, [1, 1], 1
+    d = iddata(yn, u, 1)
+    Gplr, Gn = ControlSystemIdentification.plr(d, na, nb, nc, initial_order = 10)
+    @test freqresptest(G, Gplr) < 0.11
 end
 
 @testset "arma" begin
