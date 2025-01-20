@@ -17,7 +17,7 @@ using ComponentArrays,
     StatsBase,
     TotalLeastSquares
 import DSP
-using DSP: filt, filtfilt, impz, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients, hamming, hanning, gaussian, xcorr, resample
+using DSP: filt, filtfilt, Highpass, Lowpass, Bandpass, Bandstop, Butterworth, digitalfilter, FilterType, FilterCoefficients, hamming, hanning, gaussian, xcorr, resample
 import StatsBase: predict
 import MatrixEquations
 import Optim: minimizer, Options
@@ -337,7 +337,7 @@ function ff_controller(sys::AbstractPredictionStateSpace, L, Lr = static_gain_co
     Bc = Be * Lr
     Cc = L
     Dc = 0
-    return 1 - ss(Ac, Bc, Cc, Dc, sys.timeevol)
+    return Lr - ss(Ac, Bc, Cc, Dc, sys.timeevol)
 end
 
 function ControlSystemsBase.c2d(sys::AbstractPredictionStateSpace{ControlSystemsBase.Continuous}, Ts::Real; kwargs...)
