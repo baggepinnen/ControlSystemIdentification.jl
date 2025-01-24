@@ -32,7 +32,7 @@ freqresptest(G, model) =
 freqresptest(G, model, tol) = freqresptest(G, model) < tol
 
 """
-Compare a tf to a tf based on particles .. maybe replaye by correct dispatched isapprox
+Compare a tf to a tf based on particles .. maybe replace by correct dispatched isapprox
 """
 function compareTFs(tf, tfStochastic, atol = 10e-5)
     aok = bok = false

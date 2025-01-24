@@ -203,7 +203,7 @@ Form a linear combination of the systems in `basis` with coefficients `p`.
 function sum_basis(basis::AbstractVector, p::AbstractVector)
     out = ss(p[1]*basis[1])
     for i in 2:length(p)
-        out = out + balreal(p[i] * basis[i])[1]
+        out = out + balreal(ss(p[i] * basis[i]))[1]
     end
     out
 end

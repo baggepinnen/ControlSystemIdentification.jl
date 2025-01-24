@@ -1,4 +1,4 @@
-using ControlSystemIdentification, ControlSystemsBase
+using ControlSystemIdentification, ControlSystemsBase, Statistics, Test, LinearAlgebra
 
 ny = 2
 nu = 3
@@ -21,12 +21,16 @@ pd = ControlSystemIdentification.predictiondata(d)
 
 pesys = ControlSystemIdentification.prediction_error_filter(model)
 e2 = predict(pesys, pd, zeros(pesys.nx))
+# e3 = lsim(pesys, pd, x0=x0).y
 
 @test mean(abs2, e2 .- e) < 0.01
 @test mean(abs2, (e2 .- e)[:, nx+1:end]) < 1e-5
 
 # plot((e2 .- e)')
 
+# plot(e', layout=2)
+# plot!(e2')
+# plot!(e3')
 
 residualplot(model, d)
 

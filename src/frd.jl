@@ -62,10 +62,32 @@ Base.vec(f::FRD) = f.r
 *(f::FRD, f2::LTISystem) = *(f, FRD(f.w, f2))
 +(f::FRD, f2::LTISystem) = +(f, FRD(f.w, f2))
 -(f::FRD, f2::LTISystem) = -(f, FRD(f.w, f2))
+/(f::FRD, f2::LTISystem) = /(f, FRD(f.w, f2))
+/(f::FRD, f2::TransferFunction) = /(f, FRD(f.w, f2)) # Required for ambiguity
+
+# Other direction
+*(f::LTISystem, f2::FRD) = *(FRD(f2.w, f), f2)
++(f::LTISystem, f2::FRD) = +(FRD(f2.w, f), f2)
+-(f::LTISystem, f2::FRD) = -(FRD(f2.w, f), f2)
+/(f::LTISystem, f2::FRD) = /(FRD(f2.w, f), f2)
 
 -(f::FRD) = FRD(f.w, -f.r)
 length(f::FRD) = length(f.w)
-Base.size(f::FRD) = (1, 1) # Size in the ControlSystemsBasesense
+function Base.size(f::FRD)
+    noutputs(f), ninputs(f) # Size in the ControlSystemsBase sense
+end
+function Base.size(f::FRD, i::Int)
+    if i == 1
+        noutputs(f)
+    elseif i == 2
+        ninputs(f)
+    else
+        throw(ArgumentError("Index out of bounds"))
+    end
+end
+
+# Base.convert(::Type{FRD}, sys::LTIsystem)  # This is not defined since the type does not store the frequency vector, and there is thus no way to convert to this type. Instead, arithmetic operations are defined since these take values rather than types
+
 Base.lastindex(f::FRD) = length(f)
 function Base.getproperty(f::FRD, s::Symbol)
     s === :Ts && return π / maximum(f.w)
@@ -88,6 +110,7 @@ end
 ControlSystemsBase.noutputs(f::FRD) = f.r isa AbstractVector ? 1 : size(f.r, 1)
 ControlSystemsBase.ninputs(f::FRD) = f.r isa AbstractVector ? 1 : size(f.r, 2)
 ControlSystemsBase._default_freq_vector(f::Vector{<:FRD}, _) = f[1].w
+ControlSystemsBase._default_freq_vector(f::FRD, _) = f.w
 function ControlSystemsBase.bode(f::FRD, w::AbstractVector = f.w; unwrap=true)
     w == f.w || error("Frequency vector must match the one stored in the FRD")
     angles = angle.(f.r)
@@ -126,6 +149,16 @@ getindex(f::Tuple{<:FRD, <:FRD}, r::Tuple) = (f[1][r], f[2][r])
 Base.isapprox(f1::FRD, f2::FRD; kwargs...) =
     (f1.w == f2.w) && isapprox(f1.r, f2.r; kwargs...)
 Base.:(==)(f1::FRD, f2::FRD) = (f1.w == f2.w) && ==(f1.r, f2.r)
+
+function Base.hcat(f::FRD, f2::FRD...)
+    all(f.w == f2.w for f2 in f2) || error("Frequency vectors must match")
+    FRD(f.w, hcat(f.r, (f2.r for f2 in f2)...))
+end
+
+function Base.vcat(f::FRD, f2::FRD...)
+    all(f.w == f2.w for f2 in f2) || error("Frequency vectors must match")
+    FRD(f.w, vcat(f.r, (f2.r for f2 in f2)...))
+end
 
 sensitivity(P::FRD, K) = FRD(P.w, 1.0 ./ (1.0 .+ vec(P) .* vec(K)))
 feedback(P::FRD, K) = FRD(P.w, vec(P) ./ (1.0 .+ vec(P) .* vec(K)))

@@ -165,10 +165,11 @@ function estimate_x0(sys::AbstractStateSpace, d, n = min(length(d), 3slowest_tim
     nx,p,N = sys.nx, sys.ny, length(d)
     size(y,2) >= nx || throw(ArgumentError("y should be at least length sys.nx"))
 
-    if focus === :prediction && sys isa AbstractPredictionStateSpace && !iszero(sys.K)
-        ε, _ = lsim(prediction_error_filter(sys), predictiondata(d))
-        y = y - ε # remove influence of innovations
-    end 
+    # Code below deactived due to `test_prediction` being too much off, and test_estimate_x0 fails for PredictionStateSpace with this code
+    # if focus === :prediction && sys isa AbstractPredictionStateSpace && !iszero(sys.K)
+    #     ε, _ = lsim(prediction_error_filter(sys), predictiondata(d))
+    #     y = y - ε # remove influence of innovations
+    # end 
 
     uresp, _ = lsim(sys, u)
     y = y - uresp # remove influence of u

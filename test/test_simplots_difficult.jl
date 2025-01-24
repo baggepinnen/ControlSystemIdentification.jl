@@ -1,3 +1,4 @@
+using Random, Test, ControlSystemsBase, ControlSystemIdentification, Plots, LinearAlgebra
 Random.seed!(1)
 ##
 T = 200
@@ -22,14 +23,14 @@ ynv = yv + sim(sysn, σy * randn(size(uv)))
 dv  = iddata(yv, uv, 1)
 dnv = iddata(ynv, uv, 1)
 ##
-
+using Optim
 res = [
-    ControlSystemIdentification.newpem(dnv, nx)
+    ControlSystemIdentification.newpem(dnv, nx, optimizer=nx == 1 ? Optim.NelderMead() : Optim.BFGS())
     for nx in [1, 3, 4]
 ]
 
 ω = exp10.(range(-2, stop = log10(pi), length = 150))
-fig = plot(layout = 4, size = (1000, 600))
+fig = plot(layout = 4, size = (1000, 600), link = :none)
 for i in eachindex(res)
     (sysh, opt) = res[i]
     ControlSystemIdentification.simplot!(
@@ -37,12 +38,14 @@ for i in eachindex(res)
         dnv;
         subplot = 1,
         ploty = i == 1,
+        link = :none
     )
     ControlSystemIdentification.predplot!(
         sysh,
         dnv;
         subplot = 2,
         ploty = i == 1,
+        link = :none
     )
 end
 bodeplot!(
@@ -52,6 +55,7 @@ bodeplot!(
     subplot = 3,
     title = "Process",
     linewidth = 2 * [4 3 2 1],
+    link = :none,
 )
 bodeplot!(
     noise_model.(getindex.(res, 1)),
@@ -59,6 +63,7 @@ bodeplot!(
     plotphase = false,
     subplot = 4,
     linewidth = 2 * [4 3 2 1],
+    link = :none,
 )
 bodeplot!(
     sys,
@@ -70,6 +75,7 @@ bodeplot!(
     l = :dash,
     legend = :bottomleft,
     title = "System model",
+    link = :none,
 )
 bodeplot!(
     ControlSystemsBase.innovation_form(ss(sys), syse = ss(sysn), R2 = σy^2 * I),
@@ -82,5 +88,6 @@ bodeplot!(
     ylims = (0.1, 100),
     legend = :bottomleft,
     title = "Noise model",
+    link = :none,
 )
 display(fig)
