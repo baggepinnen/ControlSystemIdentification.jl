@@ -58,7 +58,7 @@ plot!(G2, subplot = 1, lab = "G Est W", alpha = 0.3, title = "Process model")
 plot!(√N2, subplot = 2, lab = "N Est W", alpha = 0.3, title = "Noise model")
 
 
-for op in (+, -, *)
+for op in (+, -, *, /)
     @test op(G, G) isa FRD
 end
 
@@ -80,7 +80,15 @@ S2, D2, N2, T2 = gangoffour(FRD(ω, P), FRD(ω, C))
 @test FRD(ω, P)*P ≈ FRD(ω, P)*FRD(ω, P)
 @test FRD(ω, P)-P ≈ FRD(ω, P)-FRD(ω, P)
 @test FRD(ω, P)+P ≈ FRD(ω, P)+FRD(ω, P)
+@test FRD(ω, P)/ss(P) ≈ FRD(ω, P)/FRD(ω, P) 
+@test FRD(ω, P)/P ≈ FRD(ω, P)/FRD(ω, P)
 
+P = ss(P)
+@test FRD(ω, P)*P ≈ FRD(ω, P)*FRD(ω, P)
+@test FRD(ω, P)-P ≈ FRD(ω, P)-FRD(ω, P)
+@test FRD(ω, P)+P ≈ FRD(ω, P)+FRD(ω, P)
+@test FRD(ω, P)/ss(P) ≈ FRD(ω, P)/FRD(ω, P) 
+@test FRD(ω, P)/P ≈ FRD(ω, P)/FRD(ω, P)
 
 
 ## Algebra
@@ -139,10 +147,17 @@ w = range(1e-6, stop=pi/Ts-1/N, length=N)  # Frequency vector
 frd = FRD(w, G);                        # Build a frequency-response data object
 @test frd.r == freqresp(G, w)
 @test frd.w == w
+@test size(frd) == (ny, nu)
 
 @test bode(frd) == bode(G, w)
 @test nyquist(frd) == nyquist(G, w)
 
+@test size([frd frd]) == (ny, 2nu)
+@test size([frd; frd]) == (2ny, nu)
+@test size([frd frd; frd frd]) == (2ny, 2nu)
+@test size([frd frd], 1) == ny
+@test size([frd frd], 2) == 2nu
+@test_throws ArgumentError size([frd frd], 3)
 
 # Tests for FRD printing
 littlefrd = FRD([1, 2], [im, 2*im])
