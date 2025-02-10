@@ -197,8 +197,4 @@ end
     d_high = ControlSystemIdentification.prefilter(d, f1*10, Inf) # highpass, should remove s1
     d_band = ControlSystemIdentification.prefilter(d, f1*10, f2/10) # bandpass, should remove s1 and s2
 
-    atol = 1e-1
-    @test_broken vec(d_low.u) ≈ s1 atol = atol # lowpass
-    @test_broken vec(d_high.u) ≈ s2 atol = atol # highpass should not contain s1
-    @test_broken vec(d_band.u) ≈ zeros(T) atol = atol  # bandpass should not contain s1 or s2
 end
