@@ -174,7 +174,6 @@ end
     @test d2.y[:] == ControlSystemIdentification.DSP.resample(d.y[:], 1/10)
     @test d2.u[:] == ControlSystemIdentification.DSP.resample(d.u[:], 1/10)
 
-@testitem "detrend and prefilter" begin
 @testset "detrend and prefilter" begin
     using Statistics
     T = 10_000
