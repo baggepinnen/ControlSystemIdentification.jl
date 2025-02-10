@@ -1,6 +1,6 @@
 function get_frequencyweight_tf(responsetype::FilterType; fs)
     designmethod = Butterworth(2)
-    digitalfilter(responsetype, designmethod; fs)
+    digitalfilter(responsetype, designmethod; fs=fs)
 end
 
 get_frequencyweight_tf(G::FilterCoefficients) = G
@@ -41,7 +41,8 @@ Filter both input and output of the identification data using zero-phase filteri
 Since both input and output is filtered, linear identification will not be affected in any other way than to focus the fit on the selected frequency range, i.e. the range that has high gain in the provided filter. Note, if the system that generated `d` is nonlinear, identification might be severely impacted by this transformation. Verify linearity with, e.g., [`coherenceplot`](@ref).
 """
 function prefilter(d::AbstractIdData, responsetype::FilterType)
-    H = get_frequencyweight_tf(responsetype)
+    fs = 1/d.Ts
+    H = get_frequencyweight_tf(responsetype; fs=fs)
     y = time1(output(d))
     u = time1(input(d))
     y = filtfilt(H, y)
@@ -56,11 +57,11 @@ Filter input and output with a bandpass filter between `l` and `u` Hz. If `l = 0
 """
 function prefilter(d::AbstractIdData, l::Number, u::Number)
     responsetype = if u == Inf
-        Highpass(l, fs = d.fs)
+        Highpass(l)
     elseif l <= 0
-        Lowpass(u, fs = d.fs)
+        Lowpass(u)
     else
-        Bandpass(l, u, fs = d.fs)
+        Bandpass(l, u)
     end
     prefilter(d, responsetype)
 end
