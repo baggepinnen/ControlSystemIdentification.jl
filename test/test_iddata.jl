@@ -173,4 +173,32 @@ end
     @test length(d2) == 10
     @test d2.y[:] == ControlSystemIdentification.DSP.resample(d.y[:], 1/10)
     @test d2.u[:] == ControlSystemIdentification.DSP.resample(d.u[:], 1/10)
+
+@testitem "detrend and prefilter" begin
+    using Statistics
+    T = 10_000
+    fs = 10.0
+    ts = 1/fs
+    f1 = 0.001  # low frequency
+    f2 = 1.0    # high frequency
+    t = (0:T-1) * ts
+
+    s1 = @. sinpi(f1 * t)
+    s2 = @. sinpi(f2 * t)
+    u = @. s1 + s2
+    y = @. s1 + s2 + 10
+    d = iddata(y, u, ts)
+
+    d_ = ControlSystemIdentification.detrend(d)
+    @test mean(d_.y) ≈ 0 atol = 1e-10
+    @test mean(d_.u) ≈ 0 atol = 1e-10
+
+    d_low = ControlSystemIdentification.prefilter(d, 0, f1 * 10) # lowpass, should remove s2
+    d_high = ControlSystemIdentification.prefilter(d, f1*10, Inf) # highpass, should remove s1
+    d_band = ControlSystemIdentification.prefilter(d, f1*10, f2/10) # bandpass, should remove s1 and s2
+
+    atol = 1e-1
+    @test_broken vec(d_low.u) ≈ s1 atol = atol # lowpass
+    @test_broken vec(d_high.u) ≈ s2 atol = atol # highpass should not contain s1
+    @test_broken vec(d_band.u) ≈ zeros(T) atol = atol  # bandpass should not contain s1 or s2
 end
