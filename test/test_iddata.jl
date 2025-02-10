@@ -173,6 +173,8 @@ end
     @test length(d2) == 10
     @test d2.y[:] == ControlSystemIdentification.DSP.resample(d.y[:], 1/10)
     @test d2.u[:] == ControlSystemIdentification.DSP.resample(d.u[:], 1/10)
+end
+
 
 @testset "detrend and prefilter" begin
     T = 10_000
