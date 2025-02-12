@@ -26,30 +26,30 @@ plot(
     simplot(d, model1, title=&quot;Simulation subspaceid&quot;, layout=2),
     simplot(d, model2, x0, title=&quot;Simulation PEM&quot;, layout=2),
     titlefontsize=10,
-)</code></pre><img src="c48d9e2d.svg" alt="Example block output"/><p>The simulation indicates that the fit is close to 100%, i.e., the general linear model fit the VARX model perfectly, it does not however have exactly the same structure as the original VARX model. </p><p>The estimated models on statespace form can be converted to MIMO transfer functions (polynomial models) by calling <code>tf</code>:</p><pre><code class="language-julia hljs">using ControlSystemsBase: tf
+)</code></pre><img src="fd803ae1.svg" alt="Example block output"/><p>The simulation indicates that the fit is close to 100%, i.e., the general linear model fit the VARX model perfectly, it does not however have exactly the same structure as the original VARX model. </p><p>The estimated models on statespace form can be converted to MIMO transfer functions (polynomial models) by calling <code>tf</code>:</p><pre><code class="language-julia hljs">using ControlSystemsBase: tf
 tf(model2.sys)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">TransferFunction{Discrete{Float64}, ControlSystemsBase.SisoRational{Float64}}
 Input 1 to output 1
- -0.13678986344092448z^3 + 0.056637724632375985z^2 - 0.12187396961344107z + 2.7755575615628914e-17
-----------------------------------------------------------------------------------------------------
-1.0z^4 + 0.13377374548049747z^3 + 0.21714283170260607z^2 - 0.08013497037446962z - 0.1306007977211676
+   1.8622691141312384z^3 - 0.49141712933107445z^2 + 0.014021974478556229z + 1.942890293094024e-16
+-----------------------------------------------------------------------------------------------------
+1.0z^4 - 0.7587435065399895z^3 + 0.24789596174921752z^2 - 0.11491820781336634z + 0.037500733264731634
 
 Input 1 to output 2
-              -0.3093728583584314z^3 + 0.0033987638242157225z^2 + 0.04610167805921109z
-----------------------------------------------------------------------------------------------------
-1.0z^4 + 0.13377374548049747z^3 + 0.21714283170260607z^2 - 0.08013497037446962z - 0.1306007977211676
+   -0.7936037969256013z^3 + 0.5299493622536156z^2 - 0.24763236830271476z - 2.0816681711721685e-16
+-----------------------------------------------------------------------------------------------------
+1.0z^4 - 0.7587435065399895z^3 + 0.24789596174921752z^2 - 0.11491820781336634z + 0.037500733264731634
 
 Input 2 to output 1
-   -0.609844900209626z^3 - 0.23396557941057733z^2 - 0.18025713122549022z + 1.6653345369377348e-16
-----------------------------------------------------------------------------------------------------
-1.0z^4 + 0.13377374548049747z^3 + 0.21714283170260607z^2 - 0.08013497037446962z - 0.1306007977211676
+    -0.2256841685707145z^3 - 0.19538992282841477z^2 + 0.185523355089736z + 2.7755575615628914e-17
+-----------------------------------------------------------------------------------------------------
+1.0z^4 - 0.7587435065399895z^3 + 0.24789596174921752z^2 - 0.11491820781336634z + 0.037500733264731634
 
 Input 2 to output 2
-    0.3353164936324651z^3 - 0.1457957249155281z^2 - 0.1831450128261464z - 8.326672684688674e-17
-----------------------------------------------------------------------------------------------------
-1.0z^4 + 0.13377374548049747z^3 + 0.21714283170260607z^2 - 0.08013497037446962z - 0.1306007977211676
+   0.749619372441259z^3 - 0.27894462986592944z^2 - 0.021919224790870356z - 2.7755575615628914e-17
+-----------------------------------------------------------------------------------------------------
+1.0z^4 - 0.7587435065399895z^3 + 0.24789596174921752z^2 - 0.11491820781336634z + 0.037500733264731634
 
 Sample Time: 1.0 (seconds)
 Discrete-time transfer function model</code></pre><h2 id="Summary"><a class="docs-heading-anchor" href="#Summary">Summary</a><a id="Summary-1"></a><a class="docs-heading-anchor-permalink" href="#Summary" title="Permalink"></a></h2><p>The statespace model</p><p class="math-container">\[\begin{aligned}
 x^+ &amp;= Ax + Bu + Ke\\
 y &amp;= Cx + Du + e
-\end{aligned}\]</p><p>is very general and subsumes a lot of other, special-structure models, like the VARX model.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hair_dryer/">« Hair dryer</a><a class="docs-footer-nextpage" href="../hammerstein_wiener/">Nonlinear belt drive »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Monday 10 February 2025 13:42">Monday 10 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+\end{aligned}\]</p><p>is very general and subsumes a lot of other, special-structure models, like the VARX model.</p></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hair_dryer/">« Hair dryer</a><a class="docs-footer-nextpage" href="../hammerstein_wiener/">Nonlinear belt drive »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.8.0 on <span class="colophon-date" title="Wednesday 12 February 2025 10:34">Wednesday 12 February 2025</span>. Using Julia version 1.11.3.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
