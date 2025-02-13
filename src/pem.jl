@@ -216,15 +216,15 @@ function newpem(
        p0 = [p0; nlp]
     end
     D0 = zeros(T, ny, nu)
-    du = nothing
+    # du = nothing
     function predloss(p)
         sysi, Ki, x0, nlpi = vec2modal(p, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
         pdi = if input_nonlinearity === nothing
             pd
         else
-            if du === nothing
+            # if du === nothing # NOTE: this may set du to Float64 on the first invokation and then fail for Duals
                 du = similar(p, size(d.u))
-            end
+            # end
             du .= d.u
             predictiondata(iddata(d.y, input_nonlinearity(du, nlpi), d.Ts))
         end
@@ -247,9 +247,9 @@ function newpem(
         di = if input_nonlinearity === nothing
             d
         else
-            if du === nothing
+            # if du === nothing
                 du = similar(p, size(d.u))
-            end
+            # end
             du .= d.u
             iddata(d.y, input_nonlinearity(du, nlpi), d.Ts)
         end
