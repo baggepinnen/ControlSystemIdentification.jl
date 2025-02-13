@@ -360,3 +360,39 @@ end
     @test norm(p_est - p_true) < 1e-6
     
 end
+
+
+## Issue https://github.com/baggepinnen/ControlSystemIdentification.jl/issues/178
+
+@testset "Issue 178" begin
+    # Generate some data from the system
+    Random.seed!(1)
+    T = 200
+    sys = c2d(resonant(ω0 = 0.1) * tf(1, [0.1, 1]), 1)# generate_system(nx, nu, ny)
+    nx = sys.nx
+    nu = 1
+    ny = 1
+    x0 = zeros(nx)
+    sim(sys, u, x0 = x0) = lsim(sys, u, 1:T, x0 = x0)[1]
+    sysn = c2d(resonant(ω0 = 1) * tf(1, [0.1, 1]), 1)
+
+    σu = 1e-2 # Input noise standard deviation
+    σy = 1e-3 # Output noise standard deviation
+
+    u  = randn(nu, T)
+    un = u + sim(sysn, σu * randn(size(u)), 0 * x0)
+    y  = sim(sys, un, x0)
+    yn = y + sim(sysn, σy * randn(size(u)), 0 * x0)
+
+    # Nonlinear output transformation
+    ynn = abs.(yn)
+    d  = iddata(ynn, un, 1)
+    output_nonlinearity = (y, p) -> y .= abs.(y)
+    p0 = [0.4]
+    input_nonlinearity = (u, p) -> u .= (u .> p[1]*p[1]).*(u .- p[1]*p[1])
+
+
+    # Just test that the optimization does not error
+    sysh, x0h, opt = newpem(d, nx; output_nonlinearity, input_nonlinearity, nlp=p0, show_trace=false, focus = :simulation)
+    @test x0h isa Vector
+end
