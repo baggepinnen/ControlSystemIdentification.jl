@@ -157,6 +157,15 @@ hopefully, the estimated parameters are close to the true ones.
 
 To customize the implementation of the nonlinear prediction-error method, see a lower-level interface being used in the tutorial [in the documentation of LowLevelParticleFilters.jl](https://baggepinnen.github.io/LowLevelParticleFilters.jl/stable/parameter_estimation/#Using-an-optimizer) which also provides the UKF.
 
+### Covariance of the estimated parameters
+The object representing the estimated model contains a field `Λ` which is a function that returns an estimate of the precision matrix (inverse covariance matrix). Several caveats apply to this estimate, use with care. Example usage:
+```@example HW
+Σ = inv(model.Λ())
+scatter(model.p, yerror=2sqrt.(diag(Σ[1:4, 1:4])), lab="Estimate")
+scatter!(p_true, lab="True")
+scatter!(p_guess, lab="Initial guess")
+```
+
 
 ## Hammerstein-Wiener estimation
 
