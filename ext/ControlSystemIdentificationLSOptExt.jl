@@ -109,6 +109,8 @@ function _inner_pem(
     λ,
     optimize_x0;
     autodiff = :forward,
+    γ = nothing,
+    show_every = 1,
     kwargs...,
 ) where {F,G}
     R1mut = Matrix(R1)
@@ -122,7 +124,14 @@ function _inner_pem(
     function residuals!(ϵ, px0)
         ukf = get_ukf(px0)
         pᵢ = px0[1:length(p0)]
-        LowLevelParticleFilters.prediction_errors!(ϵ, ukf, uvv, yvv, pᵢ, λ)
+        if γ === nothing
+            LowLevelParticleFilters.prediction_errors!(ϵ, ukf, uvv, yvv, pᵢ, λ)
+        else
+            ol = T * ny
+            LowLevelParticleFilters.prediction_errors!(@view(ϵ[1:ol]), ukf, uvv, yvv, pᵢ, λ)
+            ϵ[ol+1:end] .= γ .* (px0 .- p_guess)
+        end
+        ϵ
     end
 
     if optimize_x0
@@ -142,16 +151,23 @@ function _inner_pem(
         rethrow()
     end
 
+    output_length = if γ === nothing
+        T * ny
+    else
+        γ isa AbstractArray && length(γ) != length(p_guess) && throw(ArgumentError("The length of the regularization term γ must match the number of optimized parameters ($(length(p_guess)))."))
+        T * ny + length(p_guess)
+    end
+
     res = optimize!(
         LeastSquaresProblem(;
             x = p_guess,
             f! = residuals!,
-            output_length = T * ny,
+            output_length,
             autodiff,
         ),
         optimizer;
         show_trace = true,
-        show_every = 1,
+        show_every,
         kwargs...,
     )
 

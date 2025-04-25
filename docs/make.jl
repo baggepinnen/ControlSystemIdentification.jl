@@ -9,7 +9,8 @@ using LeastSquaresOptim
 
 # Run this code here to make sure the tutorial can access the file, not sure why it does not work from within the tutorial
 using DelimitedFiles
-url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectricDrivesDataSetAndReferenceModels.zip"
+# url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectricDrivesDataSetAndReferenceModels.zip"
+url = "https://drive.google.com/uc?export=download&id=10Z83_2qHTSJ_F9usqTsPohjZ1xtXCtE3"
 zipfilename = "/tmp/bd.zip"
 cd("/tmp")
 path = Base.download(url, zipfilename)

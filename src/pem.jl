@@ -613,6 +613,7 @@ This method attempts to find the optimal vector of parameters, ``p``, and the in
 - `nu`: Number of inputs to the system
 - `optimizer`: Any optimizer from [LeastSquaresOptim](https://github.com/matthieugomez/LeastSquaresOptim.jl)
 - `λ`: A weighting factor to minimize `dot(e, λ, e`). A commonly used metric is `λ = Diagonal(1 ./ (mag.^2))`, where `mag` is a vector of the "typical magnitude" of each output. Internally, the square root of `W = sqrt(λ)` is calculated so that the residuals stored in `res` are `W*e`.
+- `γ`: A regularization parameter that penalizes deviation from the initial guess. If `optimize_x0` is `true`, this is either a scalar, or a vector of length(p0) + length(x0). If `optimize_x0` is `false`, this is instead a scalar or a vector of length(p0). The penalty used is `γ.^2 .* (p - p0)`, so to perform MAP estimation, set `γ = 1 ./ sqrt.(diag(Σ))` where `Σ` is the (diagonal) covariance matrix of the prior distribution over parameters (and state if `optimize_x0`).
 - `optimize_x0`: Whether to optimize the initial condition `x0` or not. If `false`, the initial condition is fixed to the value of `x0` and the optimization is performed only on the parameters `p`.
 
 The inner optimizer accepts a number of keyword arguments:
@@ -629,7 +630,7 @@ See [Identification of nonlinear models](https://baggepinnen.github.io/ControlSy
 
 
 !!! warning "Experimental"
-    This function is considered experimental and may change in the future without respecting semantic versioning. This implementation also lacks a number of features associated with good nonlinear PEM implementations, such as regularization and support for multiple datasets.
+    This function is considered experimental and may change in the future without respecting semantic versioning. This implementation also lacks a number of features associated with good nonlinear PEM implementations, such as support for multiple datasets.
 """
 function nonlinear_pem end
 
