@@ -102,3 +102,12 @@ model2 = ControlSystemIdentification.nonlinear_pem(d, model; R2 = 1000R2, optimi
 @test model2.x0 == model.x0
 
 display(model2) # For coverage purposes
+
+## Regularization
+γ = 1e4 # Strong regularization to more or less force the optimum to be at the initial guess
+modelγ = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, x00, R1, 100R2, nu; γ, iterations=300, show_every=50, optimizer=Dogleg())
+@test norm(modelγ.p - p0) < 0.01norm(model.p - p0)
+
+γ = 1e4*ones(8) # Strong regularization to more or less force the optimum to be at the initial guess
+modelγ = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p0, x00, R1, 100R2, nu; γ, iterations=300, show_every=50, optimizer=Dogleg())
+@test norm(modelγ.p - p0) < 0.01norm(model.p - p0)

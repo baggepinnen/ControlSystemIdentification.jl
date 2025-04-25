@@ -166,4 +166,4 @@ using BenchmarkTools
 
 
 !!! warning
-    ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v9.58, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
+    ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v9.58 and v9.68.1, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
