@@ -13,7 +13,7 @@ The estimation of the Wiener model is performed using the [`newpem`](@ref) funct
 using DelimitedFiles, Plots
 using ControlSystemIdentification, ControlSystemsBase
 
-url = "http://www.it.uu.se/research/publications/reports/2017-024/CoupledElectricDrivesDataSetAndReferenceModels.zip"
+url = "https://drive.google.com/uc?export=download&id=10Z83_2qHTSJ_F9usqTsPohjZ1xtXCtE3"
 zipfilename = "/tmp/bd.zip"
 cd("/tmp")
 path = Base.download(url, zipfilename)
