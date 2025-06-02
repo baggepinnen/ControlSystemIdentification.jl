@@ -71,7 +71,8 @@ tunable_p = [mtkmodel.k1, mtkmodel.k2, mtkmodel.A, mtkmodel.γ] # Provided in th
 
 function get_mtk_dynamics(mtkmodel, inputs, outputs, tunable_p) # A wrapper function to avoid using global variables
 
-    (f_oop, f_ip), statevars, p, io_sys = ModelingToolkit.generate_control_function(mtkmodel, inputs; outputs, split=false)
+    mtkmodel = mtkcompile(mtkmodel; inputs, outputs, split=false)
+    (f_oop, f_ip), statevars, p, io_sys = ModelingToolkit.generate_control_function(mtkmodel)
 
     continuous_dynamics = f_oop # This is ẋ = f(x, u, p, t)
     inner_discrete_dynamics = SeeToDee.Rk4(continuous_dynamics, Ts::Float64) # x⁺ = f(x, u, p, t)
@@ -160,10 +161,10 @@ using BenchmarkTools
 @btime ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p_guess, x0_guess, R1, R2, nu)
 ```
 ```
-101.731 ms (873689 allocations: 97.10 MiB)
+91.923 ms (876913 allocations: 97.23 MiB)
 ```
 
 
 
 !!! warning
-    ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v9.58 and v9.68.1, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
+    ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v10.0.1, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
