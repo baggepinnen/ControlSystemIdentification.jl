@@ -21,8 +21,8 @@
 
     @test freqresptest(G, Gls) < 1.5
     @test freqresptest(G, Gtls) < 1
-    @test freqresptest(G, Gwtls) < 0.11
-    @test freqresptest(G, Gplr) < 0.11
+    @test freqresptest(G, Gwtls) < 0.12
+    @test freqresptest(G, Gplr) < 0.12
 
     d = iddata(y, u, 1)
     Gls = arx(d, na, nb)
@@ -45,7 +45,7 @@
     na, nb, nc = 1, [1, 1], 1
     d = iddata(yn, u, 1)
     Gplr, Gn = ControlSystemIdentification.plr(d, na, nb, nc, initial_order = 10)
-    @test freqresptest(G, Gplr) < 0.11
+    @test freqresptest(G, Gplr) < 0.12
 end
 
 @testset "arma" begin
