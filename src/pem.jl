@@ -183,6 +183,7 @@ function newpem(
     allow_f_increases = false,
     time_limit = 100,
     x_tol = 0,
+    x_abstol = x_tol,
     f_abstol = 1e-16,
     g_tol = 1e-12,
     f_calls_limit = 0,
@@ -270,7 +271,7 @@ function newpem(
             optimizer,
             Optim.Options(;
                 store_trace, show_trace, show_every, iterations, allow_f_increases,
-                time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit);
+                time_limit, x_abstol, f_abstol, g_tol, f_calls_limit, g_calls_limit);
             autodiff,
         )
         sys_opt::StateSpace{Discrete{T}, T}, K_opt::Matrix{T}, x0_opt, nlp = vec2modal(res.minimizer, ny, nu, nx, sys0.timeevol, zeroD, pred, D0, K, nnl)
@@ -716,6 +717,7 @@ function structured_pem(
     allow_f_increases = false,
     time_limit = 100,
     x_tol = 0,
+    x_abstol = x_tol,
     f_abstol = 1e-16,
     g_tol = 1e-12,
     f_calls_limit = 0,
@@ -762,7 +764,7 @@ function structured_pem(
         optimizer,
         Optim.Options(;
             store_trace, show_trace, show_every, iterations, allow_f_increases,
-            time_limit, x_tol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
+            time_limit, x_abstol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
         autodiff = :forward,
     )
     sys_opt, K_opt, x0_opt = inner_constructor(res.minimizer, constructor, d.Ts)
