@@ -634,42 +634,43 @@ end
 # end
 # display(current())
 # ##
-"""
-    find_similarity_transform(sys1, sys2, method = :obsv)
+if !isdefined(ControlSystemsBase, :find_similarity_transform)
+    """
+        find_similarity_transform(sys1, sys2, method = :obsv)
 
-Find T such that `ControlSystemsBase.similarity_transform(sys1, T) == sys2`
+    Find T such that `ControlSystemsBase.similarity_transform(sys1, T) == sys2`
 
-Ref: Minimal state-space realization in linear system theory: an overview, B. De Schutter
+    Ref: Minimal state-space realization in linear system theory: an overview, B. De Schutter
 
-If `method == :obsv`, the observability matrices of `sys1` and `sys2` are used to find `T`, whereas `method == :ctrb` uses the controllability matrices.
+    If `method == :obsv`, the observability matrices of `sys1` and `sys2` are used to find `T`, whereas `method == :ctrb` uses the controllability matrices.
 
-```jldoctest
-julia> T = randn(3,3);
+    ```jldoctest
+    julia> T = randn(3,3);
 
-julia> sys1 = ssrand(1,1,3);
+    julia> sys1 = ssrand(1,1,3);
 
-julia> sys2 = ControlSystemsBase.similarity_transform(sys1, T);
+    julia> sys2 = ControlSystemsBase.similarity_transform(sys1, T);
 
-julia> T2 = find_similarity_transform(sys1, sys2);
+    julia> T2 = find_similarity_transform(sys1, sys2);
 
-julia> T2 ≈ T
-true
-```
-"""
-function find_similarity_transform(sys1, sys2, method = :obsv)
-    if method === :obsv
-        O1 = obsv(sys1)
-        O2 = obsv(sys2)
-        return O1\O2
-    elseif method === :ctrb
-        C1 = ctrb(sys1)
-        C2 = ctrb(sys2)
-        return C1/C2
-    else
-        error("Unknown method $method")
+    julia> T2 ≈ T
+    true
+    ```
+    """
+    function find_similarity_transform(sys1, sys2, method = :obsv)
+        if method === :obsv
+            O1 = obsv(sys1)
+            O2 = obsv(sys2)
+            return O1\O2
+        elseif method === :ctrb
+            C1 = ctrb(sys1)
+            C2 = ctrb(sys2)
+            return C1/C2
+        else
+            error("Unknown method $method")
+        end
     end
 end
-
 function evalfr2(sys::AbstractStateSpace, w_vec::AbstractVector{Complex{W}}, u) where W
     ny, nu = size(sys)
     T = promote_type(Complex{real(eltype(sys.A))}, Complex{W})
