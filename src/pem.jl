@@ -642,10 +642,10 @@ using ChainRules
 using ForwardDiffChainRules
 @ForwardDiff_frule LinearAlgebra.exp!(x1::AbstractMatrix{<:ForwardDiff.Dual}) true
 
-function inner_constructor(p, constructor, Ts)
+function inner_constructor(p, constructor, Ts, method)
     sys = constructor(p)
     if iscontinuous(sys)
-        return c2d(sys, Ts, :zoh), p.K, p.x0
+        return c2d(sys, Ts, method), p.K, p.x0
     end
     return sys, p.K, p.x0
 end
@@ -710,6 +710,7 @@ function structured_pem(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.BackTracking(),
     ),
+    method = :zoh,
     store_trace = true,
     show_trace = true,
     show_every = 50,
@@ -742,7 +743,7 @@ function structured_pem(
     end
     p0ca = ComponentArray(p = p0, K = T.(K0), x0 = x0i)
     function predloss(p)
-        sysi, Ki, x0 = inner_constructor(p, constructor, d.Ts)
+        sysi, Ki, x0 = inner_constructor(p, constructor, d.Ts, method)
         syso = PredictionStateSpace(sysi, Ki, 0, 0)
         Pyh = ControlSystemsBase.observer_predictor(syso; h)
         simres = lsim(Pyh, pd; x0=Vector(x0))
@@ -752,7 +753,7 @@ function structured_pem(
         c1 + inner_regularizer(regularizer, p, syso, simres)
     end
     function simloss(p)
-        syssim, _, x0 = inner_constructor(p, constructor, d.Ts)
+        syssim, _, x0 = inner_constructor(p, constructor, d.Ts, method)
         simres = lsim(syssim, d; x0)
         y = simres.y 
         y .= metric.(y .- d.y)
@@ -767,7 +768,7 @@ function structured_pem(
             time_limit, x_abstol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
         autodiff = :forward,
     )
-    sys_opt, K_opt, x0_opt = inner_constructor(res.minimizer, constructor, d.Ts)
+    sys_opt, K_opt, x0_opt = inner_constructor(res.minimizer, constructor, d.Ts, method)
     sysp_opt = PredictionStateSpace(
         sys_opt,
         pred ? K_opt : zeros(T, nx, ny),
@@ -776,5 +777,12 @@ function structured_pem(
         zeros(T, nx, ny),
     )
     pred && !isstable(observer_predictor(sysp_opt)) && @warn("Estimated predictor dynamics A-KC is unstable")
-    (; sys=sysp_opt, x0=x0_opt, res)
+    function Λ()
+        cost = pred ? predloss : simloss
+        H = Symmetric(ForwardDiff.hessian(cost, res.minimizer))
+        iσ2 = (length(d) - length(res.minimizer))/cost(res.minimizer)
+        iσ2 * H
+    end
+    ax = ComponentArrays.getaxes(res.minimizer)
+    (; sys=sysp_opt, x0=x0_opt, res, Λ, constructor=p->inner_constructor(ComponentArray(p, ax), constructor, d.Ts, method))
 end

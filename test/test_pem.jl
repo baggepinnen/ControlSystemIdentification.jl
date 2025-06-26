@@ -1,6 +1,8 @@
 using ControlSystemIdentification, Optim, ControlSystemsBase
 using ControlSystemsBase.DemoSystems: resonant
-using Random, Test
+import LowLevelParticleFilters: SimpleMvNormal
+using MonteCarloMeasurements
+using Random, Test, LinearAlgebra
 Random.seed!(1)
 T = 1000
 sys = c2d(resonant(ω0 = 0.1) * tf(1, [0.1, 1]), 1)# generate_system(nx, nu, ny)
@@ -339,7 +341,7 @@ end
 
     P_true = constructor(p_true)
     u = sign.(sin.((1 / 3 * t)')) .+ sign.(sin.((1 / 2 * t)'))
-    res_true = lsim(P_true, u, t)
+    res_true = lsim(c2d(P_true, Ts, :tustin), u, t)
     d = iddata(res_true)
 
     nx = 2
@@ -347,7 +349,7 @@ end
         sum(abs2, p.K)
     end
 
-    res = ControlSystemIdentification.structured_pem(d, nx; focus=:prediction, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300)
+    res = ControlSystemIdentification.structured_pem(d, nx; focus=:prediction, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300, method=:tustin)
     p_est = res.res.minimizer.p
     @test norm(p_est - p_true) < 1e-6
 
@@ -355,9 +357,27 @@ end
     # p_est = res.res.minimizer.p
     # @test norm(p_est - p_true)/norm(p_true) < 1e-2 # Severe convergence problems here, but it does eventually converge using NelderMead The test is deactivated since it takes a long time
 
-    res = ControlSystemIdentification.structured_pem(d, nx; focus=:simulation, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300)
+
+    res = ControlSystemIdentification.structured_pem(d, nx; focus=:simulation, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300, method=:tustin)
     p_est = res.res.minimizer.p
     @test norm(p_est - p_true) < 1e-6
+
+    d2 = deepcopy(d)
+    d2.y .+= randn.()
+
+    res = ControlSystemIdentification.structured_pem(d2, nx; focus=:simulation, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300, method=:tustin)
+
+
+    H = res.Λ()
+    Σ = inv(H)
+    @test tr(Σ) < 1e4
+    dp = SimpleMvNormal(res.res.minimizer, Σ)
+    pars = Particles(rand!(Xoshiro(), dp, zeros(length(dp), 100))')
+    sysu, Ku, x0u = res.constructor(pars)
+
+    # w = exp10.(LinRange(-3, 2, 200))
+    # bodeplot(sysu, w, plotphase=false)
+    # bodeplot!(res.sys, w, plotphase=false, legend=false)
     
 end
 
