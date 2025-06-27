@@ -780,6 +780,7 @@ function structured_pem(
     function Λ()
         cost = pred ? predloss : simloss
         H = Symmetric(ForwardDiff.hessian(cost, res.minimizer))
+        # NOTE: this scales all gradients by the same σ unlike in nonlinear_pem where we compute a unique σ for each output
         iσ2 = (length(d) - length(res.minimizer))/cost(res.minimizer)
         iσ2 * H
     end
