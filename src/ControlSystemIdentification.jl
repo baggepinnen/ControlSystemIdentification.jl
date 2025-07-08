@@ -74,6 +74,8 @@ export kautz, laguerre, laguerre_oo, laguerre_id, adhocbasis, sum_basis, basis_r
 
 export autocorplot, crosscorplot, modelfit, residualplot
 
+export prbs, chirp, multisine, step_signal
+
 include("utils.jl")
 include("types.jl")
 include("frd.jl")
@@ -85,6 +87,7 @@ include("spectrogram.jl")
 include("frequency_weights.jl")
 include("basis_functions.jl")
 include("plotting.jl")
+include("input_signals.jl")
 
 """
     predict(sys, d::AbstractIdData, args...)
@@ -397,5 +400,7 @@ function DSP.resample(sys::AbstractStateSpace{<:Discrete}, Qd::AbstractMatrix, n
     Qc = d2c(sys, Qd)
     c2d(sys2, Qc)
 end
+
+using .InputSignals
 
 end # module

@@ -29,6 +29,7 @@ makedocs(
       pages = [
             "Home" => "index.md",
             "Identification data" => "iddata.md",
+            "Input signal generation" => "input_signals.md",
             "State-space estimation" => "ss.md",
             "Transfer-function estimation" => "tf.md",
             "Impulse-response estimation" => "impulse.md",
