@@ -139,6 +139,11 @@ end
         include("test_impulseest.jl")
     end
 
+    @testset "input_signals" begin
+        @info "Testing input_signals"
+        include("test_input_signals.jl")
+    end
+
     @testset "Spectrogram" begin
         @info "Testing Spectrogram"
         T = 1000
