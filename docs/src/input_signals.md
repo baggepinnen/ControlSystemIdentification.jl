@@ -24,10 +24,10 @@ using ControlSystemIdentification, Plots
 
 # Generate a standard PRBS signal
 N = 200
-u_prbs = prbs(N, seed=42)
+u_prbs = prbs(N; seed=42)
 
 # Generate a PRBS with custom amplitude levels
-u_custom = prbs(N, low=0, high=5, seed=42)
+u_custom = prbs(N; low=0, high=5, seed=42)
 
 # Plot the signals
 p1 = plot(u_prbs, title="Standard PRBS", xlabel="Sample", ylabel="Amplitude", 
@@ -37,12 +37,6 @@ p2 = plot(u_custom, title="Custom PRBS (0 to 5)", xlabel="Sample", ylabel="Ampli
 
 plot(p1, p2, layout=(2,1), size=(600, 400))
 ```
-
-PRBS signals are particularly useful because they:
-- Have flat power spectral density (white noise-like)
-- Are deterministic and reproducible
-- Have good autocorrelation properties
-- Are easy to generate and implement
 
 ## Chirp Signals
 
@@ -56,11 +50,11 @@ chirp
 # Generate chirp signals
 N = 1000
 Ts = 0.01
-f0 = 0.1  # Start frequency (Hz)
+f0 = 1.0  # Start frequency (Hz)
 f1 = 10.0 # End frequency (Hz)
 
-u_log = chirp(N, Ts=Ts, f0=f0, f1=f1, logspace=true)
-u_lin = chirp(N, Ts=Ts, f0=f0, f1=f1, logspace=false)
+u_log = chirp(N; Ts, f0, f1, logspace=true)
+u_lin = chirp(N; Ts, f0, f1, logspace=false)
 
 # Time vector for plotting
 t = (0:N-1) * Ts
@@ -77,14 +71,25 @@ plot(p1, p2, layout=(2,1), size=(600, 400))
 ### Frequency Content Analysis
 
 ```@example input_signals
-# Note: FFTW is available in the main package but may not be in docs environment
-# This example shows the concept but may not execute in all environments
+using ControlSystemIdentification.FFTW
 
-# Compare the signals in time domain
-p1 = plot(t[1:100], u_log[1:100], title="Logarithmic Chirp (first 100 samples)", 
-          xlabel="Time (s)", ylabel="Amplitude", label="Log chirp", linewidth=2)
-p2 = plot(t[1:100], u_lin[1:100], title="Linear Chirp (first 100 samples)", 
-          xlabel="Time (s)", ylabel="Amplitude", label="Linear chirp", linewidth=2)
+# Analyze frequency content of the chirp signals
+U_log = abs.(fft(u_log))
+U_lin = abs.(fft(u_lin))
+
+# Frequency axis (only plot positive frequencies)
+freqs = (0:N-1) / (N*Ts)
+half_N = N÷2
+
+# Plot frequency domain (first half only, up to Nyquist frequency)
+p1 = plot(freqs[2:half_N], U_log[2:half_N], title="Logarithmic Chirp Spectrum", 
+          xlabel="Frequency (Hz)", ylabel="Magnitude", label="Log chirp", 
+          xscale=:log10, yscale=:log10, linewidth=2)
+p2 = plot(freqs[2:half_N], U_lin[2:half_N], title="Linear Chirp Spectrum", 
+          xlabel="Frequency (Hz)", ylabel="Magnitude", label="Linear chirp", 
+          xscale=:log10, yscale=:log10, linewidth=2)
+vline!(p1, [f0, f1], label="", linestyle=:dash, color=:red, alpha=0.7)
+vline!(p2, [f0, f1], label="", linestyle=:dash, color=:red, alpha=0.7)
 
 plot(p1, p2, layout=(2,1), size=(600, 400))
 ```
@@ -109,7 +114,7 @@ N = 1000
 Ts = 0.01
 frequencies = [0.5, 2.0, 5.0, 10.0]  # Hz
 
-u_multi = multisine(N, frequencies=frequencies, Ts=Ts)
+u_multi = multisine(N; frequencies=frequencies, Ts)
 
 # Time vector
 t = (0:N-1) * Ts
@@ -118,8 +123,25 @@ t = (0:N-1) * Ts
 p1 = plot(t, u_multi, title="Multi-sine Signal", xlabel="Time (s)", ylabel="Amplitude", 
           label="u(t)", linewidth=1)
 
-# Show the time domain signal only (avoid FFTW dependency in docs)
-plot(p1, size=(600, 300))
+# Analyze frequency content
+U_multi = abs.(fft(u_multi))
+freqs = (0:N-1) / (N*Ts)
+half_N = N÷2
+
+# Plot frequency domain
+p2 = plot(freqs[1:half_N], U_multi[1:half_N], title="Multi-sine Spectrum", 
+          xlabel="Frequency (Hz)", ylabel="Magnitude", label="Spectrum", 
+          linewidth=2)
+
+# Mark the target frequencies with vertical lines
+for f in frequencies
+    if f <= freqs[half_N]
+        plot!(p2, [f, f], [0, maximum(U_multi[1:half_N])], 
+              label="", linestyle=:dash, color=:red, alpha=0.7)
+    end
+end
+
+plot(p1, p2, layout=(2,1), size=(600, 400))
 ```
 
 Multi-sine signals are ideal for:
@@ -140,8 +162,8 @@ step_signal
 # Generate step signals
 N = 200
 Ts = 0.1
-u_step1 = step_signal(N, step_time=5.0, Ts=Ts)   # Step at 5.0 seconds
-u_step2 = step_signal(N, step_time=10.0, Ts=Ts)  # Step at 10.0 seconds
+u_step1 = step_signal(N; step_time=5.0, Ts)   # Step at 5.0 seconds
+u_step2 = step_signal(N; step_time=10.0, Ts)  # Step at 10.0 seconds
 
 # Plot the signals
 p1 = plot(u_step1, title="Step at 5.0 seconds", xlabel="Sample", ylabel="Amplitude", 
