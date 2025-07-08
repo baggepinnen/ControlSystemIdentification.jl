@@ -43,6 +43,19 @@ using DSP: xcorr
         @test U[2] > 0.1 * maximum(U)
         # High frequency content should also be significant
         @test U[end÷2] > 0.1 * maximum(U)
+        
+        # Test period parameter
+        u_period = prbs(100, period=5, seed=42)
+        @test length(u_period) == 100
+        # Check that values are held for at least the specified period
+        changes = sum(diff(u_period) .!= 0)
+        max_possible_changes = floor(Int, 100 / 5)
+        @test changes <= max_possible_changes
+        
+        # Test that period=1 gives same result as default
+        u_default = prbs(100, seed=42)
+        u_period1 = prbs(100, period=1, seed=42)
+        @test u_default == u_period1
     end
     
     @testset "Chirp Tests" begin

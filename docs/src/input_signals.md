@@ -29,13 +29,18 @@ u_prbs = prbs(N; seed=42)
 # Generate a PRBS with custom amplitude levels
 u_custom = prbs(N; low=0, high=5, seed=42)
 
+# Generate a slower PRBS with period=10 (holds values for 10 samples)
+u_slow = prbs(N; period=10, seed=42)
+
 # Plot the signals
 p1 = plot(u_prbs, title="Standard PRBS", xlabel="Sample", ylabel="Amplitude", 
           label="u(t)", linewidth=2)
 p2 = plot(u_custom, title="Custom PRBS (0 to 5)", xlabel="Sample", ylabel="Amplitude", 
           label="u(t)", linewidth=2)
+p3 = plot(u_slow, title="Slow PRBS (period=10)", xlabel="Sample", ylabel="Amplitude", 
+          label="u(t)", linewidth=2)
 
-plot(p1, p2, layout=(2,1), size=(600, 400))
+plot(p1, p2, p3, layout=(3,1), size=(600, 600))
 ```
 
 ## Chirp Signals
