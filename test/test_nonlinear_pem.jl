@@ -81,12 +81,16 @@ eopt = norm(x0 - model.x0) / norm(x0)
 @test eopt < e0
 
 
+y_err = 2sqrt.(diag(Σ[1:4, 1:4]))
 
 if isinteractive()
-    scatter(p_opt, yerror=2sqrt.(diag(Σ[1:4, 1:4])), lab="Estimate")
+    scatter(p_opt, yerror=y_err, lab="Estimate")
     scatter!(p_true, lab="True")
     scatter!(p0, lab="Initial guess")
 end
+
+z_score = abs.((p_opt - p_true) ./ y_err)
+@test all(z_score .< 3) # All parameters should be within 3 standard deviations
 
 ysim = simulate(model, U)
 ypred = predict(model, d, model.x0)
