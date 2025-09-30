@@ -309,29 +309,63 @@ function interactive_sysid(initial_data=nothing)
     # ===== MODEL LIST SECTION =====
     Label(fig[6, 4:7], "Identified Models", fontsize=16, font=:bold)
 
-    # Model list display - will be updated dynamically
-    model_list_grid = GridLayout(fig[7:10, 4:7])
-    model_list_info = Observable("")
+    # Model list display - will be updated dynamically with buttons
+    model_list_scroll = GridLayout(fig[7:10, 4:7], tellheight=false)
 
-    on(model_list) do models
-        # Build info string for all models
+    # Function to rebuild model list UI
+    function rebuild_model_list_ui!()
+        # Clear existing content
+        for i in length(contents(model_list_scroll)):-1:1
+            delete!(contents(model_list_scroll)[i])
+        end
+
+        models = model_list[]
         if isempty(models)
-            model_list_info[] = "No models yet"
+            Label(model_list_scroll[1, 1:3], "No models yet", fontsize=12)
         else
-            info_lines = String[]
             for (i, model) in enumerate(models)
-                push!(info_lines, "$(i). $(model.name) ($(model.method), nx=$(model.nx))")
-                push!(info_lines, "   Pred: $(round(model.fit_pred, digits=1))%  Sim: $(round(model.fit_sim, digits=1))%")
+                # Model info
+                info_text = "$(i). $(model.name) ($(model.method), nx=$(model.nx))\n   Pred: $(round(model.fit_pred, digits=1))%  Sim: $(round(model.fit_sim, digits=1))%"
+                Label(model_list_scroll[i, 1], info_text, fontsize=11, halign=:left,
+                      justification=:left, tellwidth=false)
+
+                # Remove button for this model
+                remove_btn = Button(model_list_scroll[i, 2], label="×",
+                                   width=30, height=30)
+                # Capture the model in the closure, not the index
+                let model = model
+                    on(remove_btn.clicks) do _
+                        # Find and remove this specific model from the list
+                        idx = findfirst(m -> m === model, model_list[])
+                        if idx !== nothing
+                            deleteat!(model_list[], idx)
+                            notify(model_list)
+
+                            # Update plots (rebuild_model_list_ui! is called by on(model_list))
+                            if processed_data[] !== nothing && !isempty(model_list[])
+                                update_plots!(pred_ax, sim_ax, model_list[], processed_data[],
+                                             pred_legend, sim_legend)
+                            elseif isempty(model_list[])
+                                # Clear plots if no models left
+                                empty!(pred_ax)
+                                empty!(sim_ax)
+                            end
+
+                            status_msg[] = "$(model.name) removed"
+                        end
+                    end
+                end
             end
-            model_list_info[] = join(info_lines, "\n")
         end
     end
 
-    # Initialize
-    model_list_info[] = "No models yet"
+    # Update model list UI when models change
+    on(model_list) do _
+        rebuild_model_list_ui!()
+    end
 
-    Label(model_list_grid[1, 1], model_list_info, halign=:left, valign=:top,
-          justification=:left, fontsize=12)
+    # Initialize
+    rebuild_model_list_ui!()
 
     clear_all_btn = Button(fig[11, 4:5], label="Clear All")
     export_btn = Button(fig[11, 6:7], label="Export to Workspace")
@@ -521,15 +555,8 @@ function interactive_sysid(initial_data=nothing)
         status_msg[] = "Exported $exported model(s) to workspace"
     end
 
-    # Update model list display when it changes
-    on(model_list) do models
-        # Clear existing model list display
-        # (In a full implementation, we'd build UI elements for each model here)
-        # For now, we'll keep it simple and just update plots
-        if !isempty(models) && processed_data[] !== nothing
-            update_plots!(pred_ax, sim_ax, models, processed_data[], pred_legend, sim_legend)
-        end
-    end
+    # Note: Model list UI updates are handled by rebuild_model_list_ui!()
+    # which is called from the on(model_list) callback defined earlier
 
     # Initialize with initial data if provided
     if initial_data !== nothing
