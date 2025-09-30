@@ -307,10 +307,10 @@ function interactive_sysid(initial_data=nothing)
     identify_btn = Button(fig[10, 1:2], label="Identify Model", buttoncolor=:green)
 
     # ===== MODEL LIST SECTION =====
-    Label(fig[6, 4:7], "Identified Models", fontsize=16, font=:bold)
+    Label(fig[6, 6:8], "Identified Models", fontsize=16, font=:bold)
 
     # Model list display - will be updated dynamically with buttons
-    model_list_scroll = GridLayout(fig[7:10, 4:7], tellheight=false)
+    model_list_scroll = GridLayout(fig[7:10, 6:8], tellheight=false)
 
     # Function to rebuild model list UI
     function rebuild_model_list_ui!()
@@ -367,18 +367,18 @@ function interactive_sysid(initial_data=nothing)
     # Initialize
     rebuild_model_list_ui!()
 
-    clear_all_btn = Button(fig[11, 4:5], label="Clear All")
-    export_btn = Button(fig[11, 6:7], label="Export to Workspace")
+    clear_all_btn = Button(fig[11, 6:7], label="Clear All")
+    export_btn = Button(fig[11, 8], label="Export to Workspace")
 
     # ===== VISUALIZATION SECTION =====
     # Prediction plot
-    pred_ax = Axis(fig[12, 1:7],
+    pred_ax = Axis(fig[12, 1:8],
                    xlabel="Time [s]",
                    ylabel="Output",
                    title="Prediction Plot")
 
     # Simulation plot
-    sim_ax = Axis(fig[13, 1:7],
+    sim_ax = Axis(fig[13, 1:8],
                   xlabel="Time [s]",
                   ylabel="Output",
                   title="Simulation Plot")
@@ -391,7 +391,7 @@ function interactive_sysid(initial_data=nothing)
     sim_legend = Ref{Union{Nothing, Legend}}(nothing)
 
     # Status bar
-    Label(fig[14, 1:7], status_msg, halign=:left, color=:blue)
+    Label(fig[14, 1:8], status_msg, halign=:left, color=:blue)
 
     # ===== CALLBACKS =====
 
