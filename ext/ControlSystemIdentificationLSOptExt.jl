@@ -177,7 +177,8 @@ function _inner_pem(
     function Λ()
         resid = zeros(T * ny)
         J = ForwardDiff.jacobian(residuals!, resid, res.minimizer)
-        (T - length(p_guess)) * Symmetric(J' * J)
+        residuals!(resid, res.minimizer)
+        (T - length(p_guess)) / dot(resid, resid) * Symmetric(J' * J)
     end
 
     ukf = get_ukf(res.minimizer)

@@ -172,6 +172,7 @@ hasinput(::OutputData)                           = false
 hasinput(::AbstractIdData)                       = true
 hasinput(::AbstractArray)                        = true
 hasinput(::ControlSystemsBase.LTISystem)             = true
+hasinput(::ControlSystemsBase.LTISystem{T}) where T  = true
 ControlSystemsBase.noutputs(d::AbstractIdData)       = obslength(getfield(d, :y))
 ControlSystemsBase.ninputs(d::AbstractIdData)        = hasinput(d) ? obslength(getfield(d, :u)) : 0
 ControlSystemsBase.nstates(d::AbstractIdData)        = 0
