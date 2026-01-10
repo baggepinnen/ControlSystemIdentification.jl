@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
-authors = ["baggepinnen <baggepinnen@gmail.com>"]
 version = "2.11.8"
+authors = ["baggepinnen <baggepinnen@gmail.com>"]
 
 [deps]
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
@@ -50,7 +50,7 @@ LinearAlgebra = "1.6"
 LowLevelParticleFilters = "2.0, 3.0"
 MatrixEquations = "1.1, 2.0"
 MonteCarloMeasurements = "1.0"
-Optim = "<0.20, 0.20, 0.21, 0.22, 1.0"
+Optim = "<0.20, 0.20, 0.21, 0.22, 1.0, 2"
 Parameters = "<0.13"
 QuadGK = "2.4"
 Random = "1.6"
