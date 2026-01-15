@@ -1,6 +1,7 @@
 module ControlSystemIdentification
 
-using ComponentArrays,
+using ADTypes,
+    ComponentArrays,
     ControlSystemsBase,
     DelimitedFiles,
     FFTW,
