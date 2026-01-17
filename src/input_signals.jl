@@ -126,16 +126,21 @@ function chirp(N::Int; Ts::Real, f0::Real, f1::Real, logspace::Bool=true)
     end
     
     t = range(0, step=Ts, length=N)
+    T = t[end] - t[1]
 
     f0 > 0 && f1 > 0 || throw(ArgumentError("f0 and f1 must be positive frequencies"))
     
     if logspace
-        f = exp10.(LinRange(log10(f0), log10(f1), N))
+        f = f0 .* (f1/f0) .^ (t ./ T)
+        phase = (2π * T / log(f1/f0)) .* (f .- f0)
     else
         f = LinRange(f0, f1, N)
+        k = (f1 - f0) / T
+        phase = 2π .* (f0 .* t .+ (k/2) .* t.^2)
     end
     
-    q = @. sin(2π * f * t)
+    q = sin.(phase)
+
     return q
 end
 
