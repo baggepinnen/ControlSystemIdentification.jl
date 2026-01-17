@@ -16,7 +16,7 @@ SeeToDee = "1c904df7-48cd-41e7-921b-d889ed9a470c"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-DataInterpolations = "7"
+DataInterpolations = "8"
 Documenter = "1"
 LowLevelParticleFilters = "3.3.5"
 PrettyTables = "2"
