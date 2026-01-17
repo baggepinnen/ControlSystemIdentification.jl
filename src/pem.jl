@@ -53,7 +53,7 @@ using Optim, Optim.LineSearches
         optimizer = BFGS(
             linesearch = LineSearches.BackTracking(),
         ),
-        autodiff = :forward,
+        autodiff = AutoForwardDiff(),
         store_trace = true,
         show_trace  = true,
         show_every  = 50,
@@ -90,7 +90,7 @@ If a manually provided initial guess `sys0`, this must also be scaled appropriat
 - `focus`: `prediction` or `:simulation`. If `:simulation`, the `K` matrix will be zero.
 - `h`: Prediction horizon for the prediction error filter. Large values of `h` makes the problem computationally expensive. As `h` approaches infinity, the problem approaches the `focus = :simulation` case.
 - `optimizer`: One of Optim's optimizers
-- `autodiff`: Whether or not to use forward-mode AD to compute gradients. `:forward` (default) for forward-mode AD, or `:finite` for finite differences.
+- `autodiff`: Whether or not to use forward-mode AD to compute gradients. `AutoForwardDiff()` (default) for forward-mode AD, or `AutoFiniteDiff()` for finite differences.
 - `metric`: The metric used to measure residuals. Try, e.g., `abs` for better resistance to outliers.
 The rest of the arguments are related to `Optim.Options`.
 - `regularizer`: A function of the parameter vector and the corresponding `PredictionStateSpace/StateSpace` system that can be used to regularize the estimate.
@@ -175,7 +175,7 @@ function newpem(
         # alphaguess = LineSearches.InitialStatic(alpha = 0.95),
         linesearch = LineSearches.BackTracking(),
     ),
-    autodiff = :forward,
+    autodiff = AutoForwardDiff(),
     store_trace = true,
     show_trace = true,
     show_every = 50,
@@ -764,8 +764,8 @@ function structured_pem(
         optimizer,
         Optim.Options(;
             store_trace, show_trace, show_every, iterations, allow_f_increases,
-            time_limit, x_abstol, f_abstol, g_tol, f_calls_limit, g_calls_limit),
-        autodiff = :forward,
+            time_limit, x_abstol, f_abstol, g_tol, f_calls_limit, g_calls_limit);
+        autodiff = AutoForwardDiff(),
     )
     sys_opt, K_opt, x0_opt = inner_constructor(res.minimizer, constructor, d.Ts)
     sysp_opt = PredictionStateSpace(

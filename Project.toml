@@ -1,9 +1,10 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
 authors = ["baggepinnen <baggepinnen@gmail.com>"]
-version = "2.11.8"
+version = "2.11.9"
 
 [deps]
+ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
 ChainRules = "082447d4-558c-5d27-93f4-14fc19e9eca2"
 ComponentArrays = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
 ControlSystemsBase = "aaaaaaaa-a6ca-5380-bf3e-84a91bcd477e"
@@ -35,6 +36,7 @@ LeastSquaresOptim = "0fc2ff8b-aaa3-5acd-a817-1944a5e08891"
 ControlSystemIdentificationLSOptExt = "LeastSquaresOptim"
 
 [compat]
+ADTypes = "1"
 ChainRules = "1.58"
 ComponentArrays = "0.14, 0.15"
 ControlSystemsBase = "1.8"
@@ -50,7 +52,7 @@ LinearAlgebra = "1.6"
 LowLevelParticleFilters = "2.0, 3.0"
 MatrixEquations = "1.1, 2.0"
 MonteCarloMeasurements = "1.0"
-Optim = "<0.20, 0.20, 0.21, 0.22, 1.0"
+Optim = "2"
 Parameters = "<0.13"
 QuadGK = "2.4"
 Random = "1.6"

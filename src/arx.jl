@@ -739,9 +739,9 @@ function tfest(
         end + 0.001abs2(a[1]-1) # Promote a monic polynomial for regularization (could enforce it without loss of generality.
     end
 
-    res = Optim.optimize(loss, ComponentVector(p0), opt, opts, autodiff = :forward)
+    res = Optim.optimize(loss, ComponentVector(p0), opt, opts; autodiff = AutoForwardDiff())
     if refine
-        res = Optim.optimize(loss2, res.minimizer, opt, opts, autodiff = :forward)
+        res = Optim.optimize(loss2, res.minimizer, opt, opts; autodiff = AutoForwardDiff())
     end
     a0 = res.minimizer.a[1]
     tf(res.minimizer.b ./ a0, res.minimizer.a ./ a0)
