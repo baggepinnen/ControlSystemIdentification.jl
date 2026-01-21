@@ -53,7 +53,7 @@ chirp
 
 ```@example input_signals
 # Generate chirp signals
-N = 1000
+N  = 1000
 Ts = 0.01
 f0 = 1.0  # Start frequency (Hz)
 f1 = 10.0 # End frequency (Hz)
@@ -78,21 +78,12 @@ plot(p1, p2, layout=(2,1), size=(600, 400))
 ```@example input_signals
 using ControlSystemIdentification.FFTW
 
-# Analyze frequency content of the chirp signals
-U_log = abs.(fft(u_log))
-U_lin = abs.(fft(u_lin))
-
-# Frequency axis (only plot positive frequencies)
-freqs = (0:N-1) / (N*Ts)
-half_N = N÷2
-
-# Plot frequency domain (first half only, up to Nyquist frequency)
-p1 = plot(freqs[2:half_N], U_log[2:half_N], title="Logarithmic Chirp Spectrum", 
+p1 = welchplot(iddata(u_log, Ts), title="Logarithmic Chirp Spectrum", 
           xlabel="Frequency (Hz)", ylabel="Magnitude", label="Log chirp", 
-          xscale=:log10, yscale=:log10, linewidth=2)
-p2 = plot(freqs[2:half_N], U_lin[2:half_N], title="Linear Chirp Spectrum", 
+          xscale=:log10, yscale=:log10, linewidth=2, ylims=(1e-3, 1e-1))
+p2 = welchplot(iddata(u_lin, Ts), title="Linear Chirp Spectrum", 
           xlabel="Frequency (Hz)", ylabel="Magnitude", label="Linear chirp", 
-          xscale=:log10, yscale=:log10, linewidth=2)
+          xscale=:log10, yscale=:log10, linewidth=2, ylims=(1e-3, 1e-1))
 vline!(p1, [f0, f1], label="", linestyle=:dash, color=:red, alpha=0.7)
 vline!(p2, [f0, f1], label="", linestyle=:dash, color=:red, alpha=0.7)
 
