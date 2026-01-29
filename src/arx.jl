@@ -572,6 +572,8 @@ function plr(d::AbstractIdData, na, nb, nc; initial_order = 20, method = :ls)
         w = A \ y_train
     elseif method isa Function
         w = method(A, y_train)
+    else
+        throw(ArgumentError("Unknown method $method"))
     end
     a, b = params2poly(w, na, nb)
     model = tf(b, a, h)
