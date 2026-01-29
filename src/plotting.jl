@@ -1,7 +1,7 @@
-@recipe function plot(d::AbstractIdData)
+@recipe function plot(d::AbstractIdData; ploty=true, plotu=true)
     y = time1(output(d))
-    n = noutputs(d)
-    if hasinput(d)
+    n = ploty ? noutputs(d) : 0
+    if plotu && hasinput(d)
         u = time1(input(d))
         n += ninputs(d)
     end
@@ -11,14 +11,16 @@
     link --> :x
     xvec = range(0, step = sampletime(d), length = length(d))
 
-    for i = 1:size(y, 2)
-        @series begin
-            title --> "Output $i"
-            label --> "Output $i"
-            xvec, y[:, i]
+    if ploty
+        for i = 1:size(y, 2)
+            @series begin
+                title --> "Output $i"
+                label --> "Output $i"
+                xvec, y[:, i]
+            end
         end
     end
-    if hasinput(d)
+    if plotu && hasinput(d)
         for i = 1:size(u, 2)
             @series begin
                 title --> "Input $i"
