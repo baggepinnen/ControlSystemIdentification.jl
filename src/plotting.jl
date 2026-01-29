@@ -306,10 +306,10 @@ This method only supports single-output data, use [`okid`](@ref) for multi-outpu
 See also [`impulseest`](@ref) and [`okid`](@ref).
 """
 impulseestplot
-@recipe function impulseestplot(p::Impulseestplot; λ = 0, σ = 2)
+@recipe function impulseestplot(p::Impulseestplot; λ = 0, σ = 2, cov=true)
     d = p.args[1]
     n = length(p.args) >= 2 ? p.args[2] : 25
-    ir, t, Σ = impulseest(d, n; λ = λ)
+    ir, t, Σ = impulseest(d, n; λ, cov)
     title --> "Estimated Impulse Response"
     xguide --> "Time [s]"
 
@@ -322,15 +322,17 @@ impulseestplot
     seriescolor := :black
     label := ""
     seriestype := :line
-    S = σ .* sqrt.(diag(Σ))
-    if d.nu > 1
-        S = reshape(S, :, d.nu)
-    end
-    @series begin
-        t, S
-    end
-    @series begin
-        t, -S
+    if cov 
+        S = σ .* sqrt.(diag(Σ))
+        if d.nu > 1
+            S = reshape(S, :, d.nu)
+        end
+        @series begin
+            t, S
+        end
+        @series begin
+            t, -S
+        end
     end
 end
 

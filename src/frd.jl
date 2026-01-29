@@ -302,7 +302,7 @@ This function only supports single-output data, use [`okid`](@ref) for multi-out
 
 See also [`impulseestplot`](@ref) and [`okid`](@ref).
 """
-function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls)
+function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls, cov=true)
     d.ny == 1 || error("impulseest only supports single-output data, consider using the function okid instead")
     h, y, u = d.Ts, time1(output(d)), time1(input(d))
     N = min(size(u, 1), size(y, 1))
@@ -310,7 +310,7 @@ function impulseest(d::AbstractIdData, n; λ = 0, estimator = ls)
     A .*= h # We adjust for the sample time here in order to get both ir and Σ adjusted correctly
     ir = estimator(A, yt, λ)
     t = range(0, length = n, step = h)
-    Σ = parameter_covariance(yt, A, ir, λ)
+    Σ = cov ? parameter_covariance(yt, A, ir, λ) : nothing
     if d.nu > 1
         ir = reshape(ir, :, d.nu)
     end
