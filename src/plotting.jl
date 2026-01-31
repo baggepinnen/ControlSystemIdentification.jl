@@ -380,8 +380,8 @@ autocorplot
     title --> "Input-Output cross correlation"
     seriestype := :corrplot
     @series begin
-        label --> ""
-        lags .* Ts, xc
+        label --> reshape(["u$ui -> y$yi" for ui in 1:size(u,2), yi in 1:size(y,2)], 1, :)
+        lags .* Ts, reshape(xc, size(xc, 1), :)
     end
 end
 
