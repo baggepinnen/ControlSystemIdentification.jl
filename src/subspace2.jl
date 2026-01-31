@@ -529,6 +529,7 @@ function find_PK(L1,L2,Or,n,p,m,r,s1,s2,A,C)
     
     K0 = vl*pinv(hl)
     W = (vl - K0*hl)*(vl-K0*hl)'
+    W ./= (length(vl) - length(K0))
     
     Q = W[1:n,1:n] |> Hermitian
     S = W[1:n,n+1:n+p]
