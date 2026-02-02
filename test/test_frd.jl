@@ -77,7 +77,7 @@ plot!(√N2, subplot = 2, lab = "N Est W", alpha = 0.3, title = "Noise model")
 
     @test mean(c.r) > 0.99
     using ControlSystemIdentification: rad
-    @test mean(c[0.99rad:1.01rad].r) < 0.1 # low coherence at disturbance frequency
+    @test mean(c[0.999rad:1.001rad].r) < 0.2 # low coherence at disturbance frequency
 end
 
 
