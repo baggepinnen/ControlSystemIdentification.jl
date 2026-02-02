@@ -325,9 +325,8 @@ function wcfft_mimo(y::AbstractVector, u::AbstractMatrix; n = length(y) ÷ 10, n
     win, norm2 = DSP.Periodograms.compute_window(window, n)
     
     # Dimensions for FFT
-    nfft = nextfastfft(n)
-    n_freqs = nfft ÷ 2 + 1
-    
+    n_freqs = n ÷ 2 + 1
+
     # Initialize Accumulators
     Syy = zeros(Float64, n_freqs)
     Suu = [zeros(ComplexF64, n_inputs, n_inputs) for _ in 1:n_freqs]
