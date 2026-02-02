@@ -402,3 +402,32 @@ using Statistics
     @test meanmodel ≈ era(ds, 2, 50, 50, round(Int, 10/Ts), p=1)
     @test meanmodel ≈ era(ds, 2; m=50, n=50, l=round(Int, 10/Ts), p=1)
 end
+
+## What happens when there is a constant input offset?
+@testset "constant bias input" begin
+    @info "Testing constant bias input"
+nu = 1
+nx = 2
+ny = 1
+off = 10
+N = 1000
+u = [randn(nu, N); ones(1, N)*off]
+sys = ssrand(ny, nu, nx, Ts=1, proper=true)
+sys = ss(sys.A, sys.B .* [1 1], sys.C, 0, sys.Ts)
+y, t, x = lsim(sys, u)
+d = iddata(y, u[1:1, :], 1)
+sys_id = subspaceid(d, nx+1)
+
+# @test hinfnorm(sys[1,1] - sys_id.sys)[1] < 1e-10
+@test observability(sys_id, atol=1e-6).isobservable
+@test !controllability(sys_id, atol=1e-6).iscontrollable
+
+# bodeplot([sys[1,1], sys_id.sys], exp10.(LinRange(-3, log10(pi), 100)), plotphase=false)
+
+#=
+With a constant input offset, subspace id can compensate exactly as long as the state dimension is increased by one.
+Modal form of the estimated system gets one pole in 1, and the B and C matrix entries corresponding to this state dimension are zero.
+
+The disturbance state is observable but not controllable
+=#
+end

@@ -260,7 +260,9 @@ from which it is obvious that ``0 ≤ κ² ≤ 1`` and that κ² is close to 1 i
 """
 function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming, method=:welch, σ = 0.05)
     noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
-    ninputs(d) == 1 || throw(ArgumentError("coherence only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
+    if ninputs(d) > 1
+        return multiple_coherence(d; n, noverlap, window, σ)
+    end
     y, u, h = vec(output(d)), vec(input(d)), sampletime(d)
     if method === :welch
         Syy, Suu, Syu = wcfft(y, u, n = n, noverlap = noverlap, window = window)
@@ -289,6 +291,80 @@ function wcfft(y, u; n = length(y) ÷ 10, noverlap = n ÷ 2, window = hamming)
         @. Suu += abs2(xu)
     end
     Syy, Suu, Syu
+end
+
+function multiple_coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming, σ = 0.05)
+    noutputs(d) == 1 || throw(ArgumentError("multiple_coherence only supports a single output."))
+    ninputs(d) > 1   || throw(ArgumentError("multiple_coherence requires multiple inputs. Use `coherence` for single input."))
+    
+    y = vec(output(d))
+    u = time1(input(d))
+    h = sampletime(d)
+
+    Syy, Suu, Syu = wcfft_mimo(y, u, n = n, noverlap = noverlap, window = window)
+
+    n_freqs = length(Syy)
+    γ2 = zeros(n_freqs)
+    
+    for i in 1:n_freqs
+        s_xy = conj(Syu[i]) 
+        num = real(dot(s_xy, Suu[i] \ s_xy))
+        γ2[i] = num / Syy[i]
+    end
+
+    γ2 = clamp.(γ2, 0.0, 1.0)
+
+    Sch = FRD(freqvec(h, γ2), γ2)
+    return Sch
+end
+
+function wcfft_mimo(y::AbstractVector, u::AbstractMatrix; n = length(y) ÷ 10, noverlap = n ÷ 2, window = hamming)
+    n_samples, n_inputs = size(u)
+    n_samples == length(y) || throw(DimensionMismatch("Input and output lengths differ"))
+
+    win, norm2 = DSP.Periodograms.compute_window(window, n)
+    
+    # Dimensions for FFT
+    nfft = nextfastfft(n)
+    n_freqs = nfft ÷ 2 + 1
+    
+    # Initialize Accumulators
+    Syy = zeros(Float64, n_freqs)
+    Suu = [zeros(ComplexF64, n_inputs, n_inputs) for _ in 1:n_freqs]
+    Syu = [zeros(ComplexF64, n_inputs) for _ in 1:n_freqs] # Vector of vectors
+
+    # Calculate window stride
+    step = n - noverlap
+    
+    # Segment Loop (Manual splitting to handle Matrix u safely)
+    for i in 1:step:(n_samples - n + 1)
+        # Extract segments and apply window
+        y_seg = y[i:i+n-1] .* win
+        u_seg = u[i:i+n-1, :] .* win # Broadcast window across columns
+
+        # Compute FFTs
+        Y_f = rfft(y_seg)
+        U_f = rfft(u_seg) # FFT along time dimension (dim 1)
+        
+        # Accumulate Spectra per frequency bin
+        for k in 1:n_freqs
+            Y_k = Y_f[k]       # Scalar
+            U_k = U_f[k, :]    # Vector (1 x Inputs)
+
+            # Auto-spectrum Output (Scalar)
+            Syy[k] += abs2(Y_k)
+
+            # Auto-spectral Matrix Input (Matrix: Inputs x Inputs)
+            # Outer product: U * U'
+            Suu[k] .+= U_k * U_k' 
+
+            # Cross-spectral Vector (Vector: Inputs)
+            # We compute S_yx = Y * U' (Output * conj(Input))
+            Syu[k] .+= Y_k .* conj.(U_k)
+        end
+    end
+
+    return Syy, Suu, Syu
 end
 
 

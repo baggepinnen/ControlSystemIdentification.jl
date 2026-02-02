@@ -58,6 +58,31 @@ plot!(G2, subplot = 1, lab = "G Est W", alpha = 0.3, title = "Process model")
 plot!(√N2, subplot = 2, lab = "N Est W", alpha = 0.3, title = "Noise model")
 
 
+
+@testset "multiple coherence" begin
+    @info "Testing multiple coherence"
+    nu = 2
+    nx = 2
+    ny = 1
+    N = 10000
+    u = randn(nu, N)
+    sys = ssrand(ny, nu, nx, Ts=1, proper=true)
+    sys.B .= I(nu)
+    y, t, x = lsim(sys, u)
+    y .+= sin.(1 .* t')
+    d = iddata(y, u, 1)
+    c = coherence(d)
+    plot(c, yscale=:identity)
+    coherenceplot(d)
+
+    @test mean(c.r) > 0.99
+    using ControlSystemIdentification: rad
+    @test mean(c[0.999rad:1.001rad].r) < 0.2 # low coherence at disturbance frequency
+end
+
+
+
+
 for op in (+, -, *, /)
     @test op(G, G) isa FRD
 end

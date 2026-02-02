@@ -268,7 +268,6 @@ coherenceplot
         ArgumentError("Call like this: coherenceplot(iddata; hz=false)")
     d = p.args[1]
     d isa AbstractIdData || throw(ae)
-    ninputs(d) == 1 || throw(ArgumentError("coherenceplot only supports a single input. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
     if length(p.args) >= 2
         kwargs = p.args[2]
     else
@@ -282,7 +281,7 @@ coherenceplot
     title --> "Coherence"
     label --> false
     for i = 1:d.ny
-        frd = coherence(d[i,1]; kwargs...)
+        frd = coherence(d[i,:]; kwargs...)
         @series begin
             inds = findall(x -> x == 0, frd.w)
             useinds = setdiff(1:length(frd.w), inds)
