@@ -21,12 +21,13 @@ y_{k+1} &= (a + bL)y_k + b r_k
 ```
 The very first experiment below will illustrate the problem when there is no excitation through $r$.
 
-We start by defining a model of the true system, a function that simulates some data and adds colored output noise, as well as a function that estimates three different models and plots their frequency responses. We will consider three estimation methods
+We start by defining a model of the true system, a function that simulates some data and adds colored output noise, as well as a function that estimates four different models and plots their frequency responses. We will consider four estimation methods
 1. [`arx`](@ref), a prediction-error approach based on a least-squares estimate.
 2. A subspace-based method [`subspaceid`](@ref), known to be biased in the presence of output feedback.
-3. The prediction-error method (PEM) [`newpem`](@ref)
+3. [`pbsid`](@ref), a predictor-based subspace method (PBSIDopt from Chiuso 2007) designed to handle closed-loop data.
+4. The prediction-error method (PEM) [`newpem`](@ref)
 
-The ARX and PEM methods are theoretically unbiased in the presence of output feedback, see [^Ljung], while the subspace-based method is not. (Note: the subspace-based method is used to form the initial guess for the iterative PEM algorithm)
+The ARX, PBSID and PEM methods are theoretically unbiased in the presence of output feedback, see [^Ljung], while the standard subspace-based method is not. (Note: the subspace-based method is used to form the initial guess for the iterative PEM algorithm)
 
 ```@example closedloop
 using ControlSystemsBase, ControlSystemIdentification, Plots
@@ -46,20 +47,20 @@ function generate_data(u; T)
     d
 end
 
-function estimate_and_plot(d, nx=1; title, focus=:prediciton)
+function estimate_and_plot(d, nx=1; title, focus=:prediction)
     Gh1 = arx(d, 1, 1)
 
     sys0 = subspaceid(d, nx; focus)
-    tf(sys0)
+
+    sys_pbsid = pbsid(d, nx, weight=1)
 
     Gh2, _ = ControlSystemIdentification.newpem(d, nx; sys0, focus)
-    tf(Gh2)
 
     figb = bodeplot(
-        [G, Gh1, sys0.sys, Gh2.sys];
+        [G, Gh1, sys0.sys, sys_pbsid.sys, Gh2.sys];
         ticks = :default,
         title,
-        lab = ["True system" "ARX" "Subspace" "PEM"],
+        lab = ["True system" "ARX" "Subspace" "PBSID" "PEM"],
         plotphase = false,
     )
 
@@ -92,14 +93,14 @@ title = "-Lx + 5sin(t)"
 estimate_and_plot(generate_data(u, T=80), title=title*",  T=80")
 ```
 
-In this case, all but the subspace-based method performs quite well
+In this case, ARX and PEM perform well, PBSID performs somewhere in the middle, while the standard subspace method performs pooly
 ```@example closedloop
 estimate_and_plot(generate_data(u, T=8000), title=title*",  T=8000")
 ```
 
-More data does not help the subspace method.
+More data does not help the poorly perfoming methods.
 
-With **a more complex excitation** (random white-spectrum noise), all methods perform well
+With **a more complex excitation** (random white-spectrum noise), all methods perform well despite a small amount of data
 ```@example closedloop
 L = 0.5 # Feedback gain u = -L*x
 u = (x, t) -> -L * x .+ 5randn()
@@ -107,10 +108,6 @@ title = "-Lx + 5randn()"
 estimate_and_plot(generate_data(u, T=80), title=title*",  T=80")
 ```
 
-and even slightly better with more data.
-```@example closedloop
-estimate_and_plot(generate_data(u, T=8000), title=title*",  T=8000")
-```
 
 If the **feedback is strong but the excitation is weak**, the results are rather poor for all methods, it's thus important to have enough energy in the excitation compared to the feedback path.
 ```@example closedloop
@@ -120,7 +117,7 @@ title = "-Lx + 0.1randn()"
 estimate_and_plot(generate_data(u, T=80), title=title*",  T=80")
 ```
 
-In this case, we can try to increase the model order of the PEM and subspace-based methods to see if they are able to learn the noise model (which has two poles)
+In this case, we can try to increase the model order of the PEM, PBSID and subspace-based methods to see if they are able to learn the noise model (which has two poles)
 ```@example closedloop
 estimate_and_plot(generate_data(u, T=8000), 3, title=title*",  T=8000")
 ```

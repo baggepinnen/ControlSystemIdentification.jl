@@ -47,7 +47,7 @@ export iddata,
 
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace,
     pem, newpem, structured_pem, prediction_error, prediction_error_filter, predictiondata, predict, simulate, noise_model, estimate_x0
-export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
+export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab, pbsid
 export getARXregressor,
     getARregressor,
     find_na,
@@ -84,6 +84,7 @@ include("pem.jl")
 include("arx.jl")
 include("subspace.jl")
 include("subspace2.jl")
+include("pbsid.jl")
 include("spectrogram.jl")
 include("frequency_weights.jl")
 include("basis_functions.jl")
