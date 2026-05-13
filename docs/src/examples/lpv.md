@@ -80,22 +80,17 @@ sys_lpv(0.0)
 
 ## Validation
 
-We compare one-step prediction against ground truth on the full trajectory and
-against a single LTI fit by [`subspaceid`](@ref):
+We compare simulation performance against ground truth on the full trajectory and
+against a single LTI fit by [`subspaceid`](@ref). As with `predplot` for the
+LPV case, passing the schedule `λ` as the third positional argument to
+[`simplot`](@ref) is enough for it to route through the LPV one-step
+predictor. Each trace is annotated with its NRMSE fit percentage.
 
 ```@example lpv
-yh_lpv = ControlSystemIdentification.predict(sys_lpv, d, λ; x0 = x0h)
-
 sys_lti = subspaceid(d, 2)
-yh_lti  = predict(sys_lti, d)
 
-e_lpv = mean(abs2, d.y .- yh_lpv)
-e_lti = mean(abs2, d.y .- yh_lti)
-@info "Prediction MSE — LPV: $e_lpv,  single LTI: $e_lti"
-
-plot(timevec(d), vec(d.y); lab = "measured", xlabel = "t [s]")
-plot!(timevec(d), vec(yh_lpv); lab = "LPV prediction")
-plot!(timevec(d), vec(yh_lti); lab = "LTI prediction", ls = :dash)
+simplot(sys_lpv, d, λ; sysname = "LPV")
+simplot!(sys_lti, d;   sysname = "LTI", ploty = false)
 ```
 
 On varying-``\lambda`` data the LPV model is strictly better than any single
@@ -189,20 +184,17 @@ sys_susp, x0_susp, _ = res2
 ### Validation: LPV vs single LTI fit
 
 A single LTI fit has to compromise between the under- and over-damped regimes
-the experiment sweeps through, while the LPV model does not.
+the experiment sweeps through, while the LPV model does not. We use
+[`simplot`](@ref) to overlay simulation against measurement and annotate each
+trace with its NRMSE fit percentage. Passing the schedule `λ` as the third
+positional argument to `simplot` is enough for the recipe to route it through
+the LPV simulator.
 
 ```@example lpv2
 sys_lti2 = subspaceid(d, 2)
-yh_lpv2  = ControlSystemIdentification.predict(sys_susp, d, λ; x0 = x0_susp)
-yh_lti2  = predict(sys_lti2, d)
-e_lpv2   = mean(abs2, d.y .- yh_lpv2)
-e_lti2   = mean(abs2, d.y .- yh_lti2)
-@info "Prediction MSE — LPV: $e_lpv2,  single LTI: $e_lti2"
 
-ix = 1:600   # short window for visual clarity
-plot(t[ix], vec(d.y)[ix];   lab = "measured", lw = 1.2, xlabel = "t [s]")
-plot!(t[ix], vec(yh_lpv2)[ix]; lab = "LPV prediction")
-plot!(t[ix], vec(yh_lti2)[ix]; lab = "LTI prediction", ls = :dash)
+simplot(sys_susp, d, λ;  sysname = "LPV")
+simplot!(sys_lti2, d;    sysname = "LTI", ploty=false)
 ```
 
 ### Frequency response at frozen operating points
