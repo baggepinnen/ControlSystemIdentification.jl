@@ -47,6 +47,7 @@ export iddata,
 
 export AbstractPredictionStateSpace, PredictionStateSpace, N4SIDStateSpace,
     pem, newpem, structured_pem, prediction_error, prediction_error_filter, predictiondata, predict, simulate, noise_model, estimate_x0
+export LPVStateSpace, lpv_pem, lpv_warmstart
 export n4sid, subspaceid, era, okid, find_similarity_transform, schur_stab
 export getARXregressor,
     getARregressor,
@@ -87,6 +88,7 @@ include("subspace2.jl")
 include("spectrogram.jl")
 include("frequency_weights.jl")
 include("basis_functions.jl")
+include("lpv.jl")
 include("plotting.jl")
 include("input_signals.jl")
 
