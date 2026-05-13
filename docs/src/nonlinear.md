@@ -7,9 +7,10 @@ using DisplayAs
 
 # Identification of nonlinear models
 
-This package supports two forms of nonlinear system identification.
+This package supports three forms of nonlinear system identification.
 - Parameter estimation in a known model structure (linear or nonlinear) ``x⁺ = f(x, u, p)`` where `p` is a vector of parameters to be estimated.
 - Estimation of Hammerstein-Wiener models, i.e., linear systems with static nonlinear functions on the input and/or output.
+- Estimation of Linear Parameter-Varying (LPV) state-space models, i.e., systems whose ``A,B,C,D`` matrices depend on a measured scheduling variable ``\lambda(t)``. This captures operating-point–dependent behavior of a nonlinear plant by interpolating between locally linear models.
 
 ## Parameter estimation in a known model structure
 Parameter estimation in differential equations can be performed by forming a one-step ahead predictor of the output, and minimizing the prediction error. This procedure is packaged in the function [`ControlSystemIdentification.nonlinear_pem`](@ref) which is available as a package extension, available if the user manually installs and loads [LeastSquaresOptim.jl](https://github.com/matthieugomez/LeastSquaresOptim.jl).
@@ -248,6 +249,27 @@ scatter!(d.t, ynn', lab="Measured nonlinear output", sp=1)
 plot!(d.t, yh', lab="Simulation", sp=1, l=:dash)
 DisplayAs.PNG(current()) # hide
 ```
+
+
+## Linear Parameter-Varying (LPV) identification
+
+!!! warning "Experimental"
+    LPV identification in this package is considered experimental and may
+    change in the future without respecting semantic versioning.
+
+[`lpv_pem`](@ref) fits a state-space model whose matrices depend on a measured
+scheduling variable ``\lambda(t)`` through a user-supplied basis expansion,
+``A(\lambda) = \sum_k \theta^A_k\, \varphi_k(\lambda)`` and likewise for
+``B,C,D``. The returned [`LPVStateSpace`](@ref) is callable: `sys(λ)` returns
+a plain `StateSpace` frozen at that operating point.
+
+```@docs
+ControlSystemIdentification.lpv_pem
+ControlSystemIdentification.LPVStateSpace
+ControlSystemIdentification.lpv_warmstart
+```
+
+See [LPV identification](@ref) for a worked example.
 
 
 # Video tutorials
