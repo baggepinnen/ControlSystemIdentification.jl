@@ -27,12 +27,17 @@ end
 
 # Hand-rolled because the inner BFGS loop is differentiated through with ForwardDiff,
 # and tensor-array operations (tullio/einsum/NNlib) drag in heavier dependencies.
-function _contract(M::AbstractArray{<:Any,3}, φ)
-    out = M[:, :, 1] .* φ[1]
-    @inbounds for k in 2:length(φ)
+function _contract!(out, M::AbstractArray{<:Any,3}, φ)
+    out .= 0
+    @inbounds @views for k in eachindex(φ)
         out .= out .+ M[:, :, k] .* φ[k]
     end
     out
+end
+
+function _contract(M::AbstractArray{T,3}, φ) where T
+    out = zeros(T, size(M, 1), size(M, 2))
+    _contract!(out, M, φ)
 end
 
 # ----------------------------------------------------------------------------
@@ -277,26 +282,38 @@ function _lpv_dataset_predloss(p, x0_col, basis_fn, λ, y, u, metric,
                                 ::Val{zeroD}, ::Val{predflag}) where {zeroD, predflag}
     N = size(y, 2)
     x = copy(x0_col)
-    L = zero(eltype(p))
+    L = zero(promote_type(eltype(p), eltype(λ)))
+    nx = length(x)
+    nu = size(u, 1)
+    ny = size(y, 1)
+    At = zeros(eltype(p), nx, nx)
+    Bt = zeros(eltype(p), nx, nu)
+    Ct = zeros(eltype(p), ny, nx)
+    Dt = zeros(eltype(p), ny, nu)
+    ŷ = zeros(eltype(p), ny)
+    e = zeros(eltype(p), ny)
+    xtmp = zeros(eltype(p), nx)
     @inbounds for t in 1:N
         φ = basis_fn(λ[t])
-        At = _contract(p.A, φ)
-        Bt = _contract(p.B, φ)
-        Ct = _contract(p.C, φ)
+        _contract!(At, p.A, φ)
+        _contract!(Bt, p.B, φ)
+        _contract!(Ct, p.C, φ)
         ut = @view u[:, t]
         yt = @view y[:, t]
-        if zeroD
-            ŷ = Ct * x
-        else
-            Dt = _contract(p.D, φ)
-            ŷ = Ct * x + Dt * ut
+        # ŷ ← Ct*x [+ Dt*ut]
+        mul!(ŷ, Ct, x)
+        if !zeroD
+            _contract!(Dt, p.D, φ)
+            mul!(ŷ, Dt, ut, 1, 1)
         end
-        e = yt - ŷ
+        e .= yt .- ŷ
         L += sum(metric, e)
+        # x ← At*x + Bt*ut [+ K*e]; bounce through xtmp to avoid mul! output/input aliasing on x.
+        mul!(xtmp, At, x)
+        x, xtmp = xtmp, x
+        mul!(x, Bt, ut, 1, 1)
         if predflag
-            x = At * x + Bt * ut + p.K * e
-        else
-            x = At * x + Bt * ut
+            mul!(x, p.K, e, 1, 1)
         end
     end
     L
@@ -318,7 +335,7 @@ function _lpv_multi_loss_factory(zeroD_v::Val, predflag_v::Val, basis_fn, λs, y
     let basis_fn = basis_fn, λs = λs, ys = ys, us = us, metric = metric, regularizer = regularizer
         function loss(p)
             L = zero(eltype(p))
-            @inbounds for i in 1:length(λs)
+            @inbounds for i in eachindex(λs)
                 L += _lpv_dataset_predloss(p, view(p.x0, :, i), basis_fn,
                                             λs[i], ys[i], us[i], metric,
                                             zeroD_v, predflag_v)
