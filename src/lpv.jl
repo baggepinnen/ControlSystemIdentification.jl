@@ -409,7 +409,6 @@ See also [`lpv_warmstart`](@ref), [`structured_pem`](@ref), [`newpem`](@ref).
     `h > 1` prediction horizon, multi-dimensional scheduling variables, and
     λ-varying `K` are also not yet supported.
 """
-# Single-dataset wrapper: delegates to the multi-dataset implementation and unwraps x0 back to a Vector.
 function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
                  x0 = nothing, kwargs...)
     x0_mat = x0 === nothing ? nothing : reshape(collect(x0), :, 1)
