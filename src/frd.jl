@@ -259,7 +259,7 @@ For the signal model ``y = Gu + v``, ``κ²`` is defined as
 from which it is obvious that ``0 ≤ κ² ≤ 1`` and that κ² is close to 1 if the noise energy ``S_{vv}`` is small compared to the output energy due to the input ``S_{uu}|G(iω)|^2``.
 """
 function coherence(d::AbstractIdData; n = length(d) ÷ 10, noverlap = n ÷ 2, window = hamming, method=:welch, σ = 0.05)
-    noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,j]` to obtain the `i`:th output and the `j`:th input."))
+    noutputs(d) == 1 || throw(ArgumentError("coherence only supports a single output. Index the data object like `d[i,:]` to obtain the `i`:th output."))
     if ninputs(d) > 1
         return multiple_coherence(d; n, noverlap, window, σ)
     end
