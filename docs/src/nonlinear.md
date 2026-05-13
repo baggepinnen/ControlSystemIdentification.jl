@@ -259,7 +259,7 @@ DisplayAs.PNG(current()) # hide
 
 [`lpv_pem`](@ref) fits a state-space model whose matrices depend on a measured
 scheduling variable ``\lambda(t)`` through a user-supplied basis expansion,
-``A(\lambda) = \sum_k \theta^A_k\, \varphi_k(\lambda)`` and likewise for
+``A(\lambda) = \sum_k A_k\, \varphi_k(\lambda)`` and likewise for
 ``B,C,D``. The returned [`LPVStateSpace`](@ref) is callable: `sys(λ)` returns
 a plain `StateSpace` frozen at that operating point.
 

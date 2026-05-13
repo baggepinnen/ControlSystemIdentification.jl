@@ -3,7 +3,7 @@
 # The user supplies a scheduling-variable trajectory λ(t) and a basis {φ_k} in λ.
 # The estimated model has matrices
 #
-#     A(λ) = Σ_k θ^A_k φ_k(λ),    similarly for B(λ), C(λ), D(λ),
+#     A(λ) = Σ_k A_k φ_k(λ),    similarly for B(λ), C(λ), D(λ),
 #
 # i.e. a single shared state-space realization whose entries depend smoothly on λ.
 # Estimation uses the same prediction-error scaffolding (Optim + ForwardDiff) as
@@ -355,7 +355,7 @@ Linear Parameter-Varying (LPV) state-space identification using PEM.
 The model has matrices that vary as a basis expansion in a measured scalar
 scheduling variable `λ(t)`:
 
-    A(λ) = Σ_k θ^A_k φ_k(λ),     ...,     D(λ) = Σ_k θ^D_k φ_k(λ).
+    A(λ) = Σ_k A_k φ_k(λ),     ...,     D(λ) = Σ_k D_k φ_k(λ).
 
 A constant Kalman gain `K` is also estimated (when `focus = :prediction`).
 Estimation minimizes one-step prediction error over the full dataset; the

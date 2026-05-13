@@ -10,10 +10,10 @@ on a *known, measured* scalar scheduling variable ``\lambda(t)``:
 
 ```math
 \begin{aligned}
-A(\lambda) &= \sum_{k} \theta^A_k\, \varphi_k(\lambda),\\
-B(\lambda) &= \sum_{k} \theta^B_k\, \varphi_k(\lambda),\\
-C(\lambda) &= \sum_{k} \theta^C_k\, \varphi_k(\lambda),\\
-D(\lambda) &= \sum_{k} \theta^D_k\, \varphi_k(\lambda),
+A(\lambda) &= \sum_{k} A_k\, \varphi_k(\lambda),\\
+B(\lambda) &= \sum_{k} B_k\, \varphi_k(\lambda),\\
+C(\lambda) &= \sum_{k} C_k\, \varphi_k(\lambda),\\
+D(\lambda) &= \sum_{k} D_k\, \varphi_k(\lambda),
 \end{aligned}
 ```
 
