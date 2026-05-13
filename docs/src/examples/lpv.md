@@ -1,5 +1,9 @@
 # Linear Parameter-Varying (LPV) identification
 
+!!! warning "Experimental"
+    LPV identification in this package is considered experimental and may
+    change in the future without respecting semantic versioning.
+
 This example shows how to identify a Linear Parameter-Varying (LPV)
 state-space model using [`lpv_pem`](@ref). The model has matrices that depend
 on a *known, measured* scalar scheduling variable ``\lambda(t)``:

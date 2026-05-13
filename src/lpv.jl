@@ -60,6 +60,12 @@ Fields:
 
 Call `sys(λ)` to obtain a frozen `StateSpace` at a particular operating point.
 See also [`lpv_pem`](@ref), [`lpv_warmstart`](@ref).
+
+!!! warning "Experimental"
+    LPV identification in this package is considered experimental and may
+    change in the future without respecting semantic versioning. In particular,
+    the field layout of [`LPVStateSpace`](@ref), the basis API, and the
+    handling of the Kalman gain are subject to revision.
 """
 struct LPVStateSpace{Tθ,Tb,TK,TT}
     basis::Tb
@@ -159,7 +165,8 @@ end
 # ----------------------------------------------------------------------------
 
 """
-    lpv_warmstart(d, λ, nx; basis, window = nothing, stride = nothing) -> ComponentArray
+    lpv_warmstart(d,  λ,  nx; basis, window = nothing, stride = nothing) -> ComponentArray
+    lpv_warmstart(ds, λs, nx; basis, window = nothing, stride = nothing) -> ComponentArray
 
 Produce an initial guess `θ⁰` for [`lpv_pem`](@ref) by
 
@@ -167,6 +174,12 @@ Produce an initial guess `θ⁰` for [`lpv_pem`](@ref) by
 2. bringing every local model to a common modal form via `modal_form`;
 3. regressing the entries of `A, B, C, D` against `basis(λ̄_i)` by ordinary least
    squares, where `λ̄_i` is the mean of `λ` in window `i`.
+
+If a vector of datasets `ds` together with the corresponding vector of
+scheduling trajectories `λs` is provided, the same procedure is applied to each
+dataset independently and the resulting local models are pooled before the
+final regression. All datasets must share the same sample time, number of
+inputs, and number of outputs.
 
 `basis` follows the same convention as in [`lpv_pem`](@ref) (a `Function` returning
 a vector, or a `Vector` of functions). `window` defaults to `max(20nx, N÷10)` and
@@ -179,35 +192,49 @@ instead.
 
 Returns a `ComponentArray` with fields `A, B, C, D`, each a 3-D array whose
 trailing dimension is the basis index.
+
+!!! warning "Experimental"
+    LPV identification in this package is considered experimental and may
+    change in the future without respecting semantic versioning.
 """
-function lpv_warmstart(d::AbstractIdData, λ::AbstractVector, nx::Int;
+lpv_warmstart(d::AbstractIdData, λ::AbstractVector, nx::Int; kwargs...) =
+    lpv_warmstart([d], [λ], nx; kwargs...)
+
+function lpv_warmstart(ds::AbstractVector{<:AbstractIdData},
+                       λs::AbstractVector,
+                       nx::Int;
                        basis,
                        window::Union{Nothing,Int} = nothing,
                        stride::Union{Nothing,Int} = nothing)
-    length(λ) == length(d) || throw(ArgumentError("length(λ) must equal length(d)"))
-    basis_fn, nb = _normalize_basis(basis, first(λ))
-    N = length(d)
-    ny, nu = d.ny, d.nu
-
-    window === nothing && (window = max(20nx, N ÷ 10))
-    window = min(window, N)
-    stride === nothing && (stride = max(1, window ÷ 4))
-
-    starts = 1:stride:(N - window + 1)
-    isempty(starts) && (starts = 1:1)
+    length(ds) == length(λs) || throw(ArgumentError("Number of datasets must equal number of λ trajectories"))
+    isempty(ds) && throw(ArgumentError("Must provide at least one dataset"))
+    allequal(d.Ts for d in ds) || throw(ArgumentError("All datasets must share the same sample time"))
+    ny, nu = ds[1].ny, ds[1].nu
+    all(d.ny == ny for d in ds) || throw(ArgumentError("All datasets must have the same number of outputs"))
+    all(d.nu == nu for d in ds) || throw(ArgumentError("All datasets must have the same number of inputs"))
+    basis_fn, nb = _normalize_basis(basis, first(λs[1]))
 
     locals = StateSpace[]
     λ_means = Float64[]
-    for w in starts
-        d_i = d[w:(w + window - 1)]
-        λ_i = @view λ[w:(w + window - 1)]
-        try
-            sys_i = subspaceid(d_i, nx; verbose = false)
-            sysm, _, _ = modal_form(sys_i.sys)
-            push!(locals, sysm)
-            push!(λ_means, mean(λ_i))
-        catch err
-            @warn "Local fit failed for window starting at $w; skipping" exception = (err, catch_backtrace())
+    for (d, λ) in zip(ds, λs)
+        length(λ) == length(d) || throw(ArgumentError("each λ must have the same length as its dataset"))
+        N = length(d)
+        w = window === nothing ? max(20nx, N ÷ 10) : window
+        w = min(w, N)
+        st = stride === nothing ? max(1, w ÷ 4) : stride
+        starts = 1:st:(N - w + 1)
+        isempty(starts) && (starts = 1:1)
+        for s in starts
+            d_i = d[s:(s + w - 1)]
+            λ_i = @view λ[s:(s + w - 1)]
+            try
+                sys_i = subspaceid(d_i, nx; verbose = false)
+                sysm, _, _ = modal_form(sys_i.sys)
+                push!(locals, sysm)
+                push!(λ_means, mean(λ_i))
+            catch err
+                @warn "Local fit failed for window starting at $s; skipping" exception = (err, catch_backtrace())
+            end
         end
     end
 
@@ -246,32 +273,55 @@ end
 # lpv_pem
 # ----------------------------------------------------------------------------
 
-function _lpv_loss_factory(::Val{zeroD}, ::Val{predflag}, basis_fn, λ, y, u, metric, regularizer) where {zeroD, predflag}
+function _lpv_dataset_predloss(p, x0_col, basis_fn, λ, y, u, metric,
+                                ::Val{zeroD}, ::Val{predflag}) where {zeroD, predflag}
+    N = size(y, 2)
+    x = copy(x0_col)
+    L = zero(eltype(p))
+    @inbounds for t in 1:N
+        φ = basis_fn(λ[t])
+        At = _contract(p.A, φ)
+        Bt = _contract(p.B, φ)
+        Ct = _contract(p.C, φ)
+        ut = @view u[:, t]
+        yt = @view y[:, t]
+        if zeroD
+            ŷ = Ct * x
+        else
+            Dt = _contract(p.D, φ)
+            ŷ = Ct * x + Dt * ut
+        end
+        e = yt - ŷ
+        L += sum(metric, e)
+        if predflag
+            x = At * x + Bt * ut + p.K * e
+        else
+            x = At * x + Bt * ut
+        end
+    end
+    L
+end
+
+# Single-dataset loss: x0 is a Vector (column) in the ComponentArray.
+function _lpv_loss_factory(zeroD_v::Val, predflag_v::Val, basis_fn, λ, y, u, metric, regularizer)
     let basis_fn = basis_fn, λ = λ, y = y, u = u, metric = metric, regularizer = regularizer
         function loss(p)
-            N = size(y, 2)
-            x = copy(p.x0)
+            L = _lpv_dataset_predloss(p, p.x0, basis_fn, λ, y, u, metric, zeroD_v, predflag_v)
+            L + regularizer(p)
+        end
+        return loss
+    end
+end
+
+# Multi-dataset loss: x0 is a Matrix of shape (nx, M); column i is the initial state for dataset i.
+function _lpv_multi_loss_factory(zeroD_v::Val, predflag_v::Val, basis_fn, λs, ys, us, metric, regularizer)
+    let basis_fn = basis_fn, λs = λs, ys = ys, us = us, metric = metric, regularizer = regularizer
+        function loss(p)
             L = zero(eltype(p))
-            @inbounds for t in 1:N
-                φ = basis_fn(λ[t])
-                At = _contract(p.A, φ)
-                Bt = _contract(p.B, φ)
-                Ct = _contract(p.C, φ)
-                ut = @view u[:, t]
-                yt = @view y[:, t]
-                if zeroD
-                    ŷ = Ct * x
-                else
-                    Dt = _contract(p.D, φ)
-                    ŷ = Ct * x + Dt * ut
-                end
-                e = yt - ŷ
-                L += sum(metric, e)
-                if predflag
-                    x = At * x + Bt * ut + p.K * e
-                else
-                    x = At * x + Bt * ut
-                end
+            @inbounds for i in 1:length(λs)
+                L += _lpv_dataset_predloss(p, view(p.x0, :, i), basis_fn,
+                                            λs[i], ys[i], us[i], metric,
+                                            zeroD_v, predflag_v)
             end
             L + regularizer(p)
         end
@@ -280,23 +330,8 @@ function _lpv_loss_factory(::Val{zeroD}, ::Val{predflag}, basis_fn, λ, y, u, me
 end
 
 """
-    sys, x0, res = lpv_pem(
-        d, λ, nx;
-        basis,
-        focus = :prediction,
-        zeroD = false,
-        p0 = nothing,
-        K0 = nothing,
-        x0 = nothing,
-        h = 1,
-        metric = abs2,
-        regularizer = p -> 0,
-        optimizer = BFGS(linesearch = LineSearches.BackTracking()),
-        store_trace = true, show_trace = true, show_every = 50,
-        iterations = 10000, allow_f_increases = false,
-        time_limit = 100, x_tol = 0, f_abstol = 1e-16, g_tol = 1e-12,
-        f_calls_limit = 0, g_calls_limit = 0,
-    )
+    sys, x0, res = lpv_pem( d,  λ,  nx; basis, ...)
+    sys, x0, res = lpv_pem(ds, λs, nx; basis, ...)
 
 Linear Parameter-Varying (LPV) state-space identification using PEM.
 
@@ -309,9 +344,16 @@ A constant Kalman gain `K` is also estimated (when `focus = :prediction`).
 Estimation minimizes one-step prediction error over the full dataset; the
 predictor is time-varying along `λ(t)`.
 
+If a vector of datasets `ds` and a corresponding vector of scheduling
+trajectories `λs` is passed, the same parameters `θ` and `K` are fit to all
+datasets jointly. Each dataset gets its own initial state, returned as a
+matrix `x0::Matrix{Float64}` of shape `(nx, length(ds))`. All datasets must
+share sample time, number of inputs, and number of outputs.
+
 # Arguments
-- `d`: [`iddata`](@ref).
-- `λ::AbstractVector`: scheduling trajectory, `length(λ) == length(d)`.
+- `d`, `ds`: [`iddata`](@ref) (or a vector thereof).
+- `λ::AbstractVector`, `λs`: scheduling trajectory (or a vector of them);
+  each must satisfy `length(λ) == length(d)`.
 - `nx`: model order.
 
 # Keyword arguments
@@ -324,13 +366,15 @@ predictor is time-varying along `λ(t)`.
   shape `(nx,nx,nb),(nx,nu,nb),(ny,nx,nb),(ny,nu,nb)`. If `nothing`, a warm
   start is computed via [`lpv_warmstart`](@ref).
 - `K0`: optional initial Kalman gain `(nx,ny)`.
-- `x0`: optional initial state.
+- `x0`: optional initial state. For the multi-dataset method, this is a
+  matrix of shape `(nx, length(ds))` with one column per experiment.
 - The remaining keyword arguments are forwarded to `Optim.Options` and follow
   the same conventions as [`structured_pem`](@ref) and [`newpem`](@ref).
 
 # Returns
 A named tuple `(; sys, x0, res)` where `sys::LPVStateSpace`, `x0` is the
-optimized initial state, and `res` is the `Optim` result.
+optimized initial state (a `Vector` for the single-dataset method, a `Matrix`
+for the multi-dataset method), and `res` is the `Optim` result.
 
 # Example
 ```julia
@@ -356,8 +400,26 @@ sys, x0h, res = lpv_pem(d, λ, 2; basis)
 ```
 
 See also [`lpv_warmstart`](@ref), [`structured_pem`](@ref), [`newpem`](@ref).
+
+!!! warning "Experimental"
+    LPV identification in this package is considered experimental and may
+    change in the future without respecting semantic versioning. The basis
+    API, the handling of the Kalman gain `K`, and the return type
+    [`LPVStateSpace`](@ref) in particular are subject to revision; the
+    `h > 1` prediction horizon, multi-dimensional scheduling variables, and
+    λ-varying `K` are also not yet supported.
 """
+# Single-dataset wrapper: delegates to the multi-dataset implementation and unwraps x0 back to a Vector.
 function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
+                 x0 = nothing, kwargs...)
+    x0_mat = x0 === nothing ? nothing : reshape(collect(x0), :, 1)
+    out = lpv_pem([d], [λ], nx; x0 = x0_mat, kwargs...)
+    (; sys = out.sys, x0 = vec(out.x0), res = out.res)
+end
+
+function lpv_pem(ds::AbstractVector{<:AbstractIdData},
+                 λs::AbstractVector,
+                 nx::Int;
                  basis,
                  focus::Symbol = :prediction,
                  zeroD::Bool = false,
@@ -383,14 +445,23 @@ function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
                  ) where {F,RE}
     h == 1 || throw(ArgumentError("h > 1 not supported for lpv_pem yet"))
     focus ∈ (:prediction, :simulation) || throw(ArgumentError("focus must be :prediction or :simulation"))
-    length(λ) == length(d) || throw(ArgumentError("length(λ) must equal length(d)"))
+    length(ds) == length(λs) || throw(ArgumentError("Number of datasets must equal number of λ trajectories"))
+    isempty(ds) && throw(ArgumentError("Must provide at least one dataset"))
+    allequal(d.Ts for d in ds) || throw(ArgumentError("All datasets must share the same sample time"))
+    ny, nu = ds[1].ny, ds[1].nu
+    all(d.ny == ny for d in ds) || throw(ArgumentError("All datasets must have the same number of outputs"))
+    all(d.nu == nu for d in ds) || throw(ArgumentError("All datasets must have the same number of inputs"))
+    for i in 1:length(ds)
+        length(λs[i]) == length(ds[i]) || throw(ArgumentError("length(λs[$i]) must equal length(ds[$i])"))
+    end
 
-    basis_fn, nb = _normalize_basis(basis, first(λ))
-    ny, nu = d.ny, d.nu
+    M = length(ds)
+    Ts = ds[1].Ts
+    basis_fn, nb = _normalize_basis(basis, first(λs[1]))
 
     if p0 === nothing
         show_trace && @info "lpv_pem: computing warm-start with sliding-window subspaceid"
-        p0 = lpv_warmstart(d, λ, nx; basis = basis_fn)
+        p0 = lpv_warmstart(ds, λs, nx; basis = basis_fn)
     end
 
     K0_ = K0 === nothing ?
@@ -398,24 +469,27 @@ function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
         copy(K0)
     size(K0_) == (nx, ny) || throw(DimensionMismatch("K0 must have size ($nx, $ny)"))
 
-    x0_init = if x0 === nothing
-        mean_λ = mean(λ)
-        sys_mean = let
-            φ = basis_fn(mean_λ)
-            A_mean = _contract(p0.A, φ)
-            B_mean = _contract(p0.B, φ)
-            C_mean = _contract(p0.C, φ)
-            D_mean = zeroD ? zeros(ny, nu) : _contract(p0.D, φ)
-            ss(A_mean, B_mean, C_mean, D_mean, d.Ts)
+    x0_mat = if x0 === nothing
+        m = zeros(nx, M)
+        for (i, (d, λ)) in enumerate(zip(ds, λs))
+            sys_mean = let
+                φ = basis_fn(mean(λ))
+                A_mean = _contract(p0.A, φ)
+                B_mean = _contract(p0.B, φ)
+                C_mean = _contract(p0.C, φ)
+                D_mean = zeroD ? zeros(ny, nu) : _contract(p0.D, φ)
+                ss(A_mean, B_mean, C_mean, D_mean, Ts)
+            end
+            m[:, i] = try
+                estimate_x0(sys_mean, d, min(length(d), 10nx))
+            catch
+                zeros(nx)
+            end
         end
-        try
-            estimate_x0(sys_mean, d, min(length(d), 10nx))
-        catch
-            zeros(nx)
-        end
+        m
     else
-        length(x0) == nx || throw(DimensionMismatch("x0 must have length $nx"))
-        copy(x0)
+        size(x0) == (nx, M) || throw(DimensionMismatch("x0 must have size ($nx, $M)"))
+        collect(x0)
     end
 
     if zeroD
@@ -424,7 +498,7 @@ function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
             B = collect(p0.B),
             C = collect(p0.C),
             K = K0_,
-            x0 = collect(x0_init),
+            x0 = x0_mat,
         )
     else
         D0 = hasproperty(p0, :D) ? collect(p0.D) : zeros(ny, nu, nb)
@@ -434,17 +508,17 @@ function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
             C = collect(p0.C),
             D = D0,
             K = K0_,
-            x0 = collect(x0_init),
+            x0 = x0_mat,
         )
     end
 
-    y = time2(output(d))
-    u = time2(input(d))
+    ys = [time2(output(d)) for d in ds]
+    us = [time2(input(d)) for d in ds]
 
-    loss = _lpv_loss_factory(
+    loss = _lpv_multi_loss_factory(
         Val(zeroD),
         Val(focus === :prediction),
-        basis_fn, λ, y, u, metric, regularizer,
+        basis_fn, λs, ys, us, metric, regularizer,
     )
 
     res = Optim.optimize(
@@ -475,6 +549,6 @@ function lpv_pem(d::AbstractIdData, λ::AbstractVector, nx::Int;
     end
 
     K_opt = focus === :prediction ? collect(p_opt.K) : zeros(nx, ny)
-    sys = LPVStateSpace(basis_fn, nb, θ_opt, K_opt, d.Ts, nx, nu, ny)
+    sys = LPVStateSpace(basis_fn, nb, θ_opt, K_opt, Ts, nx, nu, ny)
     (; sys, x0 = collect(p_opt.x0), res)
 end

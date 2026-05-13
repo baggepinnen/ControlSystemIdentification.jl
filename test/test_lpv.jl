@@ -112,6 +112,39 @@ end
     @test size(yh) == (1, length(d))
 end
 
+@testset "LPV PEM multi-dataset" begin
+    # Two experiments from the same affine-in-λ system but with different
+    # scheduling trajectories and inputs. The joint fit should explain both.
+    d1, λ1, _ = simulate_affine_lpv(T = 1200, σy = 0.005, seed = 1)
+    d2, λ2, _ = simulate_affine_lpv(T = 1200, σy = 0.005, seed = 7)
+    basis = [_ -> 1.0, λ -> λ]
+
+    res = lpv_pem([d1, d2], [λ1, λ2], 2; basis,
+                  K0 = 1e-6 .* ones(2, 1),
+                  show_trace = false, store_trace = false,
+                  iterations = 200, time_limit = 90)
+    sys_joint, x0_mat, _ = res
+    @test size(x0_mat) == (2, 2)
+    @test all(isfinite, x0_mat)
+
+    e1 = mean(abs2, d1.y .- ControlSystemIdentification.predict(sys_joint, d1, λ1; x0 = x0_mat[:, 1]))
+    e2 = mean(abs2, d2.y .- ControlSystemIdentification.predict(sys_joint, d2, λ2; x0 = x0_mat[:, 2]))
+    @test e1 < 0.05
+    @test e2 < 0.05
+
+    # Joint fit must beat a single-dataset fit on the OTHER experiment, since
+    # the single fit overfits its own dataset's input/noise realization.
+    res1 = lpv_pem(d1, λ1, 2; basis,
+                   K0 = 1e-6 .* ones(2, 1),
+                   show_trace = false, store_trace = false,
+                   iterations = 200, time_limit = 60)
+    sys_only1, x0_only1, _ = res1
+    # Held-out prediction using sys_only1 starts from zero state, which is fair
+    # since it never saw d2.
+    e2_only1 = mean(abs2, d2.y .- ControlSystemIdentification.predict(sys_only1, d2, λ2))
+    @test e1 < e2_only1
+end
+
 @testset "LPV PEM basis-of-length-1 ≈ LTI" begin
     # When the basis has a single constant function, the LPV model is just LTI;
     # the result should match a plain LTI fit to within a moderate tolerance.
