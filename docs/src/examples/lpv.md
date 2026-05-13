@@ -1,4 +1,4 @@
-# Linear Parameter-Varying (LPV) identification
+# [Linear Parameter-Varying (LPV) identification](@id lpv-example)
 
 !!! warning "Experimental"
     LPV identification in this package is considered experimental and may

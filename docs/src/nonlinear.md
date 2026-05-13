@@ -269,7 +269,7 @@ ControlSystemIdentification.LPVStateSpace
 ControlSystemIdentification.lpv_warmstart
 ```
 
-See [Linear Parameter-Varying (LPV) identification](@ref) for a worked example.
+See [Linear Parameter-Varying (LPV) identification](@ref lpv-example) for a worked example.
 
 
 # Video tutorials
