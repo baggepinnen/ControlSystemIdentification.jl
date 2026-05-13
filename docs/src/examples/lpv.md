@@ -42,11 +42,15 @@ B(λ) = B0 .+ λ .* B1
 
 λ = 0.5 .* sin.(0.01 .* (1:T))
 u = randn(1, T)
-x = zeros(2)
-y = zeros(1, T)
-for t in 1:T
-    y[:, t] = C * x
-    x = A(λ[t]) * x + B(λ[t]) * u[:, t]
+
+y = let
+    x = zeros(2)
+    y = zeros(1, T)
+    for t in 1:T
+        y[:, t] = C * x
+        x = A(λ[t]) * x + B(λ[t]) * u[:, t]
+    end
+    y
 end
 y .+= 0.01 .* randn(size(y))
 d = iddata(y, u, Ts)
@@ -149,12 +153,15 @@ Dc    = zeros(1, 1)
 u = reshape(randn(N), 1, N)   # broadband excitation force
 
 # Simulate by re-discretizing the LTV model at every sample (ZOH on u)
-x = zeros(2)
-y_clean = zeros(1, N)
-for n in 1:N
-    y_clean[:, n] = Cc * x
-    sys_n = c2d(ss(Ac(λ[n]), Bc, Cc, Dc), Ts)
-    x = sys_n.A * x + sys_n.B * u[:, n]
+y_clean = let
+    x = zeros(2)
+    y_clean = zeros(1, N)
+    for n in 1:N
+        y_clean[:, n] = Cc * x
+        sys_n = c2d(ss(Ac(λ[n]), Bc, Cc, Dc), Ts)
+        x = sys_n.A * x + sys_n.B * u[:, n]
+    end
+    y_clean
 end
 y = y_clean .+ 1e-3 .* randn(size(y_clean))
 d = iddata(y, u, Ts)
