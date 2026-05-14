@@ -178,7 +178,13 @@ function _inner_pem(
         resid = zeros(T * ny)
         J = ForwardDiff.jacobian(residuals!, resid, res.minimizer)
         residuals!(resid, res.minimizer)
-        (T - length(p_guess)) / dot(resid, resid) * Symmetric(J' * J)
+        Σout = vec(sum(abs2, reshape(resid, ny, T), dims=2)) ./ (T - length(p_guess))
+        inds = range(1, step=ny, length=T)
+        for i = 1:ny
+            @views J[inds, :] ./= sqrt(Σout[i])
+            inds = inds .+ 1
+        end
+        Symmetric(J' * J)
     end
 
     ukf = get_ukf(res.minimizer)

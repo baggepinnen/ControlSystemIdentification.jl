@@ -1,6 +1,6 @@
 using ControlSystemIdentification, Optim, ControlSystemsBase
 using ControlSystemsBase.DemoSystems: resonant
-using Random, Test
+using Random, Test, Statistics, LinearAlgebra
 Random.seed!(1)
 T = 1000
 sys = c2d(resonant(ω0 = 0.1) * tf(1, [0.1, 1]), 1)# generate_system(nx, nu, ny)
@@ -358,7 +358,57 @@ end
     res = ControlSystemIdentification.structured_pem(d, nx; focus=:simulation, p0, constructor, regularizer, show_trace = false, show_every = 1, iterations=300)
     p_est = res.res.minimizer.p
     @test norm(p_est - p_true) < 1e-6
-    
+
+end
+
+
+@testset "structured_pem covariance scaling" begin
+    @info "Testing structured_pem covariance scaling against bootstrap (ny=1 and ny=3)"
+
+    Ts_b = 0.1
+    nT_b = 200
+    t_b = 0:Ts_b:Ts_b*(nT_b-1)
+    σ_b = 0.3
+    N_reps = 50
+
+    Random.seed!(0)
+    u_b = randn(1, nT_b)
+
+    function bootstrap_compare(constructor, p_true, seed_offset)
+        y_clean = lsim(c2d(constructor(p_true), Ts_b), u_b, t_b).y
+        p_ests   = zeros(length(p_true), N_reps)
+        var_ests = zeros(length(p_true), N_reps)
+        for rep in 1:N_reps
+            Random.seed!(seed_offset + rep)
+            d_rep = iddata(y_clean .+ σ_b .* randn(size(y_clean)), u_b, Ts_b)
+            res = ControlSystemIdentification.structured_pem(
+                d_rep, 1; focus=:simulation, p0=p_true, constructor,
+                show_trace=false, iterations=100,
+            )
+            p_ests[:, rep]   = collect(res.res.minimizer.p)
+            var_ests[:, rep] = diag(inv(res.Λ()))[1:length(p_true)]
+        end
+        vec(mean(var_ests, dims=2)), vec(var(p_ests, dims=2))
+    end
+
+    # --- ny = 1 (catches the missing factor of ½ — buggy formula would give ratio ≈ 0.5) ---
+    constructor_1 = function (p)
+        a, b = p
+        ss(reshape([a], 1, 1), reshape([b], 1, 1), reshape([1.0], 1, 1), 0)
+    end
+    mean_est_1, emp_var_1 = bootstrap_compare(constructor_1, [-1.0, 1.0], 100)
+    @test 0.6 < mean_est_1[1] / emp_var_1[1] < 1.7
+    @test 0.6 < mean_est_1[2] / emp_var_1[2] < 1.7
+
+    # --- ny = 3 (catches the T vs T·ny error — buggy formula would give ratio ≈ 1.5) ---
+    C_3 = reshape([1.0, 0.5, -0.3], 3, 1)
+    constructor_3 = function (p)
+        a, b = p
+        ss(reshape([a], 1, 1), reshape([b], 1, 1), C_3, zeros(3, 1))
+    end
+    mean_est_3, emp_var_3 = bootstrap_compare(constructor_3, [-1.0, 1.0], 200)
+    @test 0.6 < mean_est_3[1] / emp_var_3[1] < 1.7
+    @test 0.6 < mean_est_3[2] / emp_var_3[2] < 1.7
 end
 
 
