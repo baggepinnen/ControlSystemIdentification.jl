@@ -1,7 +1,7 @@
 name = "ControlSystemIdentification"
 uuid = "3abffc1c-5106-53b7-b354-a47bfc086282"
-authors = ["baggepinnen <baggepinnen@gmail.com>"]
 version = "2.12.0"
+authors = ["baggepinnen <baggepinnen@gmail.com>"]
 
 [deps]
 ADTypes = "47edcb42-4c32-4615-8424-f2b9edc5f35b"
@@ -53,7 +53,7 @@ LowLevelParticleFilters = "2.0, 3.0"
 MatrixEquations = "1.1, 2.0"
 MonteCarloMeasurements = "1.0"
 Optim = "2"
-Parameters = "<0.13"
+Parameters = "<0.13, 0.13"
 QuadGK = "2.4"
 Random = "1.6"
 RecipesBase = "<0.8, 0.8, 1.0"
