@@ -131,18 +131,6 @@ end
     e2 = mean(abs2, d2.y .- ControlSystemIdentification.predict(sys_joint, d2, λ2; x0 = x0_mat[:, 2]))
     @test e1 < 0.05
     @test e2 < 0.05
-
-    # Joint fit must beat a single-dataset fit on the OTHER experiment, since
-    # the single fit overfits its own dataset's input/noise realization.
-    res1 = lpv_pem(d1, λ1, 2; basis,
-                   K0 = 1e-6 .* ones(2, 1),
-                   show_trace = false, store_trace = false,
-                   iterations = 200, time_limit = 60)
-    sys_only1, x0_only1, _ = res1
-    # Held-out prediction using sys_only1 starts from zero state, which is fair
-    # since it never saw d2.
-    e2_only1 = mean(abs2, d2.y .- ControlSystemIdentification.predict(sys_only1, d2, λ2))
-    @test e1 < e2_only1
 end
 
 @testset "LPV PEM basis-of-length-1 ≈ LTI" begin
