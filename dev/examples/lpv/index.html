@@ -38,46 +38,46 @@ plot(
     plot(timevec(d), λ; xlabel=&quot;t [s]&quot;, ylabel=&quot;λ(t)&quot;, lab=&quot;scheduling&quot;),
     plot(d);
     layout = (2, 1), size=(700, 500),
-)</code></pre><img src="71331f94.svg" alt="Example block output"/><h2 id="Fitting-an-LPV-model"><a class="docs-heading-anchor" href="#Fitting-an-LPV-model">Fitting an LPV model</a><a id="Fitting-an-LPV-model-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting-an-LPV-model" title="Permalink"></a></h2><p>We choose an affine basis in <span>$\lambda$</span>, <span>$\varphi_1(\lambda) = 1$</span>, <span>$\varphi_2(\lambda) = \lambda$</span>, and estimate the parameters with <a href="../../nonlinear/#ControlSystemIdentification.lpv_pem"><code>lpv_pem</code></a>. <code>lpv_pem</code> warm-starts from a sliding-window subspace fit (see <a href="../../nonlinear/#ControlSystemIdentification.lpv_warmstart"><code>lpv_warmstart</code></a>) when no initial guess is given.</p><pre><code class="language-julia hljs">basis = [λ -&gt; 1.0, λ -&gt; λ]
+)</code></pre><img src="2d294b8a.svg" alt="Example block output"/><h2 id="Fitting-an-LPV-model"><a class="docs-heading-anchor" href="#Fitting-an-LPV-model">Fitting an LPV model</a><a id="Fitting-an-LPV-model-1"></a><a class="docs-heading-anchor-permalink" href="#Fitting-an-LPV-model" title="Permalink"></a></h2><p>We choose an affine basis in <span>$\lambda$</span>, <span>$\varphi_1(\lambda) = 1$</span>, <span>$\varphi_2(\lambda) = \lambda$</span>, and estimate the parameters with <a href="../../nonlinear/#ControlSystemIdentification.lpv_pem"><code>lpv_pem</code></a>. <code>lpv_pem</code> warm-starts from a sliding-window subspace fit (see <a href="../../nonlinear/#ControlSystemIdentification.lpv_warmstart"><code>lpv_warmstart</code></a>) when no initial guess is given.</p><pre><code class="language-julia hljs">basis = [λ -&gt; 1.0, λ -&gt; λ]
 res = lpv_pem(d, λ, 2; basis, show_trace = false, iterations = 200)
-sys_lpv, x0h, _ = res</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(sys = LPVStateSpace with nx=2, nu=1, ny=1, nb=2, Ts=0.05, x0 = [-0.06981304263404793, -0.06339807060946015], res =  * Status: failure (reached maximum number of iterations)
+sys_lpv, x0h, _ = res</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(sys = LPVStateSpace with nx=2, nu=1, ny=1, nb=2, Ts=0.05, x0 = [0.005965693277640183, -0.0048893851387002045], res =  * Status: failure (reached maximum number of iterations)
 
  * Candidate solution
-    Final objective value:     2.087146e-01
+    Final objective value:     2.089688e-01
 
  * Found with
     Algorithm:     BFGS
 
  * Convergence measures
-    |x - x&#39;|               = 7.66e-04 ≰ 0.0e+00
-    |x - x&#39;|/|x&#39;|          = 7.76e-04 ≰ 0.0e+00
-    |f(x) - f(x&#39;)|         = 3.17e-08 ≰ 1.0e-16
-    |f(x) - f(x&#39;)|/|f(x&#39;)| = 1.52e-07 ≰ 0.0e+00
-    |g(x)|                 = 6.58e-03 ≰ 1.0e-12
+    |x - x&#39;|               = 3.33e-02 ≰ 0.0e+00
+    |x - x&#39;|/|x&#39;|          = 2.52e-02 ≰ 0.0e+00
+    |f(x) - f(x&#39;)|         = 3.62e-05 ≰ 1.0e-16
+    |f(x) - f(x&#39;)|/|f(x&#39;)| = 1.73e-04 ≰ 0.0e+00
+    |g(x)|                 = 1.33e+00 ≰ 1.0e-12
 
  * Work counters
-    Seconds run:   2  (vs limit 100)
+    Seconds run:   1  (vs limit 100)
     Iterations:    200
-    f(x) calls:    371
+    f(x) calls:    388
     ∇f(x) calls:   201
     ∇f(x)ᵀv calls: 0
 )</code></pre><p>The returned <code>sys_lpv</code> is an <a href="../../api/#ControlSystemIdentification.LPVStateSpace"><code>LPVStateSpace</code></a>. It is callable: passing a scheduling value freezes the matrices and returns a plain <code>StateSpace</code>.</p><pre><code class="language-julia hljs">sys_lpv(0.0)</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">StateSpace{Discrete{Float64}, Float64}
 A = 
-  0.6674280175985896  0.1442145429212999
- -0.2082675068228129  0.9861951583699529
+  1.2093969018110993  0.9355555419994581
+ -0.1614779020305135  0.44446737628644034
 B = 
- 0.46685534655509286
- 0.17848024905277846
+  0.13765610775755785
+ -0.032559687429553986
 C = 
- 0.4626012291802766  -0.6481229253799683
+ 0.4183037317394523  -1.3191951518027942
 D = 
- 0.00032576005963250827
+ 0.000309596848885159
 
 Sample Time: 0.05 (seconds)
 Discrete-time state-space model</code></pre><h2 id="Validation"><a class="docs-heading-anchor" href="#Validation">Validation</a><a id="Validation-1"></a><a class="docs-heading-anchor-permalink" href="#Validation" title="Permalink"></a></h2><p>We compare simulation performance against ground truth on the full trajectory and against a single LTI fit by <a href="../../ss/#ControlSystemIdentification.subspaceid"><code>subspaceid</code></a>. As with <code>predplot</code> for the LPV case, passing the schedule <code>λ</code> as the third positional argument to <a href="../../api/#ControlSystemIdentification.simplot"><code>simplot</code></a> is enough for it to route through the LPV one-step predictor. Each trace is annotated with its NRMSE fit percentage.</p><pre><code class="language-julia hljs">sys_lti = subspaceid(d, 2)
 
 simplot(sys_lpv, d, λ; sysname = &quot;LPV&quot;)
-simplot!(sys_lti, d;   sysname = &quot;LTI&quot;, ploty = false)</code></pre><img src="81a9771b.svg" alt="Example block output"/><p>On varying-<span>$\lambda$</span> data the LPV model is strictly better than any single LTI fit, because the LTI model cannot match the changing dynamics.</p><h2 id="A-practical-example:-semi-active-suspension"><a class="docs-heading-anchor" href="#A-practical-example:-semi-active-suspension">A practical example: semi-active suspension</a><a id="A-practical-example:-semi-active-suspension-1"></a><a class="docs-heading-anchor-permalink" href="#A-practical-example:-semi-active-suspension" title="Permalink"></a></h2><p>A common real-world use of LPV identification is <strong>semi-active vibration isolation</strong>: a mass-spring-damper where the damping coefficient is set by a controllable voltage. Magneto-rheological shock absorbers on a vehicle suspension and active engine mounts are typical instances. The damper voltage is sampled at every time step, so it is a known scheduling variable that enters the system matrix directly.</p><p>The continuous-time 1-DOF model is</p><p class="math-container">\[m\ddot{x} + c(\lambda)\dot{x} + k x = u,\qquad
+simplot!(sys_lti, d;   sysname = &quot;LTI&quot;, ploty = false)</code></pre><img src="afa1c6d5.svg" alt="Example block output"/><p>On varying-<span>$\lambda$</span> data the LPV model is strictly better than any single LTI fit, because the LTI model cannot match the changing dynamics.</p><h2 id="A-practical-example:-semi-active-suspension"><a class="docs-heading-anchor" href="#A-practical-example:-semi-active-suspension">A practical example: semi-active suspension</a><a id="A-practical-example:-semi-active-suspension-1"></a><a class="docs-heading-anchor-permalink" href="#A-practical-example:-semi-active-suspension" title="Permalink"></a></h2><p>A common real-world use of LPV identification is <strong>semi-active vibration isolation</strong>: a mass-spring-damper where the damping coefficient is set by a controllable voltage. Magneto-rheological shock absorbers on a vehicle suspension and active engine mounts are typical instances. The damper voltage is sampled at every time step, so it is a known scheduling variable that enters the system matrix directly.</p><p>The continuous-time 1-DOF model is</p><p class="math-container">\[m\ddot{x} + c(\lambda)\dot{x} + k x = u,\qquad
 c(\lambda) = c_0 + c_1\lambda,\qquad y = x,\]</p><p>with state <span>$[x,\ \dot{x}]^\top$</span>. In state-space form the only λ-dependence sits in the <span>$(2,2)$</span> entry of <span>$A$</span>, which makes this a textbook affine-in-λ LPV system. With the parameters used below the damping ratio sweeps from <span>$\zeta \approx 0.05$</span> (sharp resonance) to <span>$\zeta \approx 0.3$</span> (well-damped) as <span>$\lambda$</span> is varied, easily distinguishable in the data.</p><h3 id="Simulating-a-damper-sweep-experiment"><a class="docs-heading-anchor" href="#Simulating-a-damper-sweep-experiment">Simulating a damper-sweep experiment</a><a id="Simulating-a-damper-sweep-experiment-1"></a><a class="docs-heading-anchor-permalink" href="#Simulating-a-damper-sweep-experiment" title="Permalink"></a></h3><p>We simulate a 30 s experiment where the operator slowly sweeps the damper voltage while exciting the mass with broadband noise. The damper voltage is <em>measured</em>, and is used as the scheduling variable for identification.</p><pre><code class="language-julia hljs">using ControlSystemIdentification, ControlSystemsBase, Plots, Random, LinearAlgebra, Statistics
 Random.seed!(0)
 
@@ -119,11 +119,11 @@ plot(
     plot(t, λ; ylabel = &quot;λ(t) [V]&quot;, lab = &quot;damper voltage&quot;),
     plot(t, vec(y); ylabel = &quot;y(t) [m]&quot;, lab = &quot;measured position&quot;);
     layout = (2, 1), xlabel = &quot;t [s]&quot;, size = (700, 480),
-)</code></pre><img src="867289d2.svg" alt="Example block output"/><h3 id="Identifying-the-LPV-model"><a class="docs-heading-anchor" href="#Identifying-the-LPV-model">Identifying the LPV model</a><a id="Identifying-the-LPV-model-1"></a><a class="docs-heading-anchor-permalink" href="#Identifying-the-LPV-model" title="Permalink"></a></h3><p>With an affine basis <span>$\{1,\lambda\}$</span> we recover the operating-point dependence directly. The warm-start (subspace ID + modal-form coefficient regression) is what makes this work despite never having a constant-<span>$\lambda$</span> segment of data:</p><pre><code class="language-julia hljs">basis_susp = [λ -&gt; 1.0, λ -&gt; λ]
+)</code></pre><img src="000bedd4.svg" alt="Example block output"/><h3 id="Identifying-the-LPV-model"><a class="docs-heading-anchor" href="#Identifying-the-LPV-model">Identifying the LPV model</a><a id="Identifying-the-LPV-model-1"></a><a class="docs-heading-anchor-permalink" href="#Identifying-the-LPV-model" title="Permalink"></a></h3><p>With an affine basis <span>$\{1,\lambda\}$</span> we recover the operating-point dependence directly. The warm-start (subspace ID + modal-form coefficient regression) is what makes this work despite never having a constant-<span>$\lambda$</span> segment of data:</p><pre><code class="language-julia hljs">basis_susp = [λ -&gt; 1.0, λ -&gt; λ]
 res2 = lpv_pem(d, λ, 2; basis = basis_susp,
                K0 = 1e-6 .* ones(2, 1),
                show_trace = false, iterations = 300)
-sys_susp, x0_susp, _ = res2</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(sys = LPVStateSpace with nx=2, nu=1, ny=1, nb=2, Ts=0.01, x0 = [0.0009025192320492299, 0.000620019278224398], res =  * Status: success
+sys_susp, x0_susp, _ = res2</code></pre><pre class="documenter-example-output"><code class="nohighlight hljs ansi">(sys = LPVStateSpace with nx=2, nu=1, ny=1, nb=2, Ts=0.01, x0 = [0.0009025189174745249, 0.0006200192224950968], res =  * Status: success
 
  * Candidate solution
     Final objective value:     3.023331e-03
@@ -132,26 +132,26 @@ sys_susp, x0_susp, _ = res2</code></pre><pre class="documenter-example-output"><
     Algorithm:     BFGS
 
  * Convergence measures
-    |x - x&#39;|               = 2.08e-17 ≰ 0.0e+00
-    |x - x&#39;|/|x&#39;|          = 2.09e-17 ≰ 0.0e+00
-    |f(x) - f(x&#39;)|         = 0.00e+00 ≤ 1.0e-16
-    |f(x) - f(x&#39;)|/|f(x&#39;)| = 0.00e+00 ≤ 0.0e+00
-    |g(x)|                 = 3.86e-08 ≰ 1.0e-12
+    |x - x&#39;|               = 8.79e-09 ≰ 0.0e+00
+    |x - x&#39;|/|x&#39;|          = 8.85e-09 ≰ 0.0e+00
+    |f(x) - f(x&#39;)|         = 2.17e-18 ≤ 1.0e-16
+    |f(x) - f(x&#39;)|/|f(x&#39;)| = 7.17e-16 ≰ 0.0e+00
+    |g(x)|                 = 2.40e-09 ≰ 1.0e-12
 
  * Work counters
     Seconds run:   1  (vs limit 100)
     Iterations:    112
-    f(x) calls:    155
+    f(x) calls:    146
     ∇f(x) calls:   113
     ∇f(x)ᵀv calls: 0
 )</code></pre><h3 id="Validation:-LPV-vs-single-LTI-fit"><a class="docs-heading-anchor" href="#Validation:-LPV-vs-single-LTI-fit">Validation: LPV vs single LTI fit</a><a id="Validation:-LPV-vs-single-LTI-fit-1"></a><a class="docs-heading-anchor-permalink" href="#Validation:-LPV-vs-single-LTI-fit" title="Permalink"></a></h3><p>A single LTI fit has to compromise between the under- and over-damped regimes the experiment sweeps through, while the LPV model does not. We use <a href="../../api/#ControlSystemIdentification.simplot"><code>simplot</code></a> to overlay simulation against measurement and annotate each trace with its NRMSE fit percentage. Passing the schedule <code>λ</code> as the third positional argument to <code>simplot</code> is enough for the recipe to route it through the LPV simulator.</p><pre><code class="language-julia hljs">sys_lti2 = subspaceid(d, 2)
 
 simplot(sys_susp, d, λ;  sysname = &quot;LPV&quot;)
-simplot!(sys_lti2, d;    sysname = &quot;LTI&quot;, ploty=false)</code></pre><img src="a8342a33.svg" alt="Example block output"/><h3 id="Frequency-response-at-frozen-operating-points"><a class="docs-heading-anchor" href="#Frequency-response-at-frozen-operating-points">Frequency response at frozen operating points</a><a id="Frequency-response-at-frozen-operating-points-1"></a><a class="docs-heading-anchor-permalink" href="#Frequency-response-at-frozen-operating-points" title="Permalink"></a></h3><p>Because <a href="../../api/#ControlSystemIdentification.LPVStateSpace"><code>LPVStateSpace</code></a> is callable, freezing the identified model at a particular <span>$\lambda$</span> returns an ordinary <code>StateSpace</code>. This is exactly the artifact a controller designer would feed into a gain-scheduled controller synthesis on top of the identified plant.</p><pre><code class="language-julia hljs">truth(λ) = c2d(ss(Ac(λ), Bc, Cc, Dc), Ts)
+simplot!(sys_lti2, d;    sysname = &quot;LTI&quot;, ploty=false)</code></pre><img src="125403a0.svg" alt="Example block output"/><h3 id="Frequency-response-at-frozen-operating-points"><a class="docs-heading-anchor" href="#Frequency-response-at-frozen-operating-points">Frequency response at frozen operating points</a><a id="Frequency-response-at-frozen-operating-points-1"></a><a class="docs-heading-anchor-permalink" href="#Frequency-response-at-frozen-operating-points" title="Permalink"></a></h3><p>Because <a href="../../api/#ControlSystemIdentification.LPVStateSpace"><code>LPVStateSpace</code></a> is callable, freezing the identified model at a particular <span>$\lambda$</span> returns an ordinary <code>StateSpace</code>. This is exactly the artifact a controller designer would feed into a gain-scheduled controller synthesis on top of the identified plant.</p><pre><code class="language-julia hljs">truth(λ) = c2d(ss(Ac(λ), Bc, Cc, Dc), Ts)
 w = exp10.(range(-0.5, log10(π / Ts); length = 300))
 
 p = bodeplot(truth(0.1),    w; plotphase = false, lab = &quot;truth λ=0.1&quot;)
 bodeplot!(p, sys_susp(0.1), w; plotphase = false, lab = &quot;LPV   λ=0.1&quot;, ls = :dash)
 bodeplot!(p, truth(0.9),    w; plotphase = false, lab = &quot;truth λ=0.9&quot;)
 bodeplot!(p, sys_susp(0.9), w; plotphase = false, lab = &quot;LPV   λ=0.9&quot;, ls = :dash)
-p</code></pre><img src="8b820a06.svg" alt="Example block output"/><p>The resonance peak collapses by more than 15 dB between <span>$\lambda=0.1$</span> and <span>$\lambda=0.9$</span>, and the LPV fit tracks it at both endpoints.</p><h2 id="Notes"><a class="docs-heading-anchor" href="#Notes">Notes</a><a id="Notes-1"></a><a class="docs-heading-anchor-permalink" href="#Notes" title="Permalink"></a></h2><ul><li>The basis can be any user-supplied set of functions of <span>$\lambda$</span>: polynomial, radial-basis-function, piecewise-linear, etc. For mild dependence (as in the suspension example) an affine basis suffices; stronger nonlinearity in <span>$\lambda$</span> is well-served by a polynomial or RBF basis.</li><li>Multi-dimensional scheduling is not yet documented; the basis API technically accepts vector <span>$\lambda$</span> if the user writes a multivariate basis function, but this path has not been thoroughly tested.</li><li>The Kalman gain <span>$K$</span> is currently held constant in <span>$\lambda$</span>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hammerstein_wiener/">« Nonlinear belt drive</a><a class="docs-footer-nextpage" href="../modelingtoolkit/">Fit parameters of ModelingToolkit model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Thursday 14 May 2026 06:38">Thursday 14 May 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
+p</code></pre><img src="5ccebc33.svg" alt="Example block output"/><p>The resonance peak collapses by more than 15 dB between <span>$\lambda=0.1$</span> and <span>$\lambda=0.9$</span>, and the LPV fit tracks it at both endpoints.</p><h2 id="Notes"><a class="docs-heading-anchor" href="#Notes">Notes</a><a id="Notes-1"></a><a class="docs-heading-anchor-permalink" href="#Notes" title="Permalink"></a></h2><ul><li>The basis can be any user-supplied set of functions of <span>$\lambda$</span>: polynomial, radial-basis-function, piecewise-linear, etc. For mild dependence (as in the suspension example) an affine basis suffices; stronger nonlinearity in <span>$\lambda$</span> is well-served by a polynomial or RBF basis.</li><li>Multi-dimensional scheduling is not yet documented; the basis API technically accepts vector <span>$\lambda$</span> if the user writes a multivariate basis function, but this path has not been thoroughly tested.</li><li>The Kalman gain <span>$K$</span> is currently held constant in <span>$\lambda$</span>.</li></ul></article><nav class="docs-footer"><a class="docs-footer-prevpage" href="../hammerstein_wiener/">« Nonlinear belt drive</a><a class="docs-footer-nextpage" href="../modelingtoolkit/">Fit parameters of ModelingToolkit model »</a><div class="flexbox-break"></div><p class="footer-message">Powered by <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> and the <a href="https://julialang.org/">Julia Programming Language</a>.</p></nav></div><div class="modal" id="documenter-settings"><div class="modal-background"></div><div class="modal-card"><header class="modal-card-head"><p class="modal-card-title">Settings</p><button class="delete"></button></header><section class="modal-card-body"><p><label class="label">Theme</label><div class="select"><select id="documenter-themepicker"><option value="auto">Automatic (OS)</option><option value="documenter-light">documenter-light</option><option value="documenter-dark">documenter-dark</option><option value="catppuccin-latte">catppuccin-latte</option><option value="catppuccin-frappe">catppuccin-frappe</option><option value="catppuccin-macchiato">catppuccin-macchiato</option><option value="catppuccin-mocha">catppuccin-mocha</option></select></div></p><hr/><p>This document was generated with <a href="https://github.com/JuliaDocs/Documenter.jl">Documenter.jl</a> version 1.17.0 on <span class="colophon-date" title="Friday 5 June 2026 04:34">Friday 5 June 2026</span>. Using Julia version 1.12.6.</p></section><footer class="modal-card-foot"></footer></div></div></div></body></html>
