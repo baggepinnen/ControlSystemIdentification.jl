@@ -17,7 +17,7 @@ t = ModelingToolkit.t_nounits
 ssqrt(x) = √(max(x, zero(x)) + 1e-3) # For numerical robustness at x = 0
 @register_symbolic ssqrt(x)
 
-@mtkmodel QuadtankModel begin
+@component function QuadtankModel(; name)
     @parameters begin
         k1 = 1.4
         k2 = 1.4
@@ -26,21 +26,20 @@ ssqrt(x) = √(max(x, zero(x)) + 1e-3) # For numerical robustness at x = 0
         a = 0.03
         γ = 0.25
     end
-    begin
-        A1 = A2 = A3 = A4 = A
-        a1 = a3 = a2 = a4 = a
-        γ1 = γ2 = γ
-    end
     @variables begin
-        h(t)[1:4] = 0
-        u(t)[1:2] = 0
+        h(t)[1:4] = zeros(4)
+        u(t)[1:2] = zeros(2)
     end
-    @equations begin
+    A1 = A2 = A3 = A4 = A
+    a1 = a3 = a2 = a4 = a
+    γ1 = γ2 = γ
+    eqs = [
         D(h[1]) ~ -a1/A1 * ssqrt(2g*h[1]) + a3/A1*ssqrt(2g*h[3]) +     γ1*k1/A1 * u[1]
         D(h[2]) ~ -a2/A2 * ssqrt(2g*h[2]) + a4/A2*ssqrt(2g*h[4]) +     γ2*k2/A2 * u[2]
         D(h[3]) ~ -a3/A3*ssqrt(2g*h[3])                          + (1-γ2)*k2/A3 * u[2]
         D(h[4]) ~ -a4/A4*ssqrt(2g*h[4])                          + (1-γ1)*k1/A4 * u[1]
-    end
+    ]
+    return System(eqs, t; name)
 end
 
 @named mtkmodel = QuadtankModel()
@@ -77,7 +76,7 @@ function get_mtk_dynamics(mtkmodel, inputs, outputs, tunable_p) # A wrapper func
     continuous_dynamics = f_oop # This is ẋ = f(x, u, p, t)
     inner_discrete_dynamics = SeeToDee.Rk4(continuous_dynamics, Ts::Float64) # x⁺ = f(x, u, p, t)
     tunable_indices = [findfirst(isequal(pi), p) for pi in tunable_p] # Figure out what indices of the parameter array correspond to our tunable parameters
-    p0 = [ModelingToolkit.defaults(io_sys)[pi] for pi in p]
+    p0 = [ModelingToolkit.getdefault(pi) for pi in p]
     full_p = deepcopy(p0)
     output_indices = [findfirst(isequal(yi), statevars) for yi in outputs] # Figure out what indices of the state array correspond to our outputs
 
@@ -141,8 +140,8 @@ model = ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurem
 
 ```
 NonlinearPredictionErrorModel
-  p: [1.6130151977611773, 1.5995448472434575, 4.887899044534598, 0.20437506116084214]
-  x0: [2.5590156863624642, 1.674133802252665, 2.890730509103397, 2.114949939609547]
+  p: [1.611987373192685, 1.599185391084847, 4.877360360086102, 0.2044771473506988]
+  x0: [1.8477043095652341, 1.1766588459161196, 3.3770895080106467, 2.876924813784857]
   Ts: 1.0
   ny = 2, nu = 2, nx = 4
 ```
@@ -161,10 +160,10 @@ using BenchmarkTools
 @btime ControlSystemIdentification.nonlinear_pem(d, discrete_dynamics, measurement, p_guess, x0_guess, R1, R2, nu)
 ```
 ```
-91.923 ms (876913 allocations: 97.23 MiB)
+118.966 ms (876188 allocations: 106.92 MiB)
 ```
 
 
 
 !!! warning
-    ModelingToolkit is a fast moving target that breaks frequently. The example below was tested with ModelingToolkit v10.0.1, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
+    ModelingToolkit is a fast moving target that breaks frequently. This example was tested with ModelingToolkit v11.36.0, but is not run as part of the build process for this documentation and is not to be considered a supported interface between ControlSystemIdentification and ModelingToolkit.
