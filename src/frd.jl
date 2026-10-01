@@ -91,11 +91,12 @@ end
 Base.lastindex(f::FRD) = length(f)
 function Base.getproperty(f::FRD, s::Symbol)
     s === :Ts && return π / maximum(f.w)
+    s === :timeevol && return Continuous()
     s === :nu && return ninputs(f)
     s === :ny && return noutputs(f)
     getfield(f, s)
 end
-Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts)
+Base.propertynames(f::FRD, private::Bool = false) = (fieldnames(typeof(f))..., :Ts, :timeevol, :nu, :ny)
 
 function Base.show(io::IO, frd::FRD)
     write(io, "Frequency (rad/s)\n")
@@ -120,7 +121,7 @@ function ControlSystemsBase.bode(f::FRD, w::AbstractVector = f.w; unwrap=true)
     reshape(abs.(f.r), f.ny, f.nu, :), angles, f.w
 end
 
-function ControlSystemsBase.freqresp(f::FRD, w::AbstractVector{W} = f.w) where W <: Real
+function ControlSystemsBase.freqresp(f::FRD, w::AbstractVector{W} = f.w; kwargs...) where W <: Real # kwargs such as balance do not apply to frequency-response data
     w == f.w || error("Frequency vector must match the one stored in the FRD")
     reshape(f.r, f.ny, f.nu, :)
 end
