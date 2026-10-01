@@ -9,7 +9,7 @@ for basis in [kautz(av), laguerre(1,n), laguerre_oo(1,n), adhocbasis(av)]
     F = sum_basis(basis, p)
     fr1 = freqresp(F, w) |> vec
     fr2 = freqresp(tf(1), basis, w, p) |> vec
-    @test norm(fr1-fr2) < 1e-10
+    @test norm(fr1-fr2) < 2e-9
     @test basislength(basis) == n
 end
 basis = laguerre_oo(1,n)

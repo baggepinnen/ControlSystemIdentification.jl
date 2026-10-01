@@ -247,7 +247,7 @@ end
 
 m2vv(x) = collect.(eachcol(x))
 
-function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData, p=parameters(kf))
+function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData, p=LowLevelParticleFilters.parameters(kf))
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
@@ -255,7 +255,7 @@ function LowLevelParticleFilters.forward_trajectory(kf::LowLevelParticleFilters.
     forward_trajectory(kf, U, Y, p)
 end
 
-function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData, p=parameters(kf))
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, d::AbstractIdData, p=LowLevelParticleFilters.parameters(kf))
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)
@@ -263,7 +263,7 @@ function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilt
     LowLevelParticleFilters.smooth(kf, U, Y, p)
 end
 
-function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, M::Int, d::AbstractIdData, p=parameters(kf))
+function LowLevelParticleFilters.smooth(kf::LowLevelParticleFilters.AbstractFilter, M::Int, d::AbstractIdData, p=LowLevelParticleFilters.parameters(kf))
     y = time2(output(d))
     u = input(d)
     U = m2vv(u)

@@ -176,6 +176,8 @@ frd = FRD(w, G);                        # Build a frequency-response data object
 
 @test bode(frd) == bode(G, w)
 @test nyquist(frd) == nyquist(G, w)
+@test ControlSystemsBase.iscontinuous(frd)
+@test freqresp(frd, w; balance = false) == freqresp(frd)
 
 @test size([frd frd]) == (ny, 2nu)
 @test size([frd; frd]) == (2ny, nu)
