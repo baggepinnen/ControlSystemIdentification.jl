@@ -166,6 +166,13 @@ end
         @test kf.B == res.B
         @test kf.C == res.C
 
+        sol = ControlSystemIdentification.LowLevelParticleFilters.forward_trajectory(kf, d)
+        @test length(sol.x) == length(d)
+        if pkgversion(ControlSystemIdentification.LowLevelParticleFilters) >= v"3.33.1" # Earlier versions dispatch smooth(::KalmanFilter, ::AbstractIdData) to their own method
+            ssol = ControlSystemIdentification.LowLevelParticleFilters.smooth(kf, d)
+            @test length(ssol.xT) == length(d)
+        end
+
     end
 
     # Test u scaling
